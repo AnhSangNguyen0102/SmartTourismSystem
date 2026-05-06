@@ -18,7 +18,7 @@ from core.algorithms import estimate_travel_time, check_within_radius
 
 router = APIRouter(prefix="/api/trips", tags=["Trips - Lộ trình & Theo dõi"])
 
-def get_current_user_id(db: Session, current_user_dict: dict) -> int:
+def get_current_user_id(db: Session, current_user_dict: dict) -> str:
     """Lấy user_id thực tế từ database dựa trên email trong token."""
     email = current_user_dict.get("sub")
     user = crud_user.get_user_by_email(db, email=email)

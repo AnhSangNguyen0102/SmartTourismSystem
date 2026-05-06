@@ -5,7 +5,7 @@ from models import Itinerary, ItineraryDay, ItineraryStop, CheckinProgress
 
 def create_itinerary(
     db: Session,
-    user_id: int,
+    user_id: str,
     name: str,
     total_travel_time: int,
 ) -> Itinerary:
@@ -95,7 +95,7 @@ def get_itinerary_stop(db: Session, stop_id: int) -> Optional[ItineraryStop]:
         .first()
     )
 
-def mark_stop_completed(db: Session, user_id: int, stop_id: int, lat: float, lon: float) -> CheckinProgress:
+def mark_stop_completed(db: Session, user_id: str, stop_id: int, lat: float, lon: float) -> CheckinProgress:
     """Đánh dấu điểm dừng là đã hoàn thành và lưu log Checkin."""
     # Đổi trạng thái trạm
     db_stop = db.query(ItineraryStop).filter(ItineraryStop.stop_id == stop_id).first()

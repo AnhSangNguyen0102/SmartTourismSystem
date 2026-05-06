@@ -3,9 +3,6 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import date, time, datetime
 
-# ==========================================
-# AUTH SCHEMAS (GIỮ NGUYÊN)
-# ==========================================
 class UserCreate(BaseModel):
     full_name: str
     email: EmailStr
@@ -23,9 +20,7 @@ class TokenResponse(BaseModel):
     role: str
     full_name: str
 
-# ==========================================
-# GỢI Ý ĐỊA ĐIỂM (SUGGESTION MODULE)
-# ==========================================
+
 class SuggestionRequest(BaseModel):
     city_id: int = Field(..., description="ID của thành phố cần gợi ý")
     budget: float = Field(..., description="Ngân sách tối đa của người dùng")
@@ -52,9 +47,6 @@ class SuggestionResponse(BaseModel):
     total: int
     locations: List[LocationOut]
 
-# ==========================================
-# XÂY DỰNG LỘ TRÌNH (ITINERARY MANAGEMENT)
-# ==========================================
 class CreateItineraryRequest(BaseModel):
     name: str = Field(..., description="Tên lộ trình")
     start_date: date
@@ -87,7 +79,7 @@ class ItineraryDayOut(BaseModel):
 
 class ItineraryOut(BaseModel):
     itinerary_id: str
-    user_id: int
+    user_id: str
     name: Optional[str]
     status: str
     total_budget: float
@@ -99,9 +91,6 @@ class ItineraryOut(BaseModel):
     class Config:
         from_attributes = True
 
-# ==========================================
-# THEO DÕI LỘ TRÌNH (PROGRESS TRACKING)
-# ==========================================
 class CheckInRequest(BaseModel):
     latitude: float = Field(..., description="Vĩ độ hiện tại của GPS điện thoại")
     longitude: float = Field(..., description="Kinh độ hiện tại của GPS điện thoại")

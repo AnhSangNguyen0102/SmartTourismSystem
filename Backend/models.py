@@ -8,7 +8,7 @@ from database import Base
 class User(Base):
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     full_name = Column(String(255))
     passwordhash = Column(String(255), nullable=False) 
     email = Column(String(255), unique=True, index=True, nullable=False)
@@ -23,7 +23,7 @@ class UserSession(Base):
     __tablename__ = "user_sessions"
 
     session_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
+    user_id = Column(String(36), ForeignKey("users.user_id"))
     device_id = Column(String(255))
     refresh_token_hash = Column(String(500))
     is_revoked = Column(Boolean, default=False) 
@@ -96,9 +96,7 @@ class Itinerary(Base):
     __tablename__ = "itineraries"
 
     itinerary_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    # Chú ý: user_id thực tế trong hệ thống đang là Integer, nhưng file CSV ghi là UNIQUEIDENTIFIER
-    # Do nhóm đang thiết kế bảng User là Integer, ta sẽ dùng Integer để không gây lỗi Foreign Key với bảng User hiện tại
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False) 
+    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False) 
     session_id = Column(String(36), nullable=True) # Có thể liên kết tới PlanningSession
     name = Column(String(255), nullable=True)
     status = Column(String(20), default="DRAFT", nullable=False)
@@ -148,7 +146,7 @@ class CheckinProgress(Base):
     __tablename__ = "checkin_progress"
 
     progress_id = Column(Integer, primary_key=True, index=True) # INT IDENTITY
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
     stop_id = Column(Integer, ForeignKey("itineraries_stops.stop_id"), nullable=False)
     is_completed = Column(Boolean, default=False, nullable=False)
     checkin_time = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
