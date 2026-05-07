@@ -1,29 +1,86 @@
-# File chạy chính của server, khởi tạo các route
-# File chạy chính của server, khởi tạo các route
+"""
+main.py - FastAPI application entrypoint
+Backend: FastAPI | Database: Supabase (PostgreSQL) | ORM: SQLModel
+"""
+
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware # Thêm dòng import này
-from database import engine, Base
-from api import auth
+from fastapi.middleware.cors import CORSMiddleware
 
-# SQLAlchemy kết nối với Supabase và tự động tạo bảng (users, user_sessions)
-Base.metadata.create_all(bind=engine)
+from database import create_db_and_tables
 
-# Khởi tạo ứng dụng FastAPI
-app = FastAPI(title="Travel App API", version="1.0.0")
 
-# Middleware này giống như ông bảo vệ, cho phép các domain khác (như localhost:3000) đi qua cổng
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Cho phép tất cả
-    allow_credentials=True,
-    allow_methods=["*"],  # Cho phép tất cả các lệnh GET, POST, PUT, DELETE...
-    allow_headers=["*"],  # Cho phép tất cả các loại dữ liệu gửi kèm
+# ============================================================
+# Lifespan: startup / shutdown events
+# ============================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run startup tasks before accepting requests."""
+    # NOTE: On Supabase production, tables are managed via schema.sql.
+    # Calling create_db_and_tables() is safe for local dev only.
+    create_db_and_tables()
+    yield
+    # Shutdown logic (e.g., close background tasks) goes here
+
+
+# ============================================================
+# App instance
+# ============================================================
+
+app = FastAPI(
+    title="Du Lịch Thông Minh Việt Nam",
+    description="Smart Travel Platform API",
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
-# Nhúng bộ API Đăng ký/Đăng nhập/Đăng xuất đã viết vào hệ thống
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+# ============================================================
+# CORS Middleware
+# ============================================================
 
-# Tạo một API cơ bản ở trang chủ để test xem server có sống hay không
-@app.get("/")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # TODO: restrict in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ============================================================
+# Routers (add your feature routers here)
+# ============================================================
+
+# Example:
+# from routers import users, locations, itineraries
+# app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
+# app.include_router(locations.router, prefix="/api/v1/locations", tags=["Locations"])
+# app.include_router(itineraries.router, prefix="/api/v1/itineraries", tags=["Itineraries"])
+
+
+# ============================================================
+# Health check
+# ============================================================
+
+@app.get("/", tags=["Health"])
 def root():
-    return {"message": "Server đang chạy ngon lành! Hãy truy cập /docs để test API."}
+    return {"status": "ok", "message": "Du Lịch Thông Minh Việt Nam API is running"}
+
+
+@app.get("/health", tags=["Health"])
+def health_check():
+    return {"status": "healthy"}
+
+# Code thêm vào để test tính năng module data
+from fastapi import Depends
+from sqlmodel import Session
+from database import get_session
+from crud.crud_user import create_user
+from schemas import UserCreate
+
+@app.post("/test-create-user", tags=["Test"])
+def test_db(user: UserCreate, db: Session = Depends(get_session)):
+    return create_user(db=db, user_in=user)
+# ============================================================
+# Run locally: uvicorn main:app --reload
+# ============================================================

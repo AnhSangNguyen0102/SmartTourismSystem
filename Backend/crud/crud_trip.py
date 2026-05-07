@@ -1,117 +1,132 @@
-from typing import List, Optional
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
-from models import Itinerary, ItineraryDay, ItineraryStop, CheckinProgress
+# ============================================================
+# crud/crud_trip.py  –  Itinerary / Trip CRUD operations
+# ============================================================
 
-def create_itinerary(
+from typing import Optional, Sequence
+from uuid import UUID
+
+from sqlmodel import Session, select
+
+from models import (
+    Itineraries,
+    ItineraryDays,
+    ItineraryStatus,
+    CurrencyEnum,
+)
+from schemas import ItineraryCreate
+
+
+# ---------------------------------------------------------------------------
+# Create  (transactional)
+# ---------------------------------------------------------------------------
+
+def create_itinerary_with_days(
     db: Session,
-    user_id: str,
-    name: str,
-    total_travel_time: int,
-) -> Itinerary:
-    """Tạo một lộ trình (Itinerary) mới."""
-    db_itinerary = Itinerary(
-        user_id=user_id,
-        name=name,
-        status="DRAFT",
-        total_travel_time=total_travel_time
-    )
-    db.add(db_itinerary)
-    db.commit()
-    db.refresh(db_itinerary)
-    return db_itinerary
+    user_id: UUID,
+    session_id: UUID,
+    itinerary_in: ItineraryCreate,
+    days_data: list[dict],
+) -> Itineraries:
+    """
+    Create an ``Itineraries`` row **and** its child ``ItineraryDays``
+    inside a single transaction.
 
-def create_itinerary_day(
-    db: Session,
-    itinerary_id: str,
-    day_order: int,
-    travel_date: str,
-    total_time: int
-) -> ItineraryDay:
-    """Tạo thông tin một ngày trong lộ trình."""
-    db_day = ItineraryDay(
-        itinerary_id=itinerary_id,
-        day_order=day_order,
-        travel_date=travel_date,
-        total_time=total_time
-    )
-    db.add(db_day)
-    db.commit()
-    db.refresh(db_day)
-    return db_day
+    If inserting any ``ItineraryDays`` fails, the entire operation
+    (including the parent ``Itineraries`` row) is rolled back to
+    guarantee data integrity.
 
-def create_itinerary_stop(
-    db: Session,
-    day_id: int,
-    location_id: str,
-    stop_order: int,
-    checkin_radius: int = 100
-) -> ItineraryStop:
-    """Tạo một điểm dừng trong ngày."""
-    db_stop = ItineraryStop(
-        day_id=day_id,
-        location_id=location_id,
-        stop_order=stop_order,
-        # Đặt thời gian dummy vì hiện tại chưa có logic tính toán thời gian chính xác
-        arrival_time="08:00:00",
-        departure_time="09:00:00",
-        checkin_radius=checkin_radius,
-        status="PENDING"
-    )
-    db.add(db_stop)
-    db.commit()
-    db.refresh(db_stop)
-    return db_stop
+    Parameters
+    ----------
+    db : Session
+        Active SQLModel / SQLAlchemy session.
+    user_id : UUID
+        Owner of the itinerary.
+    session_id : UUID
+        Related planning session.
+    itinerary_in : ItineraryCreate
+        Basic itinerary payload from the client.
+    days_data : list[dict]
+        Each dict should contain at minimum::
 
-def get_itinerary(db: Session, itinerary_id: str) -> Optional[Itinerary]:
-    """Lấy thông tin lộ trình kèm theo ngày và các điểm dừng."""
-    return (
-        db.query(Itinerary)
-        .filter(Itinerary.itinerary_id == itinerary_id)
-        .options(
-            joinedload(Itinerary.days)
-            .joinedload(ItineraryDay.stops)
-            .joinedload(ItineraryStop.location)
+            {
+                "day_order": int,
+                "travel_date": date,
+                "estimated_budget": Decimal,
+                "total_time": int,          # minutes
+                "currency": "VND" | "USD",  # optional, defaults to VND
+            }
+
+    Returns
+    -------
+    Itineraries
+        The newly created itinerary (refreshed from DB).
+
+    Raises
+    ------
+    Exception
+        Re-raises any error after rolling back the transaction.
+    """
+    try:
+        # --- 1. Insert parent: Itineraries --------------------------------
+        itinerary = Itineraries(
+            session_id=session_id,
+            user_id=user_id,
+            status=ItineraryStatus.DRAFT,
+            total_budget=itinerary_in.budget,
+            currency=CurrencyEnum.VND,
+            total_travel_time=0,
+            total_distance=0,
         )
-        .first()
-    )
+        db.add(itinerary)
+        # Flush to obtain itinerary_id without committing
+        db.flush()
 
-def update_itinerary_status(db: Session, itinerary_id: str, status: str) -> Optional[Itinerary]:
-    """Cập nhật trạng thái của lộ trình."""
-    db_itinerary = db.query(Itinerary).filter(Itinerary.itinerary_id == itinerary_id).first()
-    if db_itinerary:
-        db_itinerary.status = status
-        db_itinerary.updated_at = func.now()
+        # --- 2. Insert children: ItineraryDays ----------------------------
+        for day in days_data:
+            itinerary_day = ItineraryDays(
+                itinerary_id=itinerary.itinerary_id,
+                day_order=day["day_order"],
+                travel_date=day["travel_date"],
+                estimated_budget=day["estimated_budget"],
+                currency=day.get("currency", CurrencyEnum.VND),
+                total_time=day.get("total_time", 0),
+            )
+            db.add(itinerary_day)
+
+        # --- 3. Commit the whole transaction ------------------------------
         db.commit()
-        db.refresh(db_itinerary)
-    return db_itinerary
+        db.refresh(itinerary)
+        return itinerary
 
-def get_itinerary_stop(db: Session, stop_id: int) -> Optional[ItineraryStop]:
-    """Lấy thông tin 1 điểm dừng cụ thể để phục vụ Check-in."""
-    return (
-        db.query(ItineraryStop)
-        .filter(ItineraryStop.stop_id == stop_id)
-        .options(joinedload(ItineraryStop.location))
-        .first()
-    )
+    except Exception:
+        db.rollback()
+        raise
 
-def mark_stop_completed(db: Session, user_id: str, stop_id: int, lat: float, lon: float) -> CheckinProgress:
-    """Đánh dấu điểm dừng là đã hoàn thành và lưu log Checkin."""
-    # Đổi trạng thái trạm
-    db_stop = db.query(ItineraryStop).filter(ItineraryStop.stop_id == stop_id).first()
-    if db_stop:
-        db_stop.status = "COMPLETED"
-    
-    # Tạo log check-in
-    db_progress = CheckinProgress(
-        user_id=user_id,
-        stop_id=stop_id,
-        is_completed=True,
-        latitude=lat,
-        longitude=lon
+
+# ---------------------------------------------------------------------------
+# Read
+# ---------------------------------------------------------------------------
+
+def get_user_itineraries(
+    db: Session,
+    user_id: UUID,
+) -> Sequence[Itineraries]:
+    """
+    Return all itineraries belonging to *user_id*, newest first.
+    """
+    statement = (
+        select(Itineraries)
+        .where(Itineraries.user_id == user_id)
+        .order_by(Itineraries.create_at.desc())  # type: ignore[union-attr]
     )
-    db.add(db_progress)
-    db.commit()
-    db.refresh(db_progress)
-    
-    return db_progress
+    return db.exec(statement).all()
+
+
+def get_itinerary_by_id(
+    db: Session,
+    itinerary_id: UUID,
+) -> Optional[Itineraries]:
+    """
+    Fetch a single itinerary by its primary key.
+    """
+    return db.get(Itineraries, itinerary_id)

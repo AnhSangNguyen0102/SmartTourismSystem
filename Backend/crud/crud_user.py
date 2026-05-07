@@ -1,47 +1,76 @@
-# Query lấy thông tin user, kiểm tra đăng nhập.
-from sqlalchemy.orm import Session
-import models
-from datetime import datetime, timedelta
-from core.security import get_password_hash
+# ============================================================
+# crud/crud_user.py  –  User CRUD operations
+# ============================================================
 
-def get_user_by_email(db: Session, email: str):
-    # Dùng ilike để không phân biệt chữ hoa/thường
-    return db.query(models.User).filter(models.User.email.ilike(email)).first()
+from typing import Optional
 
-def create_user(db: Session, full_name: str, email: str, password: str):
-    hashed_password = get_password_hash(password)
-    new_user = models.User(
-        full_name=full_name,
-        email=email,
+from sqlmodel import Session, select
+
+from core.security import get_password_hash, verify_password
+from models import Users
+from schemas import UserCreate
+
+
+# ---------------------------------------------------------------------------
+# Read
+# ---------------------------------------------------------------------------
+
+def get_user_by_email(db: Session, email: str) -> Optional[Users]:
+    """
+    Look up a user by their email address.
+
+    Returns the ``Users`` row or ``None`` if not found.
+    """
+    statement = select(Users).where(Users.email == email)
+    return db.exec(statement).first()
+
+
+# ---------------------------------------------------------------------------
+# Create
+# ---------------------------------------------------------------------------
+
+def create_user(db: Session, user_in: UserCreate) -> Users:
+    """
+    Register a new user.
+
+    1. Hash the plain-text password via ``get_password_hash``.
+    2. Build a ``Users`` model instance (passwordhash = hashed value).
+    3. Persist to DB and return the refreshed row.
+    """
+    hashed_password = get_password_hash(user_in.password)
+
+    db_user = Users(
+        full_name=user_in.full_name,
+        email=user_in.email,
         passwordhash=hashed_password,
-        role="USER",
-        status="ACTIVE"
+        register_type=user_in.register_type,
     )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
 
-def create_user_session(db: Session, user_id: str, device_id: str, refresh_token: str):
-    expire_date = datetime.utcnow() + timedelta(days=7)
-    db_session = models.UserSession(
-        user_id=user_id,
-        device_id=device_id,
-        refresh_token_hash=refresh_token, 
-        is_revoked=False,
-        expires_at=expire_date
-    )
-    db.add(db_session)
+    db.add(db_user)
     db.commit()
-    return db_session
+    db.refresh(db_user)
+    return db_user
 
-def revoke_session(db: Session, refresh_token: str):
-    session = db.query(models.UserSession).filter(
-        models.UserSession.refresh_token_hash == refresh_token,
-        models.UserSession.is_revoked == False
-    ).first()
-    if session:
-        session.is_revoked = True
-        db.commit()
-        return True
-    return False
+
+# ---------------------------------------------------------------------------
+# Authenticate
+# ---------------------------------------------------------------------------
+
+def authenticate_user(
+    db: Session,
+    email: str,
+    password: str,
+) -> Optional[Users]:
+    """
+    Validate credentials and return the ``Users`` row on success.
+
+    Returns ``None`` when:
+    - No user with the given email exists.
+    - The password does not match the stored hash.
+    """
+    user = get_user_by_email(db, email)
+    if user is None:
+        return None
+    if not verify_password(password, user.passwordhash):
+        return None
+    return user

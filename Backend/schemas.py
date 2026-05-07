@@ -1,109 +1,153 @@
-# Định nghĩa dữ liệu đầu vào/đầu ra cho API
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
-from datetime import date, time, datetime
+# ============================================================
+# schemas.py  –  Pydantic v2 request / response schemas
+# Maps to SQLModel tables defined in models.py
+# ============================================================
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from models import (
+    CurrencyEnum,
+    GenderEnum,
+    ItineraryStatus,
+    KycStatus,
+    PlanningStatus,
+    PrivacyStatus,
+    RegisterType,
+    TravelStyle,
+    UserRole,
+    UserStatus,
+)
+
+
+# ============================================================
+# USER SCHEMAS
+# ============================================================
 
 class UserCreate(BaseModel):
-    full_name: str
+    """Payload for registering a new user."""
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8, description="Mật khẩu tối thiểu 8 ký tự")
+    full_name: str = Field(max_length=100)
+    register_type: RegisterType = RegisterType.EMAIL
+
 
 class UserLogin(BaseModel):
+    """Payload for authenticating an existing user."""
     email: EmailStr
     password: str
-    device_id: Optional[str] = "mobile_app"
 
-class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str  
-    token_type: str = "bearer"
-    role: str
+
+class UserResponse(BaseModel):
+    """
+    Public user representation – **never** exposes ``passwordhash``.
+    Uses ``from_attributes`` so it can be built directly from a
+    ``Users`` SQLModel instance.
+    """
+    user_id: UUID
     full_name: str
+    email: str
+    social_id: Optional[str] = None
+    register_type: RegisterType
+    role: UserRole
+    status: UserStatus
+    create_at: datetime
+    update_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
-class SuggestionRequest(BaseModel):
-    city_id: int = Field(..., description="ID của thành phố cần gợi ý")
-    budget: float = Field(..., description="Ngân sách tối đa của người dùng")
-    preferred_tags: List[str] = Field(default=[], description="Danh sách tên các tag sở thích (ví dụ: 'biển', 'núi')")
-    max_results: int = 10
+# ============================================================
+# AUTH / JWT SCHEMAS
+# ============================================================
 
-class LocationOut(BaseModel):
-    location_id: str
-    location_name: str
-    latitude: float
-    longitude: float
-    opentime: time
-    closetime: time
-    min_price: float
-    max_price: float
-    currency: str
-    tags: List[str] = []
-    score: Optional[float] = None # Điểm gợi ý sau khi tính toán
+class Token(BaseModel):
+    """Returned after successful login."""
+    access_token: str
+    token_type: str = "bearer"
 
-    class Config:
-        from_attributes = True
 
-class SuggestionResponse(BaseModel):
-    total: int
-    locations: List[LocationOut]
+class TokenPayload(BaseModel):
+    """Decoded JWT payload."""
+    sub: UUID                          # user_id
+    exp: Optional[int] = None          # expiry (unix timestamp)
+    role: Optional[UserRole] = None
 
-class CreateItineraryRequest(BaseModel):
-    name: str = Field(..., description="Tên lộ trình")
-    start_date: date
-    end_date: date
-    location_ids: List[str] = Field(..., description="Danh sách ID các địa điểm người dùng đã chọn")
 
-class ItineraryStopOut(BaseModel):
-    stop_id: int
-    location_id: str
-    stop_order: int
-    arrival_time: time
-    departure_time: time
-    checkin_radius: int
-    status: str
-    location: Optional[LocationOut] = None
+# ============================================================
+# PLANNING SESSION SCHEMAS
+# ============================================================
 
-    class Config:
-        from_attributes = True
+class PlanningSessionCreate(BaseModel):
+    """Payload for creating a new planning session (trip request)."""
+    city_id: int
+    start_day: date
+    end_day: date
+    budget: Decimal = Field(gt=0, decimal_places=2)
+    currency: CurrencyEnum = CurrencyEnum.VND
+    pax_adult: int = Field(default=1, gt=0)
+    pax_children: int = Field(default=0, ge=0)
 
-class ItineraryDayOut(BaseModel):
-    day_id: int
-    day_order: int
-    travel_date: date
-    estimated_budget: float
-    total_time: int
-    stops: List[ItineraryStopOut] = []
 
-    class Config:
-        from_attributes = True
+class PlanningSessionResponse(BaseModel):
+    """Basic planning session info returned to the client."""
+    session_id: UUID
+    user_id: UUID
+    city_id: int
+    pax_adult: int
+    pax_children: int
+    budget: Decimal
+    currency: CurrencyEnum
+    start_day: date
+    end_day: date
+    status: PlanningStatus
+    create_at: datetime
 
-class ItineraryOut(BaseModel):
-    itinerary_id: str
-    user_id: str
-    name: Optional[str]
-    status: str
-    total_budget: float
-    currency: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================
+# ITINERARY SCHEMAS
+# ============================================================
+
+class ItineraryCreate(BaseModel):
+    """
+    Minimal payload to kick‑off itinerary generation.
+    The heavy lifting (stops, routes) is handled server‑side.
+    """
+    city_id: int
+    start_day: date
+    end_day: date
+    budget: Decimal = Field(gt=0, decimal_places=2)
+
+
+class ItineraryResponse(BaseModel):
+    """Basic itinerary information returned to the client."""
+    itinerary_id: UUID
+    session_id: UUID
+    user_id: UUID
+    name: Optional[str] = None
+    status: ItineraryStatus
+    total_budget: Decimal
+    currency: CurrencyEnum
     total_travel_time: int
-    total_distance: float
-    days: List[ItineraryDayOut] = []
+    total_distance: Decimal
+    create_at: datetime
+    update_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
-class CheckInRequest(BaseModel):
-    latitude: float = Field(..., description="Vĩ độ hiện tại của GPS điện thoại")
-    longitude: float = Field(..., description="Kinh độ hiện tại của GPS điện thoại")
 
-class CheckInResponse(BaseModel):
-    success: bool
-    message: str
-    stop_id: int
-    progress_id: int
+# ============================================================
+# GENERIC MESSAGE SCHEMA
+# ============================================================
 
-class TripProgressResponse(BaseModel):
-    itinerary_id: str
-    status: str
-    total_stops: int
-    completed_stops: int
-    completion_percentage: float
+class MessageResponse(BaseModel):
+    """Generic API message (e.g. for delete / status endpoints)."""
+    detail: str
