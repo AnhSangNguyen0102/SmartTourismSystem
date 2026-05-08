@@ -66,7 +66,34 @@ def score_location(
     final_score = tag_score + bonus
     return final_score
 
+def _tsp_nearest_neighbor(locations: List[Tuple], dist: List[List[float]]) -> Tuple[List, float]:
+    """
+    Thuật toán Láng giềng gần nhất (Greedy) cho tập dữ liệu lớn.
+    """
+    n = len(locations)
+    ids = [loc[0] for loc in locations]
+    visited = [False] * n
+    
+    path = [0]  # Bắt đầu từ điểm 0
+    visited[0] = True
+    total_dist = 0.0
+    current = 0
 
+    for _ in range(n - 1):
+        next_node = -1
+        min_dist = float('inf')
+        for j in range(n):
+            if not visited[j] and dist[current][j] < min_dist:
+                min_dist = dist[current][j]
+                next_node = j
+
+        path.append(next_node)
+        visited[next_node] = True
+        total_dist += min_dist
+        current = next_node
+
+    path_ids = [ids[i] for i in path]
+    return path_ids, total_dist
 
 def tsp_dp_bitmask(locations: List[Tuple]) -> Tuple[List, float]:
     """
@@ -89,6 +116,10 @@ def tsp_dp_bitmask(locations: List[Tuple]) -> Tuple[List, float]:
     # Lấy ma trận 1 lần duy nhất bằng Google Maps API
     dist = get_full_distance_matrix(coords)
 
+    if n > 15:
+        print(f"Cảnh báo: {n} địa điểm. Chuyển sang thuật toán Láng giềng gần nhất!")
+        return _tsp_nearest_neighbor(locations, dist)
+    
     # dp[mask][u] = khoảng cách nhỏ nhất để đến u với tập mask
     dp = [[float("inf")] * n for _ in range(1 << n)]
     parent = [[-1] * n for _ in range(1 << n)]
