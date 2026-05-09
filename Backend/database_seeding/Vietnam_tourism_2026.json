@@ -1,0 +1,2244 @@
+﻿{
+    "Vietnam_Tourism_Dataset_2026": {
+        "Hà Nội": {
+            "diem_du_lich": [
+                {
+                    "ten": "Hoàng thành Thăng Long",
+                    "the_loai": "Di sản/Lịch sử",
+                    "gioi_thieu": "Quần thể di tích gắn liền với lịch sử hình thành kinh đô",
+                    "gia_ve_tham_khao": "30.000 VND"
+                },
+                {
+                    "ten": "Văn Miếu - Quốc Tử Giám",
+                    "the_loai": "Văn hóa/Giáo dục",
+                    "gioi_thieu": "Trường đại học đầu tiên của Việt Nam, biểu tượng hiếu học",
+                    "gia_ve_tham_khao": "30.000 VND"
+                },
+                {
+                    "ten": "Nhà tù Hỏa Lò",
+                    "the_loai": "Lịch sử Cảm xúc",
+                    "gioi_thieu": "Nơi lưu giữ ký ức về tinh thần bất khuất của các chiến sĩ",
+                    "gia_ve_tham_khao": "30.000 VND"
+                },
+                {
+                    "ten": "Hồ Hoàn Kiếm",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Trái tim của Thủ đô với Tháp Rùa và đền Ngọc Sơn",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Phố Cổ Hà Nội",
+                    "the_loai": "Văn hóa Ẩm thực",
+                    "gioi_thieu": "Không gian 36 phố phường với các làng nghề truyền thống",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Lăng Chủ tịch Hồ Chí Minh",
+                    "the_loai": "Lịch sử Chính trị",
+                    "gioi_thieu": "Công trình có ý nghĩa thiêng liêng nhất đối với người dân",
+                    "gia_ve_tham_khao": "Miễn phí (VN)"
+                },
+                {
+                    "ten": "Nhà hát Lớn Hà Nội",
+                    "the_loai": "Kiến trúc/Nghệ thuật",
+                    "gioi_thieu": "Biểu tượng kiến trúc Pháp cổ điển giữa lòng thành phố",
+                    "gia_ve_tham_khao": "Theo show"
+                },
+                {
+                    "ten": "Bảo tàng Dân tộc học",
+                    "the_loai": "Văn hóa/Khám phá",
+                    "gioi_thieu": "Trưng bày chi tiết về đời sống 54 dân tộc anh em",
+                    "gia_ve_tham_khao": "40.000 VND"
+                },
+                {
+                    "ten": "Hồ Tây",
+                    "the_loai": "Chill/Lãng mạn",
+                    "gioi_thieu": "Không gian ngắm hoàng hôn và thư giãn lớn nhất Hà Nội",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chùa Một Cột",
+                    "the_loai": "Tâm linh/Kiến trúc",
+                    "gioi_thieu": "Công trình có kiến trúc độc đáo hình bông sen trên mặt hồ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Mega Grand World Hà Nội",
+                    "the_loai": "Giải trí/Hiện đại",
+                    "gioi_thieu": "Tổ hợp mua sắm, vui chơi giải trí phong cách Ý",
+                    "gia_ve_tham_khao": "Miễn phí vào"
+                },
+                {
+                    "ten": "Đài quan sát Lotte Sky",
+                    "the_loai": "Ngắm cảnh/Hiện đại",
+                    "gioi_thieu": "Điểm nhìn toàn cảnh Hà Nội từ tầng cao",
+                    "gia_ve_tham_khao": "180.000 VND"
+                },
+                {
+                    "ten": "Làng lụa Vạn Phúc",
+                    "the_loai": "Trải nghiệm/Nghề",
+                    "gioi_thieu": "Làng nghề dệt lụa truyền thống nổi tiếng nhất miền Bắc",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Đồi Bù",
+                    "the_loai": "Mạo hiểm/Thiên nhiên",
+                    "gioi_thieu": "Địa điểm nhảy dù lượn ngắm mây gần Hà Nội",
+                    "gia_ve_tham_khao": "Phí dịch vụ dù"
+                },
+                {
+                    "ten": "Ga Tàu Cát Linh - Hà Đông",
+                    "the_loai": "Trải nghiệm/Hiện đại",
+                    "gioi_thieu": "Tuyến đường sắt đô thị đầu tiên, điểm check-in mới",
+                    "gia_ve_tham_khao": "Theo chặng"
+                },
+                {
+                    "ten": "Chùa Hương",
+                    "the_loai": "Tâm linh/Thiên nhiên",
+                    "gioi_thieu": "Quần thể di tích thắng cảnh tâm linh nổi tiếng ngoại thành",
+                    "gia_ve_tham_khao": "80.000 VND"
+                },
+                {
+                    "ten": "Làng gốm Bát Tràng",
+                    "the_loai": "Trải nghiệm/Văn hóa",
+                    "gioi_thieu": "Trung tâm tinh hoa gốm sứ với kiến trúc bảo tàng độc đáo",
+                    "gia_ve_tham_khao": "50.000 VND"
+                },
+                {
+                    "ten": "Nhà thờ Lớn Hà Nội",
+                    "the_loai": "Kiến trúc/Tôn giáo",
+                    "gioi_thieu": "Công trình Gothic đặc sắc, tâm điểm của giới trẻ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bảo tàng Mỹ thuật Việt Nam",
+                    "the_loai": "Nghệ thuật/Văn hóa",
+                    "gioi_thieu": "Nơi lưu giữ những kiệt tác hội họa và điêu khắc quốc gia",
+                    "gia_ve_tham_khao": "40.000 VND"
+                },
+                {
+                    "ten": "Quảng trường Ba Đình",
+                    "the_loai": "Chính trị/Lịch sử",
+                    "gioi_thieu": "Nơi diễn ra các sự kiện trọng đại của đất nước",
+                    "gia_ve_tham_khao": "Miễn phí"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Old Quarter Hotel 1961",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Khách sạn phong cách phố cổ, vị trí trung tâm",
+                    "gia_trung_binh": "600.000 VND"
+                },
+                {
+                    "ten": "Narcissus 2 Hotel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Căn hộ dịch vụ tiện nghi cho khách ở dài ngày",
+                    "gia_trung_binh": "550.000 VND"
+                },
+                {
+                    "ten": "Galliot Central Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Khách sạn boutique gần Nhà Thờ Lớn, dịch vụ ấm cúng",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Spoon Hotel Hà Nội",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Thiết kế hiện đại, sạch sẽ, gần các điểm tham quan",
+                    "gia_trung_binh": "950.000 VND"
+                },
+                {
+                    "ten": "Mường Thanh Grand Hà Nội",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Chuẩn mực khách sạn truyền thống với dịch vụ chu đáo",
+                    "gia_trung_binh": "1.800.000 VND"
+                },
+                {
+                    "ten": "Nesta Hotel & Spa",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Chuyên về dịch vụ thư giãn và chăm sóc sức khỏe",
+                    "gia_trung_binh": "1.950.000 VND"
+                },
+                {
+                    "ten": "Sofitel Legend Metropole",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Biểu tượng lịch sử và sang trọng của Hà Nội",
+                    "gia_trung_binh": "8.500.000 VND"
+                },
+                {
+                    "ten": "Melia Hà Nội",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Khách sạn cao tầng hiện đại phục vụ doanh nhân",
+                    "gia_trung_binh": "4.200.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Phở 49 Bát Đàn",
+                    "gia_trung_binh": "50.000 - 80.000 VNĐ",
+                    "mon_noi_bat": "Phở bò tái nạm",
+                    "dac_diem": "Nước dùng trong, phong cách tự phục vụ"
+                },
+                {
+                    "ten_quan": "Phở Thìn Lò Đúc",
+                    "gia_trung_binh": "60.000 - 90.000 VNĐ",
+                    "mon_noi_bat": "Phở bò tái lăn",
+                    "dac_diem": "Thịt bò xào tỏi nồng nàn, nước dùng béo ngậy"
+                },
+                {
+                    "ten_quan": "Bún ốc cô Huệ",
+                    "gia_trung_binh": "30.000 - 50.000 VNĐ",
+                    "mon_noi_bat": "Bún ốc nguội/nóng",
+                    "dac_diem": "Nước chấm gia truyền đựng trong chum sành"
+                },
+                {
+                    "ten_quan": "Bánh cuốn Bà Hoành",
+                    "gia_trung_binh": "35.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bánh cuốn thanh trì",
+                    "dac_diem": "Bánh tráng mỏng, ăn kèm chả quế giòn"
+                },
+                {
+                    "ten_quan": "Nộm Long Vi Dung",
+                    "gia_trung_binh": "40.000 - 80.000 VNĐ",
+                    "mon_noi_bat": "Nộm thịt bò khô",
+                    "dac_diem": "Topping đa dạng từ gan, phổi bò đến khô bò"
+                },
+                {
+                    "ten_quan": "Mỳ gà tần Hàng Bồ",
+                    "gia_trung_binh": "55.000 - 105.000 VNĐ",
+                    "mon_noi_bat": "Mỳ gà tần thuốc bắc",
+                    "dac_diem": "Gà mềm nhừ, nước dùng thơm ngải cứu"
+                },
+                {
+                    "ten_quan": "Bún chả Hàng Quạt",
+                    "gia_trung_binh": "40.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bún chả nướng than",
+                    "dac_diem": "Chả miếng nướng cháy cạnh thơm lừng"
+                },
+                {
+                    "ten_quan": "Bánh mì sốt vang Trâm",
+                    "gia_trung_binh": "35.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Bánh mì sốt vang",
+                    "dac_diem": "Thịt bò mềm, nước sốt đặc sánh đậm đà"
+                }
+            ]
+        },
+        "Thành phố Hồ Chí Minh": {
+            "diem_du_lich": [
+                {
+                    "ten": "Landmark 81",
+                    "the_loai": "Hiện đại/Giải trí",
+                    "gioi_thieu": "Tòa nhà cao nhất Việt Nam với đài quan sát SkyView",
+                    "gia_ve_tham_khao": "420.000 VND"
+                },
+                {
+                    "ten": "Dinh Độc Lập",
+                    "the_loai": "Lịch sử Kiến trúc",
+                    "gioi_thieu": "Di tích quốc gia đặc biệt, nơi kết thúc chiến tranh Việt Nam",
+                    "gia_ve_tham_khao": "40.000 VND"
+                },
+                {
+                    "ten": "Chợ Bến Thành",
+                    "the_loai": "Văn hóa/Mua sắm",
+                    "gioi_thieu": "Biểu tượng thương mại lâu đời nhất Sài Gòn",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Nhà thờ Đức Bà",
+                    "the_loai": "Tôn giáo/Kiến trúc",
+                    "gioi_thieu": "Kiệt tác kiến trúc Gothic bằng gạch đỏ từ Pháp",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bưu điện Thành phố",
+                    "the_loai": "Kiến trúc/Check-in",
+                    "gioi_thieu": "Sự kết hợp giữa phong cách châu Âu và nét Á Đông",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Địa đạo Củ Chi",
+                    "the_loai": "Khám phá Lịch sử",
+                    "gioi_thieu": "Hệ thống phòng thủ dưới lòng đất kỳ vĩ",
+                    "gia_ve_tham_khao": "110.000 VND"
+                },
+                {
+                    "ten": "Phố đi bộ Nguyễn Huệ",
+                    "the_loai": "Năng động/Chill",
+                    "gioi_thieu": "Không gian sinh hoạt cộng đồng náo nhiệt nhất thành phố",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bảo tàng Chứng tích Chiến tranh",
+                    "the_loai": "Lịch sử Giáo dục",
+                    "gioi_thieu": "Nơi lưu giữ những hình ảnh chân thực về chiến tranh",
+                    "gia_ve_tham_khao": "40.000 VND"
+                },
+                {
+                    "ten": "Thảo Cầm Viên",
+                    "the_loai": "Thiên nhiên/Gia đình",
+                    "gioi_thieu": "Một trong những vườn thú lâu đời nhất thế giới",
+                    "gia_ve_tham_khao": "60.000 VND"
+                },
+                {
+                    "ten": "Bitexco Financial Tower",
+                    "the_loai": "Ngắm cảnh/Hiện đại",
+                    "gioi_thieu": "Tòa tháp hình búp sen với đài quan sát Saigon Skydeck",
+                    "gia_ve_tham_khao": "240.000 VND"
+                },
+                {
+                    "ten": "Phố Tây Bùi Viện",
+                    "the_loai": "Giải trí/Sôi động",
+                    "gioi_thieu": "Trung tâm giải trí về đêm dành cho khách du lịch bụi",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Khu du lịch Suối Tiên",
+                    "the_loai": "Giải trí/Văn hóa",
+                    "gioi_thieu": "Công viên chủ đề kết hợp truyền thuyết dân tộc",
+                    "gia_ve_tham_khao": "120.000 VND"
+                },
+                {
+                    "ten": "Bến Nhà Rồng",
+                    "the_loai": "Lịch sử",
+                    "gioi_thieu": "Bảo tàng Hồ Chí Minh, nơi khởi đầu hành trình cứu nước",
+                    "gia_ve_tham_khao": "20.000 VND"
+                },
+                {
+                    "ten": "Cầu Ánh Sao",
+                    "the_loai": "Lãng mạn/Chill",
+                    "gioi_thieu": "Cây cầu bộ hành phun nước và ánh sáng đẹp mắt",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Nhà hát Thành phố",
+                    "the_loai": "Nghệ thuật/Kiến trúc",
+                    "gioi_thieu": "Nơi diễn ra các buổi biểu diễn nghệ thuật cao cấp",
+                    "gia_ve_tham_khao": "Theo show"
+                },
+                {
+                    "ten": "Bảo tàng Mỹ thuật TP.HCM",
+                    "the_loai": "Nghệ thuật/Check-in",
+                    "gioi_thieu": "Kiến trúc Pháp cổ điển với nhiều góc sống ảo",
+                    "gia_ve_tham_khao": "30.000 VND"
+                },
+                {
+                    "ten": "Chùa Bửu Long",
+                    "the_loai": "Tâm linh/Kiến trúc",
+                    "gioi_thieu": "Ngôi chùa phong cách Thái Lan rực rỡ tại Quận 9",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Công viên Vinhomes Central Park",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Công viên ven sông hiện đại lấy cảm hứng từ New York",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Hẻm Bia: Lost in HongKong",
+                    "the_loai": "Chill/Sống ảo",
+                    "gioi_thieu": "Điểm hẹn hò phong cách điện ảnh cho giới trẻ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Khu du lịch sinh thái Cần Giờ",
+                    "the_loai": "Thiên nhiên/Khám phá",
+                    "gioi_thieu": "Rừng ngập mặn và đảo khỉ xanh mát ngoại thành",
+                    "gia_ve_tham_khao": "35.000 VND"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Cabana Saigon",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Thiết kế tối giản, hiện đại, trung tâm Quận 1",
+                    "gia_trung_binh": "650.000 VND"
+                },
+                {
+                    "ten": "Queen Central Hotel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Vị trí gần sát chợ Bến Thành, phù hợp khách du lịch",
+                    "gia_trung_binh": "550.000 VND"
+                },
+                {
+                    "ten": "Elios Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Tầm nhìn ra công viên 23/9, dịch vụ chu đáo",
+                    "gia_trung_binh": "1.000.000 VND"
+                },
+                {
+                    "ten": "Alagon City Hotel & Spa",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Khách sạn trung tâm với tiện nghi spa cao cấp",
+                    "gia_trung_binh": "1.800.000 VND"
+                },
+                {
+                    "ten": "Wink Saigon Centre",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Khách sạn phong cách trẻ, check-in tự động",
+                    "gia_trung_binh": "1.450.000 VND"
+                },
+                {
+                    "ten": "Silverland Bến Thành",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Thiết kế tinh tế, mang đậm nét văn hóa địa phương",
+                    "gia_trung_binh": "2.600.000 VND"
+                },
+                {
+                    "ten": "Hotel Majestic Saigon",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Khách sạn di sản với view sông Sài Gòn cực đẹp",
+                    "gia_trung_binh": "4.000.000 VND"
+                },
+                {
+                    "ten": "New World Saigon",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Quy mô lớn, phục vụ chuyên nghiệp chuẩn quốc tế",
+                    "gia_trung_binh": "4.800.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Hẻm 76 Hai Bà Trưng",
+                    "gia_trung_binh": "30.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bún Thái, Cơm chiên",
+                    "dac_diem": "Tổ hợp ẩm thực đa dạng ngay trung tâm Q.1"
+                },
+                {
+                    "ten_quan": "Cơm tấm A Lủ",
+                    "gia_trung_binh": "35.000 - 70.000 VNĐ",
+                    "mon_noi_bat": "Cơm tấm sườn bì chả",
+                    "dac_diem": "Phục vụ xuyên đêm, sườn nướng đậm đà"
+                },
+                {
+                    "ten_quan": "Hủ tiếu mì Tài Ký",
+                    "gia_trung_binh": "45.000 - 85.000 VNĐ",
+                    "mon_noi_bat": "Hủ tiếu mì tươi",
+                    "dac_diem": "Sợi mì làm thủ công, nước dùng chuẩn vị"
+                },
+                {
+                    "ten_quan": "Dimsum House",
+                    "gia_trung_binh": "30.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Há cảo, xíu mại",
+                    "dac_diem": "Thực đơn phong phú hơn 80 món Hoa"
+                },
+                {
+                    "ten_quan": "Bún thịt nướng Trương Tuyền",
+                    "gia_trung_binh": "40.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bún thịt nướng",
+                    "dac_diem": "Thịt ướp kỹ, nướng trực tiếp trên than"
+                },
+                {
+                    "ten_quan": "Mì xào giòn Phan Đình Phùng",
+                    "gia_trung_binh": "50.000 - 90.000 VNĐ",
+                    "mon_noi_bat": "Mì xào giòn hải sản",
+                    "dac_diem": "Hải sản tươi, nước sốt sệt độc đáo"
+                },
+                {
+                    "ten_quan": "Bò tơ Năm Sánh",
+                    "gia_trung_binh": "60.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Bò tơ nướng tảng",
+                    "dac_diem": "Chuyên các món bò tơ Tây Ninh tươi ngon"
+                },
+                {
+                    "ten_quan": "Bún suông Bến Vân Đồn",
+                    "gia_trung_binh": "40.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Bún suông tôm",
+                    "dac_diem": "Đặc sản Trà Vinh nổi tiếng tại Quận 4"
+                }
+            ]
+        },
+        "Thừa Thiên Huế": {
+            "diem_du_lich": [
+                {
+                    "ten": "Đại Nội Huế",
+                    "the_loai": "Di sản/Lịch sử",
+                    "gioi_thieu": "Quần thể kiến trúc cung đình đỉnh cao của triều Nguyễn",
+                    "gia_ve_tham_khao": "200.000 VND"
+                },
+                {
+                    "ten": "Lăng Khải Định",
+                    "the_loai": "Kiến trúc/Lịch sử",
+                    "gioi_thieu": "Sự giao thoa độc đáo giữa kiến trúc Á - Âu",
+                    "gia_ve_tham_khao": "150.000 VND"
+                },
+                {
+                    "ten": "Lăng Tự Đức",
+                    "the_loai": "Chill/Lãng mạn",
+                    "gioi_thieu": "Không gian thơ mộng, mang đậm chất tâm hồn nghệ sĩ",
+                    "gia_ve_tham_khao": "150.000 VND"
+                },
+                {
+                    "ten": "Lăng Minh Mạng",
+                    "the_loai": "Uy nghiêm/Lịch sử",
+                    "gioi_thieu": "Kiến trúc cân xứng tuyệt mỹ giữa thiên nhiên",
+                    "gia_ve_tham_khao": "150.000 VND"
+                },
+                {
+                    "ten": "Chùa Thiên Mụ",
+                    "the_loai": "Tâm linh/Lịch sử",
+                    "gioi_thieu": "Ngôi chùa cổ linh thiêng, biểu tượng của xứ Huế",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Sông Hương",
+                    "the_loai": "Chill/Thơ mộng",
+                    "gioi_thieu": "Dòng sông gắn liền với nhiều tác phẩm văn học nghệ thuật",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Biển Lăng Cô",
+                    "the_loai": "Thiên nhiên/Nghỉ dưỡng",
+                    "gioi_thieu": "Một trong những vịnh biển đẹp nhất thế giới",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Vườn quốc gia Bạch Mã",
+                    "the_loai": "Mạo hiểm/Thiên nhiên",
+                    "gioi_thieu": "Đỉnh núi cao 1450m với hệ sinh thái phong phú",
+                    "gia_ve_tham_khao": "60.000 VND"
+                },
+                {
+                    "ten": "Đầm Lập An",
+                    "the_loai": "Chill/Sống ảo",
+                    "gioi_thieu": "Tuyệt tác thiên nhiên với bãi cát trắng giữa đầm nước",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chợ Đông Ba",
+                    "the_loai": "Văn hóa Ẩm thực",
+                    "gioi_thieu": "Khu chợ sầm uất lâu đời nhất Cố đô",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Cầu Trường Tiền",
+                    "the_loai": "Kiến trúc/Lịch sử",
+                    "gioi_thieu": "Cây cầu sắt nổi tiếng bắc qua sông Hương",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Điện Hòn Chén",
+                    "the_loai": "Tâm linh/Lịch sử",
+                    "gioi_thieu": "Nơi thờ Thánh Mẫu Thiên Y A Na linh thiêng",
+                    "gia_ve_tham_khao": "50.000 VND"
+                },
+                {
+                    "ten": "Đồi Vọng Cảnh",
+                    "the_loai": "Chill/Ngắm cảnh",
+                    "gioi_thieu": "Điểm nhìn đẹp nhất để ngắm toàn cảnh sông Hương",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Thiền viện Trúc Lâm Bạch Mã",
+                    "the_loai": "Tâm linh/Cảnh quan",
+                    "gioi_thieu": "Ngôi thiền viện giữa lòng hồ Truồi yên tĩnh",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Trường Quốc học Huế",
+                    "the_loai": "Kiến trúc/Lịch sử",
+                    "gioi_thieu": "Ngôi trường nổi tiếng với màu đỏ đặc trưng và bề dày lịch sử",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Làng hương Thủy Xuân",
+                    "the_loai": "Văn hóa/Check-in",
+                    "gioi_thieu": "Con đường rực rỡ sắc màu của những bó hương thủ công",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Hồ Thủy Tiên",
+                    "the_loai": "Chill/U tịch",
+                    "gioi_thieu": "Công viên bỏ hoang mang vẻ đẹp bí ẩn thu hút khách quốc tế",
+                    "gia_ve_tham_khao": "Tự do"
+                },
+                {
+                    "ten": "Phố đi bộ Huế",
+                    "the_loai": "Năng động/Giải trí",
+                    "gioi_thieu": "Khu vực Phạm Ngũ Lão sôi động về đêm",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Suối khoáng nóng Thanh Tân",
+                    "the_loai": "Nghỉ dưỡng/Sức khỏe",
+                    "gioi_thieu": "Khu du lịch kết hợp chăm sóc sức khỏe và trò chơi mạo hiểm",
+                    "gia_ve_tham_khao": "200.000 VND"
+                },
+                {
+                    "ten": "Đàn Nam Giao",
+                    "the_loai": "Lịch sử Tâm linh",
+                    "gioi_thieu": "Nơi các vua nhà Nguyễn tế lễ trời đất",
+                    "gia_ve_tham_khao": "50.000 VND"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Bình An Hostel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Chỗ nghỉ bình dân, sạch sẽ, phục vụ nhiệt tình",
+                    "gia_trung_binh": "400.000 VND"
+                },
+                {
+                    "ten": "Tram Homestay",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Không gian ấm cúng ngay gần Đại Nội",
+                    "gia_trung_binh": "350.000 VND"
+                },
+                {
+                    "ten": "Hương Giang Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Khách sạn lâu đời bên sông Hương, view đẹp",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Hachi Homestay & Spa",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Kết hợp nghỉ dưỡng và spa phục hồi sức khỏe",
+                    "gia_trung_binh": "1.200.000 VND"
+                },
+                {
+                    "ten": "Riverside Boutique Resort",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Thiết kế gỗ truyền thống, yên bình bên sông",
+                    "gia_trung_binh": "1.800.000 VND"
+                },
+                {
+                    "ten": "Pilgrimage Village",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Làng Hành Hương với phong cách thiền định",
+                    "gia_trung_binh": "2.200.000 VND"
+                },
+                {
+                    "ten": "Azerai La Residence",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Biệt thự cổ kiểu Art Deco vô cùng sang trọng",
+                    "gia_trung_binh": "4.500.000 VND"
+                },
+                {
+                    "ten": "Banyan Tree Lăng Cô",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Khu nghỉ dưỡng villa hồ bơi đẳng cấp thế giới",
+                    "gia_trung_binh": "9.500.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Bún bò mệ Kéo",
+                    "gia_trung_binh": "30.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bún bò chuẩn vị",
+                    "dac_diem": "Nước dùng nồng nàn mùi ruốc sả"
+                },
+                {
+                    "ten_quan": "Bánh canh Nam Phổ Thúy",
+                    "gia_trung_binh": "30.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Bánh canh Nam Phổ",
+                    "dac_diem": "Nước dùng sền sệt, màu đỏ tôm cua"
+                },
+                {
+                    "ten_quan": "Cơm hến Hoa Đông",
+                    "gia_trung_binh": "20.000 - 45.000 VNĐ",
+                    "mon_noi_bat": "Cơm hến, bún hến",
+                    "dac_diem": "Vị cay nồng, hến xào đậm đà"
+                },
+                {
+                    "ten_quan": "Bánh bèo nậm lọc Bà Đỏ",
+                    "gia_trung_binh": "35.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Khay bánh thập cẩm",
+                    "dac_diem": "Địa chỉ nổi tiếng nhất về các loại bánh"
+                },
+                {
+                    "ten_quan": "Bánh khoái Hạnh",
+                    "gia_trung_binh": "45.000 - 90.000 VNĐ",
+                    "mon_noi_bat": "Bánh khoái, nem lụi",
+                    "dac_diem": "Vỏ bánh giòn rụm, nước sốt gan bùi"
+                },
+                {
+                    "ten_quan": "Bánh ướt thịt nướng Huyền Anh",
+                    "gia_trung_binh": "35.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bánh ướt cuốn thịt nướng",
+                    "dac_diem": "Thịt nướng thơm lừng phố Kim Long"
+                },
+                {
+                    "ten_quan": "Cơm chay Thanh Liễu",
+                    "gia_trung_binh": "20.000 - 50.000 VNĐ",
+                    "mon_noi_bat": "Lẩu chay, sườn dừa",
+                    "dac_diem": "Ngon, rẻ, thanh đạm và cực kỳ đông khách"
+                },
+                {
+                    "ten_quan": "Chè Hẻm",
+                    "gia_trung_binh": "15.000 - 35.000 VNĐ",
+                    "mon_noi_bat": "Chè bột lọc heo quay",
+                    "dac_diem": "Thương hiệu chè danh tiếng hơn 30 năm"
+                }
+            ]
+        },
+        "Hội An": {
+            "diem_du_lich": [
+                {
+                    "ten": "Phố cổ Hội An",
+                    "the_loai": "Di sản/Văn hóa",
+                    "gioi_thieu": "Di sản văn hóa thế giới với kiến trúc gỗ đặc trưng",
+                    "gia_ve_tham_khao": "80.000 VND"
+                },
+                {
+                    "ten": "Chùa Cầu",
+                    "the_loai": "Biểu tượng/Lịch sử",
+                    "gioi_thieu": "Linh hồn của Hội An, cây cầu do thương nhân Nhật xây dựng",
+                    "gia_ve_tham_khao": "Trong vé chung"
+                },
+                {
+                    "ten": "Hội quán Phúc Kiến",
+                    "the_loai": "Văn hóa/Kiến trúc",
+                    "gioi_thieu": "Công trình kiến trúc Trung Hoa nguy nga nhất phố Hội",
+                    "gia_ve_tham_khao": "Trong vé chung"
+                },
+                {
+                    "ten": "VinWonders Nam Hội An",
+                    "the_loai": "Giải trí/Văn hóa",
+                    "gioi_thieu": "Tổ hợp vui chơi giải trí và bảo tồn văn hóa hiện đại",
+                    "gia_ve_tham_khao": "600.000 VND"
+                },
+                {
+                    "ten": "Làng gốm Thanh Hà",
+                    "the_loai": "Trải nghiệm/Nghề",
+                    "gioi_thieu": "Làng nghề 500 tuổi với công viên gốm quy mô lớn",
+                    "gia_ve_tham_khao": "35.000 VND"
+                },
+                {
+                    "ten": "Làng rau Trà Quế",
+                    "the_loai": "Trải nghiệm/Nông nghiệp",
+                    "gioi_thieu": "Trải nghiệm một ngày làm nông dân trồng rau sạch",
+                    "gia_ve_tham_khao": "30.000 VND"
+                },
+                {
+                    "ten": "Rừng dừa Bảy Mẫu",
+                    "the_loai": "Thiên nhiên/Trải nghiệm",
+                    "gioi_thieu": "Chèo thúng chai xuyên rừng dừa nước phong cách miền Tây",
+                    "gia_ve_tham_khao": "150.000 VND"
+                },
+                {
+                    "ten": "Cù Lao Chàm",
+                    "the_loai": "Thiên nhiên/Khám phá",
+                    "gioi_thieu": "Khu dự trữ sinh quyển thế giới với biển xanh ngắt",
+                    "gia_ve_tham_khao": "450.000 VND (cano)"
+                },
+                {
+                    "ten": "Bãi biển An Bàng",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "Một trong những bãi biển đẹp nhất thế giới theo CNN",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Nhà cổ Tấn Ký",
+                    "the_loai": "Kiến trúc/Lịch sử",
+                    "gioi_thieu": "Ngôi nhà cổ đầu tiên được công nhận di tích quốc gia",
+                    "gia_ve_tham_khao": "Trong vé chung"
+                },
+                {
+                    "ten": "Hội quán Triều Châu",
+                    "the_loai": "Kiến trúc/Văn hóa",
+                    "gioi_thieu": "Nổi tiếng với những họa tiết chạm trổ gỗ tinh xảo",
+                    "gia_ve_tham_khao": "Trong vé chung"
+                },
+                {
+                    "ten": "Thánh địa Mỹ Sơn",
+                    "the_loai": "Di sản/Lịch sử",
+                    "gioi_thieu": "Quần thể đền đài Champa huyền bí (cách Hội An 40km)",
+                    "gia_ve_tham_khao": "150.000 VND"
+                },
+                {
+                    "ten": "Chợ Hội An",
+                    "the_loai": "Văn hóa Ẩm thực",
+                    "gioi_thieu": "Thiên đường ẩm thực miền Trung tại trung tâm phố cổ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Xưởng thủ công mỹ nghệ",
+                    "the_loai": "Trải nghiệm/Nghề",
+                    "gioi_thieu": "Nơi quy tụ 12 làng nghề truyền thống lâu đời",
+                    "gia_ve_tham_khao": "Miễn phí tham quan"
+                },
+                {
+                    "ten": "Nhà thờ tộc Trần",
+                    "the_loai": "Văn hóa/Tâm linh",
+                    "gioi_thieu": "Sự giao thoa giữa kiến trúc Nhật và Trung Hoa",
+                    "gia_ve_tham_khao": "Trong vé chung"
+                },
+                {
+                    "ten": "Bảo tàng Văn hóa Sa Huỳnh",
+                    "the_loai": "Lịch sử Giáo dục",
+                    "gioi_thieu": "Trưng bày những hiện vật quý giá về cư dân cổ",
+                    "gia_ve_tham_khao": "Trong vé chung"
+                },
+                {
+                    "ten": "Bảo tàng Gốm sứ Mậu dịch",
+                    "the_loai": "Lịch sử Văn hóa",
+                    "gioi_thieu": "Minh chứng cho thời kỳ thương cảng sầm uất nhất châu Á",
+                    "gia_ve_tham_khao": "Trong vé chung"
+                },
+                {
+                    "ten": "Làng mộc Kim Bồng",
+                    "the_loai": "Trải nghiệm/Nghề",
+                    "gioi_thieu": "Làng nghề điêu khắc gỗ nổi tiếng với tay nghề tinh xảo",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Phố đèn lồng",
+                    "the_loai": "Chill/Sống ảo",
+                    "gioi_thieu": "Không gian lung linh về đêm bên dòng sông Hoài",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Show Ký ức Hội An",
+                    "the_loai": "Nghệ thuật/Văn hóa",
+                    "gioi_thieu": "Show diễn thực cảnh lớn nhất thế giới về lịch sử Hội An",
+                    "gia_ve_tham_khao": "600.000 VND"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Thanh Binh 1 Hotel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Vị trí trung tâm phố cổ, giá cả phải chăng",
+                    "gia_trung_binh": "500.000 VND"
+                },
+                {
+                    "ten": "Hoi An Silk River Villa",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Villa nhỏ yên tĩnh bên sông, gần phố cổ",
+                    "gia_trung_binh": "600.000 VND"
+                },
+                {
+                    "ten": "Emm Hotel Hoi An",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Thiết kế trẻ trung, màu sắc nổi bật, hiện đại",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Laluna Hoi An Riverside",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Khách sạn view sông Hoài, không gian lãng mạn",
+                    "gia_trung_binh": "1.300.000 VND"
+                },
+                {
+                    "ten": "Little Hoi An Boutique",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Phong cách hoài cổ tinh tế, dịch vụ chuyên nghiệp",
+                    "gia_trung_binh": "2.200.000 VND"
+                },
+                {
+                    "ten": "Almanity Hoi An Resort",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Chuyên về liệu trình spa và yoga chăm sóc sức khỏe",
+                    "gia_trung_binh": "2.800.000 VND"
+                },
+                {
+                    "ten": "Four Seasons The Nam Hai",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Khu nghỉ dưỡng đẳng cấp bậc nhất Việt Nam",
+                    "gia_trung_binh": "18.000.000 VND"
+                },
+                {
+                    "ten": "Vinpearl Resort Hội An",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "View biển Cửa Đại tuyệt đẹp, hạ tầng hiện đại",
+                    "gia_trung_binh": "4.500.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Cao lầu Thanh",
+                    "gia_trung_binh": "35.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Cao lầu xá xíu",
+                    "dac_diem": "Hơn 20 năm tuổi, vị chuẩn Hội An"
+                },
+                {
+                    "ten_quan": "Cơm gà Bà Buội",
+                    "gia_trung_binh": "40.000 - 70.000 VNĐ",
+                    "mon_noi_bat": "Cơm gà xé gỏi",
+                    "dac_diem": "Gà thả vườn, cơm nấu nước luộc gà"
+                },
+                {
+                    "ten_quan": "Bánh mì Madam Khánh",
+                    "gia_trung_binh": "25.000 - 50.000 VNĐ",
+                    "mon_noi_bat": "Bánh mì thập cẩm",
+                    "dac_diem": "\"Nữ hoàng bánh mì\" thế giới"
+                },
+                {
+                    "ten_quan": "Bánh xèo Giếng Bá Lễ",
+                    "gia_trung_binh": "45.000 - 95.000 VNĐ",
+                    "mon_noi_bat": "Bánh xèo, nem lụi",
+                    "dac_diem": "Nước chấm làm từ gan heo đặc trưng"
+                },
+                {
+                    "ten_quan": "Mì Quảng Ông Hai",
+                    "gia_trung_binh": "35.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Mì Quảng gà/tôm trứng",
+                    "dac_diem": "Sợi mì nghệ vàng óng rất bắt mắt"
+                },
+                {
+                    "ten_quan": "Hoa Hồng Trắng",
+                    "gia_trung_binh": "60.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Bánh bao, bánh vạc",
+                    "dac_diem": "Hình dáng như bông hoa hồng trắng"
+                },
+                {
+                    "ten_quan": "Bánh đập Bà Già",
+                    "gia_trung_binh": "30.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Bánh đập hến xào",
+                    "dac_diem": "Đặc sản Cẩm Nam nổi tiếng"
+                },
+                {
+                    "ten_quan": "Chè mè đen Ông Thiều",
+                    "gia_trung_binh": "15.000 - 35.000 VNĐ",
+                    "mon_noi_bat": "Xí mà (Chè mè đen)",
+                    "dac_diem": "Món ăn bồi bổ sức khỏe gia truyền"
+                }
+            ]
+        },
+        "Đà Lạt": {
+            "diem_du_lich": [
+                {
+                    "ten": "Đỉnh Lang Biang",
+                    "the_loai": "Mạo hiểm/Thiên nhiên",
+                    "gioi_thieu": "Nóc nhà của Đà Lạt với tầm nhìn toàn cảnh",
+                    "gia_ve_tham_khao": "50.000 VND"
+                },
+                {
+                    "ten": "Thác Datanla",
+                    "the_loai": "Mạo hiểm/Giải trí",
+                    "gioi_thieu": "Hệ thống máng trượt xuyên rừng thông dài nhất",
+                    "gia_ve_tham_khao": "200.000 VND"
+                },
+                {
+                    "ten": "Vườn hoa Thành phố",
+                    "the_loai": "Thiên nhiên/Văn hóa",
+                    "gioi_thieu": "Nơi hội tụ hàng trăm loài hoa đặc trưng của xứ lạnh",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Puppy Farm",
+                    "the_loai": "Trải nghiệm/Nông nghiệp",
+                    "gioi_thieu": "Trang trại cún với nhiều giống chó quý và vườn dâu",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Đồi chè Cầu Đất",
+                    "the_loai": "Chill/Săn mây",
+                    "gioi_thieu": "Không gian xanh mướt và điểm săn mây nổi tiếng",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Đường hầm Điêu khắc",
+                    "the_loai": "Kiến trúc/Nghệ thuật",
+                    "gioi_thieu": "Tái hiện lịch sử Đà Lạt bằng đất sét nung",
+                    "gia_ve_tham_khao": "90.000 VND"
+                },
+                {
+                    "ten": "Hồ Tuyền Lâm",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Hồ nước nhân tạo lớn nhất, bao quanh bởi rừng thông",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Thung lũng Tình yêu",
+                    "the_loai": "Lãng mạn/Giải trí",
+                    "gioi_thieu": "Khu du lịch mang tính biểu tượng của sự lãng mạn",
+                    "gia_ve_tham_khao": "250.000 VND"
+                },
+                {
+                    "ten": "Dapa Hill",
+                    "the_loai": "Trải nghiệm/Giải trí",
+                    "gioi_thieu": "Trượt phao khô Air Slide và vườn lạc đà Alpaca",
+                    "gia_ve_tham_khao": "120.000 VND"
+                },
+                {
+                    "ten": "Chợ đêm Đà Lạt",
+                    "the_loai": "Văn hóa Ẩm thực",
+                    "gioi_thieu": "Thiên đường ẩm thực và mua sắm về đêm",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chùa Linh Phước",
+                    "the_loai": "Tâm linh/Kiến trúc",
+                    "gioi_thieu": "Chùa Ve Chai với kiến trúc khảm sành độc đáo",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Nhà thờ Domaine de Marie",
+                    "the_loai": "Kiến trúc/Tôn giáo",
+                    "gioi_thieu": "Nhà thờ màu hồng phong cách Pháp cổ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Ga xe lửa Đà Lạt",
+                    "the_loai": "Lịch sử Kiến trúc",
+                    "gioi_thieu": "Nhà ga cổ nhất Đông Dương còn hoạt động",
+                    "gia_ve_tham_khao": "5.000 VND"
+                },
+                {
+                    "ten": "Dalat Fairytale Land",
+                    "the_loai": "Giải trí/Sống ảo",
+                    "gioi_thieu": "Ngôi làng của những người lùn Hobbit cổ tích",
+                    "gia_ve_tham_khao": "90.000 VND"
+                },
+                {
+                    "ten": "Quảng trường Lâm Viên",
+                    "the_loai": "Chill/Hiện đại",
+                    "gioi_thieu": "Biểu tượng bông hoa dã quỳ và nụ hoa Atiso",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Zoodoo Đà Lạt",
+                    "the_loai": "Gia đình/Trải nghiệm",
+                    "gioi_thieu": "Sở thú thân thiện phong cách Úc cho trẻ em",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Dinh Bảo Đại",
+                    "the_loai": "Lịch sử/Kiến trúc",
+                    "gioi_thieu": "Biệt điện sang trọng của vị vua cuối cùng",
+                    "gia_ve_tham_khao": "90.000 VND"
+                },
+                {
+                    "ten": "Thiền viện Trúc Lâm",
+                    "the_loai": "Tâm linh/Cảnh quan",
+                    "gioi_thieu": "Ngôi thiền viện đẹp nhất Đà Lạt bên hồ Tuyền Lâm",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Làng Cù Lần",
+                    "the_loai": "Thiên nhiên/Văn hóa",
+                    "gioi_thieu": "Ngôi làng cổ tích nằm giữa thung lũng xanh mướt",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Thác Pongour",
+                    "the_loai": "Thiên nhiên/Hùng Vĩ",
+                    "gioi_thieu": "Nam thiên đệ nhất thác với vẻ đẹp kỳ vĩ",
+                    "gia_ve_tham_khao": "20.000 VND"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "New Century Đà Lạt",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Phòng ốc sạch sẽ, phục vụ tận tình",
+                    "gia_trung_binh": "500.000 VND"
+                },
+                {
+                    "ten": "Le House Đà Lạt",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Thiết kế trẻ trung, hiện đại, gần trung tâm",
+                    "gia_trung_binh": "450.000 VND"
+                },
+                {
+                    "ten": "Marigold Đà Lạt",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Phong cách châu Âu sang trọng, view thành phố",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Sandals Lily Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Vị trí ngay trung tâm, nội thất gỗ ấm cúng",
+                    "gia_trung_binh": "1.300.000 VND"
+                },
+                {
+                    "ten": "Goldient Boutique",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Khách sạn nhỏ xinh, phong cách nghệ thuật",
+                    "gia_trung_binh": "1.800.000 VND"
+                },
+                {
+                    "ten": "Terracotta Resort",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Khu nghỉ dưỡng ven hồ Tuyền Lâm cực rộng",
+                    "gia_trung_binh": "2.500.000 VND"
+                },
+                {
+                    "ten": "Dalat Palace Heritage",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Khách sạn di sản cổ kính bậc nhất Việt Nam",
+                    "gia_trung_binh": "3.500.000 VND"
+                },
+                {
+                    "ten": "Ana Mandara Villas",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Các căn biệt thự cổ thời Pháp trong rừng thông",
+                    "gia_trung_binh": "4.200.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Bánh căn Lệ",
+                    "gia_trung_binh": "30.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Bánh căn trứng cút/bò",
+                    "dac_diem": "Nằm trong hẻm nhưng luôn kín chỗ"
+                },
+                {
+                    "ten_quan": "Bánh mì xíu mại Hoàng Diệu",
+                    "gia_trung_binh": "25.000 - 45.000 VNĐ",
+                    "mon_noi_bat": "Bánh mì chấm xíu mại",
+                    "dac_diem": "Điểm ăn sáng quốc dân tại Đà Lạt"
+                },
+                {
+                    "ten_quan": "Bún bò thố đá Đoàn Viên",
+                    "gia_trung_binh": "65.000 - 110.000 VNĐ",
+                    "mon_noi_bat": "Bún bò thố đá",
+                    "dac_diem": "Giữ nhiệt lâu, nước dùng bốc khói"
+                },
+                {
+                    "ten_quan": "Bánh canh Xuân An",
+                    "gia_trung_binh": "35.000 - 50.000 VNĐ",
+                    "mon_noi_bat": "Bánh canh chả cá",
+                    "dac_diem": "Quán lâu đời, phục vụ nhanh chóng"
+                },
+                {
+                    "ten_quan": "Nem nướng Bà Hùng",
+                    "gia_trung_binh": "50.000 - 85.000 VNĐ",
+                    "mon_noi_bat": "Nem nướng Đà Lạt",
+                    "dac_diem": "Nước chấm độc quyền, rau sống tươi sạch"
+                },
+                {
+                    "ten_quan": "Mì hoành thánh Tàu Cao",
+                    "gia_trung_binh": "40.000 - 75.000 VNĐ",
+                    "mon_noi_bat": "Mì hoành thánh tươi",
+                    "dac_diem": "Sợi mì gia truyền của người gốc Hoa"
+                },
+                {
+                    "ten_quan": "Bánh mì chảo Icolor",
+                    "gia_trung_binh": "45.000 - 70.000 VNĐ",
+                    "mon_noi_bat": "Bánh mì chảo thập cẩm",
+                    "dac_diem": "View rừng thông cực chill, trang trí đẹp"
+                },
+                {
+                    "ten_quan": "Kem bơ Chạm",
+                    "gia_trung_binh": "35.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Kem bơ sáp Đà Lạt",
+                    "dac_diem": "Bơ mịn màng kết hợp kem dừa truyền thống"
+                }
+            ]
+        },
+        "Đà Nẵng": {
+            "diem_du_lich": [
+                {
+                    "ten": "Bà Nà Hills",
+                    "the_loai": "Giải trí/Cảnh quan",
+                    "gioi_thieu": "Quần thể nghỉ dưỡng trên đỉnh núi Chúa",
+                    "gia_ve_tham_khao": "900.000 VND"
+                },
+                {
+                    "ten": "Bãi biển Mỹ Khê",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "Một trong những bãi biển đẹp nhất hành tinh",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Ngũ Hành Sơn",
+                    "the_loai": "Tâm linh/Thiên nhiên",
+                    "gioi_thieu": "5 ngọn núi biểu tượng cho ngũ hành",
+                    "gia_ve_tham_khao": "40.000 VND"
+                },
+                {
+                    "ten": "Cầu Rồng",
+                    "the_loai": "Kiến trúc/Check-in",
+                    "gioi_thieu": "Cây cầu phun lửa và nước vào cuối tuần",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chùa Linh Ứng",
+                    "the_loai": "Tâm linh/Cảnh quan",
+                    "gioi_thieu": "Tượng Phật Bà cao nhất Việt Nam tại Sơn Trà",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bán đảo Sơn Trà",
+                    "the_loai": "Thiên nhiên/Khám phá",
+                    "gioi_thieu": "Lá phổi xanh với đỉnh Bàn Cờ và Hải đăng",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Công viên suối khoáng Núi Thần Tài",
+                    "the_loai": "Nghỉ dưỡng/Sức khỏe",
+                    "gioi_thieu": "Tắm bùn, suối nóng giữa núi rừng",
+                    "gia_ve_tham_khao": "450.000 VND"
+                },
+                {
+                    "ten": "Asia Park",
+                    "the_loai": "Giải trí/Năng động",
+                    "gioi_thieu": "Công viên kỳ quan với Sun Wheel",
+                    "gia_ve_tham_khao": "200.000 VND"
+                },
+                {
+                    "ten": "Bảo tàng Điêu khắc Chăm",
+                    "the_loai": "Văn hóa Lịch sử",
+                    "gioi_thieu": "Nơi lưu giữ giá trị văn hóa Champa độc đáo",
+                    "gia_ve_tham_khao": "60.000 VND"
+                },
+                {
+                    "ten": "Cầu Vàng",
+                    "the_loai": "Kiến trúc/Check-in",
+                    "gioi_thieu": "Cây cầu nâng bởi đôi tay khổng lồ (tại Bà Nà)",
+                    "gia_ve_tham_khao": "Theo vé Bà Nà"
+                },
+                {
+                    "ten": "Đèo Hải Vân",
+                    "the_loai": "Mạo hiểm/Cảnh quan",
+                    "gioi_thieu": "Cung đường đèo ven biển đẹp nhất Việt Nam",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Mikazuki Water Park 365",
+                    "the_loai": "Giải trí/Gia đình",
+                    "gioi_thieu": "Công viên nước trong nhà kiểu Nhật hiện đại",
+                    "gia_ve_tham_khao": "350.000 VND"
+                },
+                {
+                    "ten": "Cầu Sông Hàn",
+                    "the_loai": "Kiến trúc/Lịch sử",
+                    "gioi_thieu": "Cây cầu quay đầu tiên tại Việt Nam",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Công viên APEC",
+                    "the_loai": "Kiến trúc/Check-in",
+                    "gioi_thieu": "Biểu tượng hình cánh diều bay cao ven sông Hàn",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bảo tàng Mỹ thuật Đà Nẵng",
+                    "the_loai": "Nghệ thuật Văn hóa",
+                    "gioi_thieu": "Không gian nghệ thuật đương đại và dân gian",
+                    "gia_ve_tham_khao": "20.000 VND"
+                },
+                {
+                    "ten": "Nhà trưng bày Hoàng Sa",
+                    "the_loai": "Lịch sử Giáo dục",
+                    "gioi_thieu": "Tư liệu lịch sử về chủ quyền biển đảo Việt Nam",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chợ Hàn",
+                    "the_loai": "Văn hóa/Mua sắm",
+                    "gioi_thieu": "Trung tâm mua sắm sầm uất cho khách du lịch",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Rạn Nam Ô",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Bãi đá phủ rêu xanh mướt cực đẹp vào mùa xuân",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Cung văn hóa thiếu nhi",
+                    "the_loai": "Kiến trúc/Check-in",
+                    "gioi_thieu": "Thiết kế khối Tangram nhiều màu sắc",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bãi Bụt",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "Vịnh biển bình yên tại bán đảo Sơn Trà",
+                    "gia_ve_tham_khao": "Miễn phí"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Rose Homestay",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Không gian ấm cúng, gần biển Mỹ Khê",
+                    "gia_trung_binh": "450.000 VND"
+                },
+                {
+                    "ten": "Wings House",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Thiết kế hiện đại, giá cực tốt cho sinh viên",
+                    "gia_trung_binh": "400.000 VND"
+                },
+                {
+                    "ten": "Sea Garden Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Khách sạn tiêu chuẩn, phục vụ chuyên nghiệp",
+                    "gia_trung_binh": "900.000 VND"
+                },
+                {
+                    "ten": "Lavender Riverside",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "View sông Hàn, gần cầu Trần Thị Lý",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Pullman Danang Resort",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Nghỉ dưỡng sang trọng bên biển Mỹ Khê",
+                    "gia_trung_binh": "3.200.000 VND"
+                },
+                {
+                    "ten": "Hyatt Regency Danang",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Phù hợp gia đình, nhiều hồ bơi lớn",
+                    "gia_trung_binh": "3.800.000 VND"
+                },
+                {
+                    "ten": "InterContinental Peninsula",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Tuyệt tác nghỉ dưỡng của Bill Bensley",
+                    "gia_trung_binh": "15.000.000 VND"
+                },
+                {
+                    "ten": "Naman Retreat",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Chuyên về detox và nghỉ dưỡng kiến trúc tre",
+                    "gia_trung_binh": "5.500.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Mì Quảng 1A",
+                    "gia_trung_binh": "30.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Mì Quảng tôm thịt",
+                    "dac_diem": "Địa chỉ lâu đời, chuẩn vị miền Trung"
+                },
+                {
+                    "ten_quan": "Bún chả cá Ông Tạ",
+                    "gia_trung_binh": "35.000 - 75.000 VNĐ",
+                    "mon_noi_bat": "Bún chả cá thu",
+                    "dac_diem": "Nước lèo ngọt thanh, chả cá tự làm"
+                },
+                {
+                    "ten_quan": "Bún mắm Vân",
+                    "gia_trung_binh": "30.000 - 50.000 VNĐ",
+                    "mon_noi_bat": "Bún mắm nêm thịt quay",
+                    "dac_diem": "Mắm nêm đậm đà, thịt quay giòn tan"
+                },
+                {
+                    "ten_quan": "Bánh canh Ruộng",
+                    "gia_trung_binh": "30.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bánh canh bột lọc",
+                    "dac_diem": "Tô bánh đầy đặn, giá cực kỳ sinh viên"
+                },
+                {
+                    "ten_quan": "Bánh bèo Bà Bé",
+                    "gia_trung_binh": "25.000 - 45.000 VNĐ",
+                    "mon_noi_bat": "Bánh bèo, nậm, lọc",
+                    "dac_diem": "Chuyên các loại bánh truyền thống Huế - Đà"
+                },
+                {
+                    "ten_quan": "Ốc hút Cây Bàng",
+                    "gia_trung_binh": "20.000 - 50.000 VNĐ",
+                    "mon_noi_bat": "Ốc hút, mít trộn",
+                    "dac_diem": "Điểm ăn vặt nổi tiếng nhất quận Cẩm Lệ"
+                },
+                {
+                    "ten_quan": "Phở Cồ Long",
+                    "gia_trung_binh": "45.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Phở bò tái nạm",
+                    "dac_diem": "Hương vị phở Bắc giữa lòng Đà Nẵng"
+                },
+                {
+                    "ten_quan": "Bún xương 89",
+                    "gia_trung_binh": "35.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bún xương ninh",
+                    "dac_diem": "Nước dùng thanh ngọt, xương mềm ngọt"
+                }
+            ]
+        },
+        "Nha Trang": {
+            "diem_du_lich": [
+                {
+                    "ten": "VinWonders Nha Trang",
+                    "the_loai": "Giải trí/Năng động",
+                    "gioi_thieu": "Công viên giải trí của những kỷ lục trên đảo Hòn Tre",
+                    "gia_ve_tham_khao": "800.000 VND"
+                },
+                {
+                    "ten": "Tháp Bà Ponagar",
+                    "the_loai": "Văn hóa Lịch sử",
+                    "gioi_thieu": "Quần thể kiến trúc Champa cổ kính trên đồi Cù Lao",
+                    "gia_ve_tham_khao": "30.000 VND"
+                },
+                {
+                    "ten": "Hòn Tằm",
+                    "the_loai": "Nghỉ dưỡng/Sức khỏe",
+                    "gioi_thieu": "Khu phức hợp tắm bùn khoáng trên biển lớn nhất",
+                    "gia_ve_tham_khao": "450.000 VND"
+                },
+                {
+                    "ten": "Viện Hải Dương Học",
+                    "the_loai": "Giáo dục/Khám phá",
+                    "gioi_thieu": "Lưu giữ hơn 20.000 mẫu vật sinh vật biển",
+                    "gia_ve_tham_khao": "40.000 VND"
+                },
+                {
+                    "ten": "Chùa Long Sơn",
+                    "the_loai": "Tâm linh/Kiến trúc",
+                    "gioi_thieu": "Ngôi chùa với tượng Phật Trắng khổng lồ trên núi",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Đảo Hòn Mun",
+                    "the_loai": "Khám phá Thiên nhiên",
+                    "gioi_thieu": "Khu bảo tồn biển với rạn san hô đa dạng bậc nhất",
+                    "gia_ve_tham_khao": "22.000 VND (phí bảo tồn)"
+                },
+                {
+                    "ten": "Skylight Nha Trang",
+                    "the_loai": "Chill/Hiện đại",
+                    "gioi_thieu": "Rooftop club ngắm cảnh 360 độ từ tầng 43",
+                    "gia_ve_tham_khao": "200.000 VND"
+                },
+                {
+                    "ten": "Nhà hát Đó (Vega City)",
+                    "the_loai": "Nghệ thuật/Kiến trúc",
+                    "gioi_thieu": "Kiến trúc hình chiếc đó bắt cá khổng lồ độc đáo",
+                    "gia_ve_tham_khao": "Theo show"
+                },
+                {
+                    "ten": "Bãi Dài",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "Bãi biển hoang sơ, nước xanh ngắt gần sân bay",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Vịnh Vân Phong",
+                    "the_loai": "Thiên nhiên/Khám phá",
+                    "gioi_thieu": "\"Nàng tiên ngủ quên\" với con đường đi bộ giữa biển",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chùa Ốc (Từ Vân)",
+                    "the_loai": "Tâm linh/Kiến trúc",
+                    "gioi_thieu": "Ngôi chùa được xây bằng vỏ ốc và san hô",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Suối Ba Hồ",
+                    "the_loai": "Mạo hiểm/Thiên nhiên",
+                    "gioi_thieu": "Hệ thống 3 hồ nước tự nhiên giữa rừng núi",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Đảo Khỉ (Hòn Lao)",
+                    "the_loai": "Gia đình/Khám phá",
+                    "gioi_thieu": "Nơi cư ngụ của hàng ngàn chú khỉ tự nhiên",
+                    "gia_ve_tham_khao": "180.000 VND"
+                },
+                {
+                    "ten": "Hòn Chồng",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Quần thể đá xếp chồng độc đáo bên bờ biển",
+                    "gia_ve_tham_khao": "22.000 VND"
+                },
+                {
+                    "ten": "Nhà thờ Đá Nha Trang",
+                    "the_loai": "Kiến trúc/Tôn giáo",
+                    "gioi_thieu": "Công trình Gothic bằng đá xám uy nghiêm",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Đảo Hoa Lan",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Vườn lan rực rỡ và các hoạt động cưỡi voi, xem xiếc",
+                    "gia_ve_tham_khao": "180.000 VND"
+                },
+                {
+                    "ten": "Đảo Robinson",
+                    "the_loai": "Khám phá/Hoang sơ",
+                    "gioi_thieu": "Thiên đường tách biệt cho các tín đồ cắm trại",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Tứ Bình (Bình Ba, Hưng, Lập, Tiên)",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "4 hòn đảo hoang sơ tuyệt mỹ tại Cam Ranh",
+                    "gia_ve_tham_khao": "Tùy tour"
+                },
+                {
+                    "ten": "Hồ Kênh Hạ",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "\"Đà Lạt giữa lòng Nha Trang\" yên bình",
+                    "gia_ve_tham_khao": "50.000 VND"
+                },
+                {
+                    "ten": "Chùa Suối Đổ",
+                    "the_loai": "Tâm linh/Thiên nhiên",
+                    "gioi_thieu": "Ngôi chùa nằm giữa vách núi, có thác nước đổ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Senkotel Nha Trang",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Sạch sẽ, tiện nghi, giá rẻ cạnh biển",
+                    "gia_trung_binh": "300.000 VND"
+                },
+                {
+                    "ten": "Nice Swan Hotel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Có hồ bơi ngoài trời - hiếm thấy ở 2 sao",
+                    "gia_trung_binh": "350.000 VND"
+                },
+                {
+                    "ten": "Sun City Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Vị trí đắc địa phố Hùng Vương, phục vụ tốt",
+                    "gia_trung_binh": "650.000 VND"
+                },
+                {
+                    "ten": "Dendro Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Thiết kế hiện đại, chất lượng dịch vụ ổn định",
+                    "gia_trung_binh": "800.000 VND"
+                },
+                {
+                    "ten": "Bonjour Nha Trang",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Khách sạn phong cách Âu, view biển đẹp",
+                    "gia_trung_binh": "1.200.000 VND"
+                },
+                {
+                    "ten": "Sea Pearl Hotel",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Tiện nghi cao cấp, hồ bơi sân thượng",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Mường Thanh Luxury",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Quy mô lớn nhất trên đường Trần Phú",
+                    "gia_trung_binh": "2.500.000 VND"
+                },
+                {
+                    "ten": "Melia Vinpearl Empire",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Khách sạn căn hộ sang trọng giữa trung tâm",
+                    "gia_trung_binh": "3.500.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Bún cá Nguyên Loan",
+                    "gia_trung_binh": "35.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bún cá sứa",
+                    "dac_diem": "Nước dùng thanh, topping chả cá dai"
+                },
+                {
+                    "ten_quan": "Nem nướng Đặng Văn Quyên",
+                    "gia_trung_binh": "50.000 - 90.000 VNĐ",
+                    "mon_noi_bat": "Nem nướng chuẩn vị",
+                    "dac_diem": "Thương hiệu nem nướng lâu đời nhất"
+                },
+                {
+                    "ten_quan": "Bánh căn 51 Tô Hiến Thành",
+                    "gia_trung_binh": "45.000 - 95.000 VNĐ",
+                    "mon_noi_bat": "Bánh căn mực tôm",
+                    "dac_diem": "Hải sản tươi rói, nước chấm đặc trưng"
+                },
+                {
+                    "ten_quan": "Bánh xèo chảo 85",
+                    "gia_trung_binh": "40.000 - 70.000 VNĐ",
+                    "mon_noi_bat": "Bánh xèo hải sản",
+                    "dac_diem": "Vỏ giòn, nhân tôm mực đậm đà"
+                },
+                {
+                    "ten_quan": "Cơm gà Hà",
+                    "gia_trung_binh": "45.000 - 80.000 VNĐ",
+                    "mon_noi_bat": "Cơm gà rô ti/luộc",
+                    "dac_diem": "Hạt cơm tơi, thịt gà dai ngọt"
+                },
+                {
+                    "ten_quan": "Bánh canh chả cá Hai Cá",
+                    "gia_trung_binh": "30.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Bánh canh lòng cá",
+                    "dac_diem": "Độc đáo với lòng cá và trứng cá"
+                },
+                {
+                    "ten_quan": "Xôi cá cơm Ngô Sĩ Liên",
+                    "gia_trung_binh": "25.000 - 45.000 VNĐ",
+                    "mon_noi_bat": "Xôi cá cơm kho",
+                    "dac_diem": "Món ăn sáng lạ vị, đậm chất biển"
+                },
+                {
+                    "ten_quan": "Bánh ướt Diên Khánh",
+                    "gia_trung_binh": "30.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Bánh ướt mắm nêm",
+                    "dac_diem": "Ăn kèm chả lụa và xoài băm"
+                }
+            ]
+        },
+        "Hạ Long": {
+            "diem_du_lich": [
+                {
+                    "ten": "Vịnh Hạ Long",
+                    "the_loai": "Di sản/Thiên nhiên",
+                    "gioi_thieu": "Di sản thiên nhiên thế giới với hàng ngàn đảo đá",
+                    "gia_ve_tham_khao": "290.000 VND"
+                },
+                {
+                    "ten": "Dragon Park",
+                    "the_loai": "Giải trí/Năng động",
+                    "gioi_thieu": "Công viên chủ đề với các trò chơi cảm giác mạnh",
+                    "gia_ve_tham_khao": "350.000 VND"
+                },
+                {
+                    "ten": "Typhoon Water Park",
+                    "the_loai": "Giải trí/Năng động",
+                    "gioi_thieu": "Công viên nước hiện đại với nhiều trò chơi dưới nước",
+                    "gia_ve_tham_khao": "350.000 VND"
+                },
+                {
+                    "ten": "Cáp treo Nữ Hoàng",
+                    "the_loai": "Ngắm cảnh/Kỷ lục",
+                    "gioi_thieu": "Cabin cáp treo lớn nhất thế giới, view vịnh cực đẹp",
+                    "gia_ve_tham_khao": "350.000 VND"
+                },
+                {
+                    "ten": "Sun Wheel",
+                    "the_loai": "Chill/Ngắm cảnh",
+                    "gioi_thieu": "Vòng quay mặt trời khổng lồ trên Đồi Huyền Bí",
+                    "gia_ve_tham_khao": "Trong vé cáp"
+                },
+                {
+                    "ten": "Bảo tàng Quảng Ninh",
+                    "the_loai": "Văn hóa/Giáo dục",
+                    "gioi_thieu": "Kiến trúc \"than đá\" độc đáo, biểu tượng mới của tỉnh",
+                    "gia_ve_tham_khao": "40.000 VND"
+                },
+                {
+                    "ten": "Đảo Tuần Châu",
+                    "the_loai": "Nghỉ dưỡng/Giải trí",
+                    "gioi_thieu": "Khu nghỉ dưỡng cao cấp và sân khấu biểu diễn nhạc nước",
+                    "gia_ve_tham_khao": "280.000 VND"
+                },
+                {
+                    "ten": "Đồi Huyền Bí",
+                    "the_loai": "Chill/Kiến trúc",
+                    "gioi_thieu": "Không gian phong cách Nhật Bản giữa lòng Hạ Long",
+                    "gia_ve_tham_khao": "Trong vé cáp"
+                },
+                {
+                    "ten": "Hang Sửng Sốt",
+                    "the_loai": "Khám phá Thiên nhiên",
+                    "gioi_thieu": "Hang động rộng nhất và đẹp nhất tại vịnh Hạ Long",
+                    "gia_ve_tham_khao": "Trong vé vịnh"
+                },
+                {
+                    "ten": "Đảo Ti Tốp",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "Bãi biển hình vầng trăng khuyết với view từ đỉnh núi",
+                    "gia_ve_tham_khao": "Trong vé vịnh"
+                },
+                {
+                    "ten": "Đền thờ Đức Ông",
+                    "the_loai": "Tâm linh/Lịch sử",
+                    "gioi_thieu": "Ngôi đền cổ linh thiêng tại chân núi Bài Thơ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Phố đi bộ Bãi Cháy",
+                    "the_loai": "Chill/Sôi động",
+                    "gioi_thieu": "Khu phố phong cách Âu sôi động về đêm",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chợ đêm Hạ Long",
+                    "the_loai": "Văn hóa Ẩm thực",
+                    "gioi_thieu": "Nơi thưởng thức hải sản và mua sắm đồ lưu niệm",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Cảng tàu Quốc tế",
+                    "the_loai": "Kiến trúc/Check-in",
+                    "gioi_thieu": "Cảng tàu hiện đại do Bill Bensley thiết kế",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Núi Bài Thơ",
+                    "the_loai": "Mạo hiểm/Lịch sử",
+                    "gioi_thieu": "Điểm ngắm vịnh từ trên cao (tạm đóng cửa để bảo tồn)",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Công viên Hoa Hạ Long",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Không gian xanh mướt bên bờ vịnh",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bãi biển Bãi Cháy",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "Bãi biển nhân tạo rộng lớn và hiện đại nhất miền Bắc",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Hang Luồn",
+                    "the_loai": "Khám phá/Trải nghiệm",
+                    "gioi_thieu": "Chèo thuyền kayak xuyên qua hang vào hồ nước kín",
+                    "gia_ve_tham_khao": "50.000 VND"
+                },
+                {
+                    "ten": "Đảo Quan Lạn",
+                    "the_loai": "Thiên nhiên/Hoang sơ",
+                    "gioi_thieu": "Hòn đảo với những bãi biển trắng mịn tuyệt đẹp",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chùa Long Tiên",
+                    "the_loai": "Tâm linh/Văn hóa",
+                    "gioi_thieu": "Ngôi chùa cổ nhất tại trung tâm thành phố Hạ Long",
+                    "gia_ve_tham_khao": "Miễn phí"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Milash Boutique Hotel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Phong cách hiện đại, vị trí đẹp tại Bãi Cháy",
+                    "gia_trung_binh": "500.000 VND"
+                },
+                {
+                    "ten": "Kenny Hạ Long Hotel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Khách sạn bình dân, sạch sẽ, dịch vụ tốt",
+                    "gia_trung_binh": "450.000 VND"
+                },
+                {
+                    "ten": "Diamond Luxury Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Gần trung tâm thương mại Vincom, tiện nghi",
+                    "gia_trung_binh": "900.000 VND"
+                },
+                {
+                    "ten": "City Bay Palace",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Kiến trúc châu Âu sang trọng giữa trung tâm",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Halong Plaza Hotel",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Khách sạn chuẩn quốc tế, hồ bơi view vịnh",
+                    "gia_trung_binh": "2.100.000 VND"
+                },
+                {
+                    "ten": "Mường Thanh Hạ Long",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Vị trí trung tâm Bãi Cháy, dịch vụ chuyên nghiệp",
+                    "gia_trung_binh": "1.800.000 VND"
+                },
+                {
+                    "ten": "FLC Halong Bay Resort",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Nghỉ dưỡng sân golf đẳng cấp trên đồi",
+                    "gia_trung_binh": "3.500.000 VND"
+                },
+                {
+                    "ten": "Vinpearl Hạ Long",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Khu nghỉ dưỡng biệt lập trên đảo Rều độc đáo",
+                    "gia_trung_binh": "4.500.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Sam Bà Tỵ",
+                    "gia_trung_binh": "50.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Sam 7 món",
+                    "dac_diem": "Chế biến Sam công phu nhất Hạ Long"
+                },
+                {
+                    "ten_quan": "Bún bề bề Cầu Trắng",
+                    "gia_trung_binh": "40.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Bún bề bề",
+                    "dac_diem": "Nước dùng ngọt lịm từ bề bề tươi"
+                },
+                {
+                    "ten_quan": "Bánh cuốn Gốc Bàng",
+                    "gia_trung_binh": "35.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bánh cuốn chả mực",
+                    "dac_diem": "Sự kết hợp hoàn hảo giữa bánh và mực"
+                },
+                {
+                    "ten_quan": "Xôi chả mực Minh Hòa",
+                    "gia_trung_binh": "35.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Xôi trắng chả mực",
+                    "dac_diem": "Chả mực giã tay truyền thống"
+                },
+                {
+                    "ten_quan": "Miến ngan cô Thủy",
+                    "gia_trung_binh": "30.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Miến ngan luộc",
+                    "dac_diem": "Ngan béo, thịt ngọt thanh, phục vụ tối"
+                },
+                {
+                    "ten_quan": "Bún hải sản Phương Huyền",
+                    "gia_trung_binh": "40.000 - 70.000 VNĐ",
+                    "mon_noi_bat": "Bún hải sản thập cẩm",
+                    "dac_diem": "Topping tôm, mực, bề bề đầy đặn"
+                },
+                {
+                    "ten_quan": "Ốc 290",
+                    "gia_trung_binh": "50.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Ốc hương xào me",
+                    "dac_diem": "Không gian thoáng, vị ốc đặc trưng"
+                },
+                {
+                    "ten_quan": "Sữa chua cô Cương",
+                    "gia_trung_binh": "20.000 - 50.000 VNĐ",
+                    "mon_noi_bat": "Sữa chua trân châu nóng",
+                    "dac_diem": "Đặc sản tráng miệng không thể bỏ lỡ"
+                }
+            ]
+        },
+        "Ninh Bình": {
+            "diem_du_lich": [
+                {
+                    "ten": "Quần thể Tràng An",
+                    "the_loai": "Di sản/Thiên nhiên",
+                    "gioi_thieu": "Hành trình đi thuyền qua các hang động và phim trường",
+                    "gia_ve_tham_khao": "300.000 VND"
+                },
+                {
+                    "ten": "Chùa Bái Đính",
+                    "the_loai": "Tâm linh/Kiến trúc",
+                    "gioi_thieu": "Quần thể chùa lớn nhất Việt Nam với nhiều kỷ lục",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Tam Cốc - Bích Động",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "\"Hạ Long trên cạn\" với cánh đồng lúa chín vàng",
+                    "gia_ve_tham_khao": "120.000 VND"
+                },
+                {
+                    "ten": "Cố đô Hoa Lư",
+                    "the_loai": "Lịch sử Văn hóa",
+                    "gioi_thieu": "Kinh đô đầu tiên của nhà nước phong kiến tập quyền",
+                    "gia_ve_tham_khao": "20.000 VND"
+                },
+                {
+                    "ten": "Hang Múa",
+                    "the_loai": "Mạo hiểm/Sống ảo",
+                    "gioi_thieu": "Chinh phục 500 bậc đá để ngắm view triệu đô",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Động Am Tiên",
+                    "the_loai": "Chill/U tịch",
+                    "gioi_thieu": "\"Tuyệt tình cốc\" với hồ nước xanh ngắt bí ẩn",
+                    "gia_ve_tham_khao": "20.000 VND"
+                },
+                {
+                    "ten": "Vườn chim Thung Nham",
+                    "the_loai": "Thiên nhiên/Khám phá",
+                    "gioi_thieu": "Hệ sinh thái đa dạng với hàng ngàn loài chim quý",
+                    "gia_ve_tham_khao": "150.000 VND"
+                },
+                {
+                    "ten": "Đầm Vân Long",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Khu bảo tồn thiên nhiên ngập nước lớn nhất miền Bắc",
+                    "gia_ve_tham_khao": "20.000 VND"
+                },
+                {
+                    "ten": "Vườn quốc gia Cúc Phương",
+                    "the_loai": "Khám phá Thiên nhiên",
+                    "gioi_thieu": "Rừng nguyên sinh với hệ động thực vật phong phú",
+                    "gia_ve_tham_khao": "60.000 VND"
+                },
+                {
+                    "ten": "Phố cổ Hoa Lư",
+                    "the_loai": "Văn hóa/Ẩm thực",
+                    "gioi_thieu": "Không gian tái hiện văn hóa truyền thống về đêm",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Động Thiên Hà",
+                    "the_loai": "Khám phá Tâm linh",
+                    "gioi_thieu": "\"Dải ngân hà trong lòng núi\" với nhũ đá kỳ ảo",
+                    "gia_ve_tham_khao": "120.000 VND"
+                },
+                {
+                    "ten": "Nhà thờ đá Phát Diệm",
+                    "the_loai": "Kiến trúc/Tôn giáo",
+                    "gioi_thieu": "Công trình đá vĩ đại kết hợp phong cách Đông - Tây",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Thung Nắng",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Không gian yên tĩnh, thơ mộng dành cho nghỉ dưỡng",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Đền thờ Vua Đinh - Lê",
+                    "the_loai": "Lịch sử",
+                    "gioi_thieu": "Di tích tưởng niệm các vị anh hùng dân tộc",
+                    "gia_ve_tham_khao": "Trong vé Hoa Lư"
+                },
+                {
+                    "ten": "Hồ Đồng Chương",
+                    "the_loai": "Chill/Dã ngoại",
+                    "gioi_thieu": "Không gian thông reo như Đà Lạt thu nhỏ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Sân golf Tràng An",
+                    "the_loai": "Thể thao/Nghỉ dưỡng",
+                    "gioi_thieu": "Sân golf 18 lỗ đẳng cấp giữa lòng di sản",
+                    "gia_ve_tham_khao": "250.000 VND (tham quan)"
+                },
+                {
+                    "ten": "Đồi dứa Tam Điệp",
+                    "the_loai": "Chill/Check-in",
+                    "gioi_thieu": "Cánh đồng dứa xanh bạt ngàn của nông trường Đồng Giao",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "token": "Tuyệt Tình Cốc",
+                    "the_loai": "Chill/Sống ảo",
+                    "gioi_thieu": "Hồ nước xanh màu ngọc bích cực đẹp",
+                    "gia_ve_tham_khao": "20.000 VND"
+                },
+                {
+                    "ten": "Hang Sáng - Hang Tối",
+                    "the_loai": "Khám phá Thiên nhiên",
+                    "gioi_thieu": "Hệ thống hang động kỳ bí trong vùng lõi Tràng An",
+                    "gia_ve_tham_khao": "Trong vé Tràng An"
+                },
+                {
+                    "ten": "Núi Non Nước",
+                    "the_loai": "Lịch sử Kiến trúc",
+                    "gioi_thieu": "Di tích văn hóa - lịch sử nổi tiếng bên sông Đáy",
+                    "gia_ve_tham_khao": "10.000 VND"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Ninh Binh Mountain View",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Gần trung tâm, giá tốt, chủ nhà thân thiện",
+                    "gia_trung_binh": "450.000 VND"
+                },
+                {
+                    "ten": "Tam Coc Homestay",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Vị trí ngay bến thuyền Tam Cốc, sạch sẽ",
+                    "gia_trung_binh": "400.000 VND"
+                },
+                {
+                    "ten": "The Legend Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Khách sạn trung tâm thành phố, dịch vụ ổn định",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Hoang Son Peace Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Không gian rộng, phù hợp cả khách đoàn",
+                    "gia_trung_binh": "950.000 VND"
+                },
+                {
+                    "ten": "Ninh Binh Hidden Charm",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Phong cách tinh tế, hồ bơi ngoài trời cực rộng",
+                    "gia_trung_binh": "2.200.000 VND"
+                },
+                {
+                    "ten": "Emeralda Resort & Spa",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Kiến trúc làng quê Bắc Bộ xưa đầy tinh tế",
+                    "gia_trung_binh": "2.800.000 VND"
+                },
+                {
+                    "ten": "Ninh Binh Legend Hotel",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Đẳng cấp quốc tế, dịch vụ hội nghị chuyên nghiệp",
+                    "gia_trung_binh": "3.500.000 VND"
+                },
+                {
+                    "ten": "Bái Đính Garden Resort",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Không gian thiền định ngay sát chùa Bái Đính",
+                    "gia_trung_binh": "4.200.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Miến lươn bà Phấn",
+                    "gia_trung_binh": "40.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Miến lươn gia truyền",
+                    "dac_diem": "Thương hiệu nổi tiếng nhất 60 năm"
+                },
+                {
+                    "ten_quan": "Bún chả quạt Tình Mai",
+                    "gia_trung_binh": "35.000 - 60.000 VNĐ",
+                    "mon_noi_bat": "Bún chả nướng vỉ",
+                    "dac_diem": "Chả miếng lớn, nước mắm vừa vị"
+                },
+                {
+                    "ten_quan": "Bún mọc Tố Như",
+                    "gia_trung_binh": "40.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Bún mọc Kim Sơn",
+                    "dac_diem": "Sợi bún và mọc được làm thủ công"
+                },
+                {
+                    "ten_quan": "Bánh đa cá rô Liên Đông",
+                    "gia_trung_binh": "35.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Bánh đa cá rô đồng",
+                    "dac_diem": "Cá rô chiên vàng, thịt chắc ngọt"
+                },
+                {
+                    "ten_quan": "Đức Trọc Quán",
+                    "gia_trung_binh": "35.000 - 75.000 VNĐ",
+                    "mon_noi_bat": "Bánh tôm, thịt nướng",
+                    "dac_diem": "Điểm ăn vặt nổi tiếng phố Thanh Bình"
+                },
+                {
+                    "ten_quan": "Ốc núi Thăng Long",
+                    "gia_trung_binh": "60.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Ốc núi hấp xả",
+                    "dac_diem": "Sản vật mùa hè chỉ có tại vùng núi đá"
+                },
+                {
+                    "ten_quan": "Kem xôi Thanh Hằng",
+                    "gia_trung_binh": "20.000 - 45.000 VNĐ",
+                    "mon_noi_bat": "Kem xôi dẻo xanh",
+                    "dac_diem": "Món tráng miệng huyền thoại tại NB"
+                },
+                {
+                    "ten_quan": "Thạch dừa Nguyễn Công Trứ",
+                    "gia_trung_binh": "20.000 - 55.000 VNĐ",
+                    "mon_noi_bat": "Thạch dừa xiêm",
+                    "dac_diem": "Mát lạnh, thanh ngọt tự nhiên"
+                }
+            ]
+        },
+        "Phú Quốc": {
+            "diem_du_lich": [
+                {
+                    "ten": "VinWonders Phú Quốc",
+                    "the_loai": "Giải trí/Năng động",
+                    "gioi_thieu": "Công viên chủ đề lớn nhất Việt Nam với 6 phân khu",
+                    "gia_ve_tham_khao": "950.000 VND"
+                },
+                {
+                    "ten": "Vinpearl Safari",
+                    "the_loai": "Thiên nhiên/Gia đình",
+                    "gioi_thieu": "Công viên bảo tồn động vật bán hoang dã đầu tiên",
+                    "gia_ve_tham_khao": "650.000 VND"
+                },
+                {
+                    "ten": "Grand World Phú Quốc",
+                    "the_loai": "Giải trí/Văn hóa",
+                    "gioi_thieu": "\"Thành phố không ngủ\" với show diễn Tinh hoa Việt Nam",
+                    "gia_ve_tham_khao": "Miễn phí (vào cổng)"
+                },
+                {
+                    "ten": "Sun World Hòn Thơm",
+                    "the_loai": "Giải trí/Kỷ lục",
+                    "gioi_thieu": "Cáp treo vượt biển dài nhất thế giới và công viên nước",
+                    "gia_ve_tham_khao": "600.000 VND"
+                },
+                {
+                    "ten": "Bãi Sao",
+                    "the_loai": "Chill/Biển",
+                    "gioi_thieu": "Bãi biển cát trắng mịn và hàng dừa nghiêng biểu tượng",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Rạch Vẹm",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "\"Vương quốc sao biển\" với làng chài yên bình",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Mũi Gành Dầu",
+                    "the_loai": "Chill/Cảnh quan",
+                    "gioi_thieu": "Điểm cực Bắc ngắm nhìn biên giới Campuchia",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Sunset Town",
+                    "the_loai": "Chill/Kiến trúc",
+                    "gioi_thieu": "Thị trấn Địa Trung Hải với Cầu Hôn rực rỡ",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Nhà tù Phú Quốc",
+                    "the_loai": "Lịch sử/Giáo dục",
+                    "gioi_thieu": "Di tích lịch sử \"Địa ngục trần gian\" đầy xúc động",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chùa Hộ Quốc",
+                    "the_loai": "Tâm linh/Kiến trúc",
+                    "gioi_thieu": "Ngôi chùa lớn nhất đảo Ngọc hướng mặt ra biển",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Chợ đêm Phú Quốc",
+                    "the_loai": "Văn hóa/Ảm thực",
+                    "gioi_thieu": "Trung tâm ăn uống và mua sắm sầm uất tại Dương Đông",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Vườn quốc gia Phú Quốc",
+                    "the_loai": "Mạo hiểm/Thiên nhiên",
+                    "gioi_thieu": "Khám phá thảm thực vật phong phú của đảo",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Làng chài Hàm Ninh",
+                    "the_loai": "Văn hóa/Ẩm thực",
+                    "gioi_thieu": "Nơi thưởng thức ghẹ Hàm Ninh tươi ngon nhất",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Bãi Khem",
+                    "the_loai": "Nghỉ dưỡng/Biển",
+                    "gioi_thieu": "Một trong những bãi biển sang trọng nhất đảo",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Sunset Sanato",
+                    "the_loai": "Chill/Sống ảo",
+                    "gioi_thieu": "Điểm ngắm hoàng hôn với các mô hình nghệ thuật trên biển",
+                    "gia_ve_tham_khao": "100.000 VND"
+                },
+                {
+                    "ten": "Suối Tranh",
+                    "the_loai": "Chill/Thiên nhiên",
+                    "gioi_thieu": "Dòng suối mát lành bao quanh bởi rừng cây xanh tốt",
+                    "gia_ve_tham_khao": "10.000 VND"
+                },
+                {
+                    "ten": "Công viên san hô Namaste",
+                    "the_loai": "Khám phá/Mạo hiểm",
+                    "gioi_thieu": "Trải nghiệm đi bộ dưới đáy biển ngắm san hô",
+                    "gia_ve_tham_khao": "950.000 VND"
+                },
+                {
+                    "ten": "Bảo tàng Gấu Teddy",
+                    "the_loai": "Gia đình/Giải trí",
+                    "gioi_thieu": "Không gian trưng bày gấu Teddy lớn nhất Việt Nam",
+                    "gia_ve_tham_khao": "200.000 VND"
+                },
+                {
+                    "ten": "Mũi Trâu Nằm",
+                    "the_loai": "Chill/Hoang sơ",
+                    "gioi_thieu": "Điểm đến hoang sơ cực Bắc đảo Phú Quốc",
+                    "gia_ve_tham_khao": "Miễn phí"
+                },
+                {
+                    "ten": "Vườn tiêu Phú Quốc",
+                    "the_loai": "Trải nghiệm/Nông nghiệp",
+                    "gioi_thieu": "Tìm hiểu quy trình trồng loại tiêu ngon nhất Việt Nam",
+                    "gia_ve_tham_khao": "Miễn phí"
+                }
+            ],
+            "noi_luu_tru": [
+                {
+                    "ten": "Hiệp Thoại Hotel",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Gần trung tâm Dương Đông, giá cực tốt",
+                    "gia_trung_binh": "450.000 VND"
+                },
+                {
+                    "ten": "Tân Hoàng Gia",
+                    "hang_sao": "2 sao",
+                    "gioi_thieu": "Tiện nghi cơ bản, phục vụ thân thiện",
+                    "gia_trung_binh": "400.000 VND"
+                },
+                {
+                    "ten": "Homestead Phú Quốc",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Thiết kế sân vườn xanh mát, gần bãi Trường",
+                    "gia_trung_binh": "900.000 VND"
+                },
+                {
+                    "ten": "Praha Hotel",
+                    "hang_sao": "3 sao",
+                    "gioi_thieu": "Khách sạn phong cách Âu, hồ bơi đẹp",
+                    "gia_trung_binh": "1.100.000 VND"
+                },
+                {
+                    "ten": "Lahana Resort",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Khu nghỉ dưỡng xanh mát trên đồi",
+                    "gia_trung_binh": "1.800.000 VND"
+                },
+                {
+                    "ten": "Green Bay Resort",
+                    "hang_sao": "4 sao",
+                    "gioi_thieu": "Phong cách mộc mạc, gần gũi thiên nhiên",
+                    "gia_trung_binh": "2.500.000 VND"
+                },
+                {
+                    "ten": "JW Marriott Emerald Bay",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Kiệt tác kiến trúc của Bill Bensley",
+                    "gia_trung_binh": "12.000.000 VND"
+                },
+                {
+                    "ten": "Salinda Resort",
+                    "hang_sao": "5 sao",
+                    "gioi_thieu": "Chuyên về wellness và phong cách boutique",
+                    "gia_trung_binh": "4.800.000 VND"
+                }
+            ],
+            "quan_an": [
+                {
+                    "ten_quan": "Bún quậy Kiến Xây",
+                    "gia_trung_binh": "55.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Bún quậy tôm mực",
+                    "dac_diem": "Trải nghiệm tự làm nước chấm"
+                },
+                {
+                    "ten_quan": "Bún kèn Út Lượm",
+                    "gia_trung_binh": "35.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Bún kèn Phú Quốc",
+                    "dac_diem": "Cá ngân xay, nước cốt dừa béo ngậy"
+                },
+                {
+                    "ten_quan": "Bánh canh ghẹ Quốc Anh",
+                    "gia_trung_binh": "65.000 - 105.000 VNĐ",
+                    "mon_noi_bat": "Bánh canh ghẹ tươi",
+                    "dac_diem": "Topping ghẹ tươi nguyên miếng"
+                },
+                {
+                    "ten_quan": "Hủ tiếu mực Tư Hường",
+                    "gia_trung_binh": "55.000 - 90.000 VNĐ",
+                    "mon_noi_bat": "Hủ tiếu mực trứng",
+                    "dac_diem": "Mực tươi giòn, nước dùng thanh"
+                },
+                {
+                    "ten_quan": "Cơm tấm Huỳnh Nhu",
+                    "gia_trung_binh": "50.000 - 80.000 VNĐ",
+                    "mon_noi_bat": "Cơm tấm sườn nướng",
+                    "dac_diem": "Quán cơm tấm đông nhất Dương Đông"
+                },
+                {
+                    "ten_quan": "Pizza Regina",
+                    "gia_trung_binh": "85.000 - 110.000 VNĐ",
+                    "mon_noi_bat": "Pizza hải sản",
+                    "dac_diem": "Món Âu giá bình dân tại Phú Quốc"
+                },
+                {
+                    "ten_quan": "Quán hải sản Ớt Ngọt",
+                    "gia_trung_binh": "60.000 - 100.000 VNĐ",
+                    "mon_noi_bat": "Ốc các loại nướng",
+                    "dac_diem": "Điểm nhậu bình dân view phố"
+                },
+                {
+                    "ten_quan": "Bún riêu Đức Tấn",
+                    "gia_trung_binh": "40.000 - 65.000 VNĐ",
+                    "mon_noi_bat": "Bún riêu cua biển",
+                    "dac_diem": "Vị thanh mát, riêu cua đầy đặn"
+                }
+            ]
+        }
+    }
+}
