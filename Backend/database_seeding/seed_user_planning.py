@@ -7,6 +7,7 @@ from supabase import create_client, Client
 
 url: str = "YOUR_URL"
 key: str = "YOUR_KEY"
+
 supabase: Client = create_client(url, key)
 fake = Faker('vi_VN')
 

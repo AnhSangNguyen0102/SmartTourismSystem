@@ -20,6 +20,7 @@
 """
 
 from decimal import Decimal
+
 from uuid import UUID
 
 from sqlmodel import Session, select
@@ -369,3 +370,4 @@ def create_location_tags(
         db.add(r)
     db.flush()
     return records
+

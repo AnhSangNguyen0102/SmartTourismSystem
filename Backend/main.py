@@ -41,8 +41,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    # Sửa ["*"] thành đích danh cổng 3000 và 3001
     allow_origins=["http://localhost:3000", "http://localhost:3001"], 
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,12 +57,11 @@ app.add_middleware(
 # app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 # app.include_router(locations.router, prefix="/api/v1/locations", tags=["Locations"])
 # app.include_router(itineraries.router, prefix="/api/v1/itineraries", tags=["Itineraries"])
-from routers import auth, enterprise # Import router vừa tạo
 
+from routers import auth, enterprise # Import router vừa tạo
 
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(enterprise.router, prefix="/api")
-
 # ============================================================
 # Health check
 # ============================================================

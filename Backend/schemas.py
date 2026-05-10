@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
+
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
@@ -21,24 +22,21 @@ from models import (
     PlanningStatus,
     PrivacyStatus,
     RegisterType,
+
     StopStatus,
     TravelStyle,
     UserRole,
     UserStatus,
     VerificationAction,
+
 )
 
 
 # ============================================================
-# GENERIC MESSAGE SCHEMA
-# ============================================================
-
 class MessageResponse(BaseModel):
     """Generic API message (e.g. for delete / status endpoints)."""
     detail: str
 
-
-# ============================================================
 # USER SCHEMAS
 # ============================================================
 
@@ -49,6 +47,7 @@ class UserCreate(BaseModel):
     full_name: str = Field(max_length=100)
     register_type: RegisterType = RegisterType.EMAIL
     role: str = "USER"
+
 
 
 class UserLogin(BaseModel):
@@ -136,7 +135,6 @@ class KycStatusUpdate(BaseModel):
     kyc_status: KycStatus
 
 
-# ============================================================
 # AUTH / JWT SCHEMAS
 # ============================================================
 
@@ -151,6 +149,7 @@ class TokenPayload(BaseModel):
     sub: UUID                          # user_id
     exp: Optional[int] = None          # expiry (unix timestamp)
     role: Optional[UserRole] = None
+
 
 # MỚI: thêm class TokenResponse
 class TokenResponse(BaseModel):
@@ -236,6 +235,7 @@ class TagResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+
 # ============================================================
 # PLANNING SESSION SCHEMAS
 # ============================================================
@@ -254,6 +254,7 @@ class PlanningSessionCreate(BaseModel):
     pax_adult: int = Field(default=1, gt=0)
     pax_children: int = Field(default=0, ge=0)
     tag_ids: list[int] = Field(default_factory=list, description="Danh sách tag sở thích cho chuyến đi")
+
 
 
 class PlanningSessionResponse(BaseModel):
@@ -363,7 +364,6 @@ class ItineraryResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
 class ItineraryStopResponse(BaseModel):
     """
     Một trạm dừng kèm thông tin địa điểm.
@@ -438,3 +438,12 @@ class DeviationLogCreate(BaseModel):
     itinerary_id: UUID
     latitude: Decimal = Field(decimal_places=6)
     longitude: Decimal = Field(decimal_places=6)
+
+# ============================================================
+# GENERIC MESSAGE SCHEMA
+# ============================================================
+
+class MessageResponse(BaseModel):
+    """Generic API message (e.g. for delete / status endpoints)."""
+    detail: str
+

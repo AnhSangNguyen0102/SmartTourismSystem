@@ -9,6 +9,7 @@ from supabase import create_client, Client
 # --- THIẾT LẬP KẾT NỐI ---
 url: str = "YOUR_URL"
 key: str = "YOUR_KEY"
+
 supabase: Client = create_client(url, key)
 
 # Tọa độ trung tâm (Mock) của các thành phố trong file JSON
