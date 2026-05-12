@@ -22,7 +22,7 @@ from crud.crud_tracking import (
     update_checkin_status, create_deviation_log, verify_stop_ownership, verify_stop_in_itinerary, create_gps_log
 )
 from crud.crud_itinerary import update_itinerary_status, get_itinerary_history
-from models import Locations, ItineraryDays, ItineraryStops, ItineraryStatus, DeviationLogs
+from models import Locations, ItineraryDays, ItineraryStops, ItineraryStatus, DeviationLogs, Itineraries
 
 from core.algorithms import check_within_radius, tsp_dp_bitmask
 from core.google_maps import get_route_polyline

@@ -5,7 +5,7 @@ import './MainTabs.css';
 // Tạm thời import file trang chủ cũ của bạn vào Tab 1
 import Traveltrip from '../screens/Travel_trip'; 
 
-const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenLocationRegister, onOpenProfileEdit }) => {
+const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenLocationRegister, onOpenProfileEdit, onOpenHistory }) => {
     // State quản lý tab đang hiển thị
     const [activeTab, setActiveTab] = useState('home');
 
@@ -111,6 +111,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                             onLogout={onLogout} onRequireLogin={onRequireLogin}
                             onOpenPlan={onOpenPlan} onOpenLocationRegister={onOpenLocationRegister}
                             onOpenProfileEdit={onOpenProfileEdit}
+                            onOpenHistory={onOpenHistory}
                         />;
             case 'location': 
                 return isGuest ? <GuestPlaceholder title="Bản đồ & Lịch trình" icon="📍" /> : <LocationScreen />;

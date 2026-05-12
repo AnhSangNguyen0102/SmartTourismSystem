@@ -120,7 +120,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                 <h2>{tripDetail.name || "Chi tiết chuyến đi"}</h2>
                 <button className="btn-refresh" onClick={handleRefresh} title="Tải lại dữ liệu">🔄</button>
                 {/* Deviation status badge — click to toggle for demo */}
-                <div 
+                <div
                     className={`deviation-badge ${isDeviated ? 'deviated' : 'on-track'}`}
                     onClick={() => setIsDeviated(!isDeviated)}
                     title="Nhấn để chuyển trạng thái (demo)"
@@ -129,7 +129,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                     <span className="badge-text">{isDeviated ? 'Lệch hướng' : 'Đúng hướng'}</span>
                 </div>
             </div>
-            
+
             <div className="trip-summary">
                 <div className="summary-item">
                     <span className="icon">💰</span>
@@ -178,7 +178,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                             <strong>{nextStop.location_name}</strong>
                         </div>
                     </div>
-                    <button 
+                    <button
                         className="btn-checkin-main"
                         onClick={handleCheckin}
                         disabled={checkinLoading}
@@ -197,7 +197,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                 {Object.keys(stopsByDay).sort().map(day => (
                     <div key={day} className="day-group">
                         <div className="day-header">
-                            Ngày {day} 
+                            Ngày {day}
                             <span className="day-date">({stopsByDay[day][0]?.travel_date})</span>
                             {stopsByDay[day][0]?.estimated_budget && (
                                 <span className="day-budget">
@@ -206,7 +206,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                             )}
                         </div>
                         <div className="timeline">
-                            {stopsByDay[day].sort((a,b) => a.stop_order - b.stop_order).map(stop => (
+                            {stopsByDay[day].sort((a, b) => a.stop_order - b.stop_order).map(stop => (
                                 <div key={stop.stop_id} className={`timeline-item`}>
                                     <div className="time-col">
                                         <div className="time">{stop.arrival_time?.slice(0, 5)}</div>

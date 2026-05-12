@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { getTripHistory } from '../../services/tripService';
+import HistoryDetail from './HistoryDetail';
 import './HistoryScreen.css';
 
 const HistoryScreen = ({ onBack }) => {
     const [history, setHistory] = useState([]);
+    const [filteredHistory, setFilteredHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedTripId, setSelectedTripId] = useState(null);
+
+    // States cho bộ lọc
+    const [filterStatus, setFilterStatus] = useState('ALL');
+    const [filterDate, setFilterDate] = useState('');
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -12,11 +19,30 @@ const HistoryScreen = ({ onBack }) => {
             if (token) {
                 const data = await getTripHistory(token);
                 setHistory(data);
+                setFilteredHistory(data);
             }
             setLoading(false);
         };
         fetchHistory();
     }, []);
+
+    // Logic lọc dữ liệu
+    useEffect(() => {
+        let result = [...history];
+
+        if (filterStatus !== 'ALL') {
+            result = result.filter(item => item.status === filterStatus);
+        }
+
+        if (filterDate) {
+            result = result.filter(item => {
+                const itemDate = new Date(item.create_at).toISOString().split('T')[0];
+                return itemDate === filterDate;
+            });
+        }
+
+        setFilteredHistory(result);
+    }, [filterStatus, filterDate, history]);
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -25,6 +51,13 @@ const HistoryScreen = ({ onBack }) => {
             year: 'numeric'
         });
     };
+
+    if (selectedTripId) {
+        return <HistoryDetail
+            itineraryId={selectedTripId}
+            onBack={() => setSelectedTripId(null)}
+        />;
+    }
 
     return (
         <div className="history-container">
@@ -35,22 +68,62 @@ const HistoryScreen = ({ onBack }) => {
                 <h1>Lịch sử hành trình</h1>
             </div>
 
+            {/* Thanh bộ lọc mới */}
+            <div className="filter-bar">
+                <div className="filter-group">
+                    <label><i className="fas fa-filter"></i> Trạng thái</label>
+                    <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="ALL">Tất cả</option>
+                        <option value="COMPLETED">Hoàn thành</option>
+                        <option value="CANCELLED">Chưa hoàn thành</option>
+                    </select>
+                </div>
+
+                <div className="filter-group">
+                    <label><i className="fas fa-calendar-alt"></i> Chọn ngày</label>
+                    <div className="date-input-wrapper">
+                        <input
+                            type="date"
+                            value={filterDate}
+                            onChange={(e) => setFilterDate(e.target.value)}
+                            className="filter-date"
+                        />
+                        {filterDate && (
+                            <button className="clear-date" onClick={() => setFilterDate('')}>&times;</button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {loading ? (
                 <div className="loading-state">
                     <div className="spinner"></div>
                     <p>Đang tải lịch sử...</p>
                 </div>
-            ) : history.length === 0 ? (
+            ) : filteredHistory.length === 0 ? (
                 <div className="empty-state">
-                    <i className="fas fa-route"></i>
-                    <p>Bạn chưa có hành trình nào hoàn thành.</p>
+                    <i className="fas fa-search"></i>
+                    <p>Không tìm thấy hành trình nào khớp với bộ lọc.</p>
+                    {(filterStatus !== 'ALL' || filterDate !== '') && (
+                        <button className="reset-filter-btn" onClick={() => { setFilterStatus('ALL'); setFilterDate(''); }}>
+                            Xóa bộ lọc
+                        </button>
+                    )}
                 </div>
             ) : (
                 <div className="history-list">
-                    {history.map((item) => (
-                        <div key={item.itinerary_id} className="history-card">
+                    {filteredHistory.map((item) => (
+                        <div
+                            key={item.itinerary_id}
+                            className="history-card"
+                            onClick={() => setSelectedTripId(item.itinerary_id)}
+                        >
                             <div className="card-status" data-status={item.status}>
-                                {item.status === 'COMPLETED' ? 'Hoàn thành' : 'Đã hủy'}
+                                {item.status === 'COMPLETED' ? 'Hoàn thành' : 'Chưa hoàn thành'}
                             </div>
                             <div className="card-info">
                                 <h3>{item.name || 'Hành trình không tên'}</h3>
@@ -75,3 +148,4 @@ const HistoryScreen = ({ onBack }) => {
 };
 
 export default HistoryScreen;
+

@@ -53,7 +53,9 @@ def seed_users_and_planning():
         # 2. TẠO PREFERENCE_TAG_WEIGHTS (Phục vụ AI gợi ý)
         # ---------------------------------------------------------
         # Chọn ngẫu nhiên 5 tags mà user này thích
-        user_tags = random.sample(tag_ids, 5)
+
+        user_tags = random.sample(tag_ids, min(len(tag_ids), 5))   
+
         for tag_id in user_tags:
             supabase.table('preference_tag_weights').insert({
                 "user_id": user_id,
