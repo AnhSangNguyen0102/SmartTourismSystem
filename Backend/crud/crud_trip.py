@@ -128,12 +128,12 @@ def create_itinerary(db: Session, session_id: UUID, user_id: UUID, name: str, to
         db.flush()
     return db_itinerary
 
-def create_itinerary_day(db: Session, itinerary_id: UUID, day_order: int, travel_date: str, total_time: int, commit: bool = True) -> ItineraryDays:
+def create_itinerary_day(db: Session, itinerary_id: UUID, day_order: int, travel_date: str, total_time: int, estimated_budget: float = 0, commit: bool = True) -> ItineraryDays:
     db_day = ItineraryDays(
         itinerary_id=itinerary_id,
         day_order=day_order,
         travel_date=datetime.strptime(travel_date, "%Y-%m-%d").date(),
-        estimated_budget=0,
+        estimated_budget=estimated_budget,
         total_time=total_time
     )
     db.add(db_day)

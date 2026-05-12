@@ -137,6 +137,7 @@ def create_new_itinerary(
 
         global_total_time = 0
         global_total_distance = 0.0
+        global_total_budget = 0.0
 
         # 4. Tối ưu TSP & Tính thời gian từng ngày
         for day_index, chunk_ids in enumerate(chunks):
@@ -148,10 +149,14 @@ def create_new_itinerary(
             # Gọi thuật toán tối ưu của team để lấy thứ tự đi chuẩn nhất
             optimized_ids, daily_dist = tsp_dp_bitmask(tsp_input)
 
+            # Tính toán ngân sách dự kiến cho ngày này dựa trên min_price của các địa điểm
+            day_budget = sum(float(loc_map[lid].min_price) for lid in chunk_ids)
+            global_total_budget += day_budget
+
             # Tạo bản ghi Day
             day = create_itinerary_day(
                 db, itinerary_id=trip.itinerary_id, day_order=day_index + 1,
-                travel_date=current_date.isoformat(), total_time=0, commit=False
+                travel_date=current_date.isoformat(), total_time=0, estimated_budget=day_budget, commit=False
             )
 
             # Setup thời gian bắt đầu đi chơi (VD: 8:00 AM)
@@ -207,9 +212,10 @@ def create_new_itinerary(
 
             global_total_time += daily_time
 
-        # 5. Cập nhật tổng thời gian chuyến đi
+        # 5. Cập nhật tổng thời gian chuyến đi và ngân sách
         trip.total_travel_time = global_total_time
         trip.total_distance = round(global_total_distance, 2)
+        trip.total_budget = global_total_budget
         db.add(trip)
         
         # 6. Commit toàn bộ Transaction
@@ -261,6 +267,8 @@ def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
         stop_dict["longitude"] = loc.longitude
         stop_dict["open_time"] = loc.open_time
         stop_dict["close_time"] = loc.close_time
+        stop_dict["min_price"] = loc.min_price
+        stop_dict["max_price"] = loc.max_price
         
         stop_dicts.append(stop_dict)
         
@@ -317,11 +325,23 @@ def checkin_stop(
     # Tăng lượt checkin tại địa điểm
     increment_location_checkin_count(db, stop_data.location_id)
 
+    # CỘNG ĐIỂM THƯỞNG CHO USER
+    earned_points = getattr(stop_data, 'reward', 0)
+    if earned_points > 0:
+        from models import UserProfiles
+        statement = select(UserProfiles).where(UserProfiles.user_id == user_id)
+        profile = db.exec(statement).first()
+        if profile:
+            profile.total_points += earned_points
+            db.add(profile)
+            db.commit()
+
     return CheckInResponse(
         success=True,
-        message=f"✅ Check-in thành công tại '{stop_data.location_name}'!",
+        message=f"✅ Check-in thành công! Bạn nhận được {earned_points} điểm thưởng.",
         stop_id=stop_id,
-        progress_id=progress_id
+        progress_id=progress_id,
+        earned_points=earned_points
     )
 
 

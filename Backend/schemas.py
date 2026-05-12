@@ -442,6 +442,8 @@ class ItineraryStopResponse(BaseModel):
     longitude: Optional[Decimal] = None
     open_time: Optional[time] = None
     close_time: Optional[time] = None
+    min_price: Optional[Decimal] = None
+    max_price: Optional[Decimal] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -478,6 +480,7 @@ class CheckInResponse(BaseModel):
     message: str
     stop_id: int
     progress_id: int
+    earned_points: Optional[int] = 0
 
 class CheckinCreate(BaseModel):
     """

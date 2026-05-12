@@ -135,7 +135,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                     <span className="icon">💰</span>
                     <div>
                         <small>Ngân sách</small>
-                        <strong>{tripDetail.total_budget} {tripDetail.currency}</strong>
+                        <strong>{new Intl.NumberFormat('vi-VN').format(tripDetail.total_budget)} {tripDetail.currency}</strong>
                     </div>
                 </div>
                 <div className="summary-item">
@@ -150,6 +150,13 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                     <div>
                         <small>Khoảng cách</small>
                         <strong>{tripDetail.total_distance} km</strong>
+                    </div>
+                </div>
+                <div className="summary-item points-summary">
+                    <span className="icon">⭐</span>
+                    <div>
+                        <small>Điểm thưởng</small>
+                        <strong>{(tripDetail.stops || []).reduce((acc, s) => acc + (s.reward || 0), 0)} pts</strong>
                     </div>
                 </div>
             </div>
@@ -192,6 +199,11 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                         <div className="day-header">
                             Ngày {day} 
                             <span className="day-date">({stopsByDay[day][0]?.travel_date})</span>
+                            {stopsByDay[day][0]?.estimated_budget && (
+                                <span className="day-budget">
+                                    💰 {new Intl.NumberFormat('vi-VN').format(stopsByDay[day][0].estimated_budget)}đ
+                                </span>
+                            )}
                         </div>
                         <div className="timeline">
                             {stopsByDay[day].sort((a,b) => a.stop_order - b.stop_order).map(stop => (
@@ -202,9 +214,25 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                                     </div>
                                     <div className="content-col">
                                         <div className={`stop-card ${getStopColorClass(stop)}`}>
-                                            <h4>{stop.location_name}</h4>
+                                            <div className="stop-card-header">
+                                                <h4>{stop.location_name}</h4>
+                                                {stop.min_price && (
+                                                    <span className="stop-price-tag">
+                                                        {new Intl.NumberFormat('vi-VN').format(stop.min_price)}đ
+                                                    </span>
+                                                )}
+                                                {stop.reward > 0 && (
+                                                    <span className="stop-reward-tag">
+                                                        +{stop.reward} ⭐
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p>Khởi hành: {stop.departure_time?.slice(0, 5)}</p>
-                                            <p className="stop-id-label">Stop ID: {stop.stop_id}</p>
+                                            {stop.min_price && (
+                                                <p className="stop-price-range">
+                                                    Dự kiến: {new Intl.NumberFormat('vi-VN').format(stop.min_price)}đ - {new Intl.NumberFormat('vi-VN').format(stop.max_price)}đ
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

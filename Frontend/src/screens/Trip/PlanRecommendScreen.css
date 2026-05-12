@@ -105,27 +105,88 @@
 
 .recommend-footer {
     margin-top: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
+}
+
+.budget-tracker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.budget-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #2d3436;
+}
+
+.budget-status {
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+}
+
+.status-ok {
+    background: #e3fcef;
+    color: #00875a;
+}
+
+.status-over {
+    background: #ffebe6;
+    color: #de350b;
+}
+
+.budget-bar-container {
+    height: 8px;
+    background: #f1f2f6;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.budget-bar {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.bar-ok {
+    background: linear-gradient(90deg, #55efc4, #00b894);
+}
+
+.bar-over {
+    background: linear-gradient(90deg, #ff7675, #d63031);
+}
+
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .selected-count {
-    text-align: center;
-    color: #2d3436;
+    color: #636e72;
+    font-size: 14px;
 }
 
 .btn-create-trip {
     background: #0abde3;
     color: white;
     border: none;
-    padding: 15px;
+    padding: 10px 20px;
     border-radius: 25px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(10, 189, 227, 0.3);
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
 .btn-create-trip:disabled {
@@ -136,4 +197,5 @@
 
 .btn-create-trip:hover:not(:disabled) {
     background: #09a1c1;
+    transform: translateY(-2px);
 }
