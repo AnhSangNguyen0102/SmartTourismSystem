@@ -70,7 +70,7 @@ def create_checkin_progress(
         longitude=longitude,
     )
     db.add(progress)
-    db.commit()
+    db.flush()
     db.refresh(progress)
     return progress
 
@@ -87,7 +87,7 @@ def update_checkin_status(
     stop_id: int,
     latitude: Optional[Decimal] = None,
     longitude: Optional[Decimal] = None,
-) -> tuple[Optional[CheckinProgress], Optional[ItineraryStops]]:
+) -> tuple[Optional[CheckinProgress], Optional[ItineraryStops], bool]:
     """
     Đánh dấu check-in hoàn thành và cập nhật trạng thái stop sang COMPLETED.
 
@@ -97,15 +97,22 @@ def update_checkin_status(
 
     Returns
     -------
-    tuple[CheckinProgress | None, ItineraryStops | None]
-        Cặp (progress, stop) sau cập nhật; ``None`` nếu không tìm thấy.
+    tuple[CheckinProgress | None, ItineraryStops | None, bool]
+        Cặp (progress, stop) sau cập nhật, và cờ bool báo hiệu vừa mới complete (tránh race condition).
     """
+    is_new_completion = False
+    
     # 1. Cập nhật checkin_progress
     progress = db.exec(
-        select(CheckinProgress).where(CheckinProgress.progress_id == progress_id)
+        select(CheckinProgress)
+        .where(CheckinProgress.progress_id == progress_id)
     ).first()
+    
     if progress is not None:
-        progress.is_completed = True
+        if not progress.is_completed:
+            progress.is_completed = True
+            is_new_completion = True
+            
         if latitude is not None:
             progress.latitude = latitude
         if longitude is not None:
@@ -120,14 +127,9 @@ def update_checkin_status(
         stop.status = StopStatus.COMPLETED
         db.add(stop)
 
-    db.commit()
+    db.flush()
 
-    if progress is not None:
-        db.refresh(progress)
-    if stop is not None:
-        db.refresh(stop)
-
-    return progress, stop
+    return progress, stop, is_new_completion
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +167,7 @@ def create_gps_log(
         tracking_time=tracking_time,
     )
     db.add(log)
-    db.commit()
+    db.flush()
     db.refresh(log)
     return log
 
@@ -204,7 +206,7 @@ def create_deviation_log(
         alert_time=alert_time,
     )
     db.add(deviation)
-    db.commit()
+    db.flush()
     db.refresh(deviation)
     return deviation
 
@@ -288,6 +290,7 @@ def get_stop_with_radius(db: Session, stop_id: int):
         select(
             ItineraryStops.stop_id,
             ItineraryStops.checkin_radius,
+            ItineraryStops.reward,
             Locations.location_id,
             Locations.location_name,
             Locations.latitude,
@@ -298,7 +301,41 @@ def get_stop_with_radius(db: Session, stop_id: int):
     )
     return db.exec(statement).first()
 # ---------------------------------------------------------------------------
-# Q8 – Kiểm tra quyền sở hữu trạm (Anti IDOR)
+# Q8b – Gộp: Kiểm tra quyền sở hữu + Lấy dữ liệu trạm (1 query thay vì 2)
+# ---------------------------------------------------------------------------
+
+def get_stop_with_ownership(
+    db: Session,
+    user_id: UUID,
+    stop_id: int,
+):
+    """
+    Gộp ``verify_stop_ownership`` + ``get_stop_with_radius`` thành 1 query duy nhất.
+    Trả về dữ liệu trạm nếu user sở hữu, ``None`` nếu không.
+    """
+    statement = (
+        select(
+            ItineraryStops.stop_id,
+            ItineraryStops.checkin_radius,
+            ItineraryStops.reward,
+            Locations.location_id,
+            Locations.location_name,
+            Locations.latitude,
+            Locations.longitude,
+        )
+        .join(Locations, ItineraryStops.location_id == Locations.location_id)
+        .join(ItineraryDays, ItineraryStops.day_id == ItineraryDays.day_id)
+        .join(Itineraries, ItineraryDays.itinerary_id == Itineraries.itinerary_id)
+        .where(
+            Itineraries.user_id == user_id,
+            ItineraryStops.stop_id == stop_id,
+        )
+    )
+    return db.exec(statement).first()
+
+
+# ---------------------------------------------------------------------------
+# Q8 – Kiểm tra quyền sở hữu trạm (Anti IDOR) — giữ lại cho endpoint khác
 # ---------------------------------------------------------------------------
 
 def verify_stop_ownership(

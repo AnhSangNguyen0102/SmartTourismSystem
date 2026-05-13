@@ -592,7 +592,7 @@ def run():
                     fail("tracking", "create_gps_log", str(e))
 
                 try:
-                    upd_chk, upd_stop = update_checkin_status(db, prog.progress_id, seed_stop_id)
+                    upd_chk, upd_stop, is_new = update_checkin_status(db, prog.progress_id, seed_stop_id)
                     ok("tracking", "update_checkin_status",
                        f"completed={upd_chk.is_completed if upd_chk else '?'}, "
                        f"stop_status={upd_stop.status if upd_stop else '?'}")

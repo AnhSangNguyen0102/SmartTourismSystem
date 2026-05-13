@@ -167,7 +167,7 @@ def increment_location_view_count(db: Session, location_id: UUID) -> LocationSta
         )
     
     db.add(stats)
-    db.commit()
+    db.flush()
     db.refresh(stats)
     return stats
 
@@ -195,7 +195,7 @@ def increment_location_checkin_count(db: Session, location_id: UUID) -> Location
         )
     
     db.add(stats)
-    db.commit()
+    db.flush()
     db.refresh(stats)
     return stats
 

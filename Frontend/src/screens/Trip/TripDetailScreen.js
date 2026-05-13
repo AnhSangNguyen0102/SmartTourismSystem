@@ -15,16 +15,16 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
     const [checkinMsg, setCheckinMsg] = useState('');
     const checkinInProgress = useRef(false);
 
-    const fetchDetail = async () => {
+    const fetchDetail = async (silent = false) => {
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             const token = localStorage.getItem('access_token');
             const data = await getTripDetail(itineraryId, token);
             setTripDetail(data);
         } catch (err) {
-            setError(err.message || "Không thể tải chi tiết chuyến đi");
+            if (!silent) setError(err.message || "Không thể tải chi tiết chuyến đi");
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
@@ -38,12 +38,16 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
         }
     };
 
-    const handleRefresh = () => {
-        fetchDetail();
-        fetchDeviationStatus();
+    const handleRefresh = async (silent = false) => {
+        await Promise.all([fetchDetail(silent), fetchDeviationStatus()]);
     };
 
     useEffect(() => {
+        // Reset trạng thái check-in khi chuyển trip (tránh khóa nút từ trip cũ)
+        checkinInProgress.current = false;
+        setCheckinLoading(false);
+        setCheckinMsg('');
+
         if (itineraryId) {
             fetchDetail();
             fetchDeviationStatus();
@@ -116,14 +120,14 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
         setCheckinLoading(true);
         setCheckinMsg('');
 
-        // Safety timeout: tự reset sau 15 giây nếu mọi thứ bị treo
+        // Safety timeout: tự reset sau 12 giây nếu mọi thứ bị treo
         const safetyTimer = setTimeout(() => {
             if (checkinInProgress.current) {
                 checkinInProgress.current = false;
                 setCheckinLoading(false);
                 setCheckinMsg('❌ Hết thời gian chờ. Vui lòng thử lại.');
             }
-        }, 15000);
+        }, 12000);
 
         // 1. Lấy vị trí thực tế
         navigator.geolocation.getCurrentPosition(
@@ -133,21 +137,46 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
 
                 try {
                     const token = localStorage.getItem('access_token');
+                    const checkedStopId = nextStop.stop_id;
+
                     // 2. Gửi tọa độ THỰC lên Backend để so sánh
-                    const result = await checkinStop(nextStop.stop_id, {
+                    const result = await checkinStop(checkedStopId, {
                         latitude: latitude,
                         longitude: longitude
                     }, token);
 
-                    setCheckinMsg(result.message);
-                    setTimeout(() => {
-                        handleRefresh();
-                        setCheckinMsg('');
-                    }, 2000);
-                } catch (err) {
-                    setCheckinMsg(`❌ ${err.message}`);
-                } finally {
                     clearTimeout(safetyTimer);
+                    setCheckinMsg(result.message);
+                    
+                    // 3. OPTIMISTIC UPDATE: Cập nhật state local ngay lập tức
+                    //    → Không cần đợi refetch từ backend → nút check-in sẵn sàng ngay
+                    setTripDetail(prev => {
+                        if (!prev) return prev;
+                        return {
+                            ...prev,
+                            stops: prev.stops.map(s => 
+                                s.stop_id === checkedStopId 
+                                    ? { ...s, status: 'COMPLETED' } 
+                                    : s
+                            )
+                        };
+                    });
+
+                    // 4. Mở khóa nút ngay sau khi update local
+                    checkinInProgress.current = false;
+                    setCheckinLoading(false);
+
+                    // 5. Xóa thông báo sau 2 giây
+                    setTimeout(() => setCheckinMsg(''), 2000);
+
+                    // 6. Background refresh (không block UI, chỉ đồng bộ data)
+                    handleRefresh(true).catch(err => 
+                        console.warn('Background refresh failed:', err)
+                    );
+
+                } catch (err) {
+                    clearTimeout(safetyTimer);
+                    setCheckinMsg(`❌ ${err.message}`);
                     checkinInProgress.current = false;
                     setCheckinLoading(false);
                 }
@@ -160,8 +189,8 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
             },
             {
                 enableHighAccuracy: false,
-                timeout: 10000,
-                maximumAge: 5000
+                timeout: 8000,
+                maximumAge: 10000
             }
         );
     };

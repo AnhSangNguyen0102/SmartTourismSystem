@@ -437,6 +437,7 @@ class ItineraryStopResponse(BaseModel):
     arrival_time: time
     departure_time: time
     checkin_radius: Optional[int] = None
+    reward: Optional[int] = 0
     status: Optional[StopStatus] = None
     location_id: UUID
     location_name: Optional[str] = None
