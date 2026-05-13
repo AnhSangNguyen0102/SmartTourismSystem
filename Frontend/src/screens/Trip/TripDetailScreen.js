@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTripDetail, getDeviationStatus, checkinStop } from '../../services/tripService';
 import RouteMap from '../../components/RouteMap/RouteMap';
-import MapComponent from '../../components/Map/MapComponent';
 import './TripDetailScreen.css';
 
 const TripDetailScreen = ({ itineraryId, onBack }) => {
@@ -235,13 +234,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
                 <div className="checkin-toast">{checkinMsg}</div>
             )}
 
-            <div className="trip-map-section" style={{ padding: '0 15px' }}>
-                <h3>📍 Vị trí & Lộ trình</h3>
-                <MapComponent 
-                    stops={allStops} 
-                    userLocation={userLocation} 
-                />
-            </div>
+
 
             <div className="trip-itinerary">
                 <h3>Lịch trình chi tiết</h3>
@@ -297,6 +290,7 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
             <RouteMap 
                 stops={allStops} 
                 routes={tripDetail.routes || []} 
+                userLocation={userLocation}
             />
         </div>
     );

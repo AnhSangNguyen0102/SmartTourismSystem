@@ -53,10 +53,12 @@ function createStopIcon(order, status) {
     });
 }
 
-const RouteMap = ({ stops = [], routes = [] }) => {
+const RouteMap = ({ stops = [], routes = [], userLocation = null }) => {
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
+    const userMarkerRef = useRef(null);
 
+    // useEffect 1: Khởi tạo map + vẽ routes/stops (CHỈ khi stops hoặc routes thay đổi)
     useEffect(() => {
         if (!mapRef.current || stops.length === 0) return;
 
@@ -64,6 +66,7 @@ const RouteMap = ({ stops = [], routes = [] }) => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
+            userMarkerRef.current = null;
         }
 
         // --- Init map ---
@@ -169,9 +172,37 @@ const RouteMap = ({ stops = [], routes = [] }) => {
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
+                userMarkerRef.current = null;
             }
         };
     }, [stops, routes]);
+
+    // useEffect 2: Cập nhật vị trí user RIÊNG BIỆT (không destroy map)
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map) return;
+
+        // Xóa marker cũ nếu có
+        if (userMarkerRef.current) {
+            userMarkerRef.current.remove();
+            userMarkerRef.current = null;
+        }
+
+        // Thêm marker mới nếu có vị trí user
+        if (userLocation && userLocation.lat && userLocation.lng) {
+            const userIcon = L.divIcon({
+                className: 'user-location-icon',
+                html: `<div style="background-color: #F44336; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(244, 67, 54, 0.6); position: relative;">
+                        <div style="position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px; border-radius: 50%; border: 2px solid #F44336; opacity: 0.5;"></div>
+                       </div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+            });
+            userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
+                .bindPopup('📍 Vị trí của bạn')
+                .addTo(map);
+        }
+    }, [userLocation]);
 
     if (stops.length === 0) return null;
 
