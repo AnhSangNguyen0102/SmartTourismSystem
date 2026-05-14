@@ -5,7 +5,6 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister, onOpenProfileE
     const [activeTab, setActiveTab] = useState('dashboard');
 
     // Dữ liệu mockup để Doanh nghiệp thấy trực quan
-    const mockStats = { views: '1,240', rating: '4.8', checkins: 342 };
     const mockServices = [
         { id: 1, name: 'Khách sạn MTP Luxury', status: 'ACTIVE', views: 850 },
         { id: 2, name: 'Tour Dĩ An - Bình Dương', status: 'PENDING', views: 0 }
@@ -13,17 +12,17 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister, onOpenProfileE
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#f4f6f8' }}>
-            
+
             {/* 1. KHU VỰC NỘI DUNG CHÍNH */}
             <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px' }}>
-                
+
                 {/* ========================================== */}
                 {/* TAB 1: TỔNG QUAN (DASHBOARD)                 */}
                 {/* ========================================== */}
                 {activeTab === 'dashboard' && (
                     <EnterpriseDashboard user={user} />  // <-- Gọi Component ở đây
                 )}
-                
+
                 {/* ========================================== */}
                 {/* TAB 2: QUẢN LÝ DỊCH VỤ                       */}
                 {/* ========================================== */}
@@ -31,7 +30,7 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister, onOpenProfileE
                     <div style={{ padding: '20px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h2 style={{ margin: 0, color: '#2c3e50', fontSize: '22px' }}>Dịch vụ của bạn</h2>
-                            <button 
+                            <button
                                 onClick={onOpenLocationRegister}
                                 style={{ padding: '10px 15px', background: '#e67e22', color: 'white', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(230, 126, 34, 0.3)' }}
                             >
@@ -45,7 +44,7 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister, onOpenProfileE
                                 <div key={service.id} style={{ background: '#fff', borderRadius: '15px', padding: '15px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <h3 style={{ margin: 0, fontSize: '16px', color: '#2c3e50' }}>{service.name}</h3>
-                                        <span style={{ 
+                                        <span style={{
                                             padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold',
                                             backgroundColor: service.status === 'ACTIVE' ? '#e8f8f5' : '#fff3cd',
                                             color: service.status === 'ACTIVE' ? '#27ae60' : '#856404'
@@ -67,40 +66,49 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister, onOpenProfileE
             </div>
 
             {/* 2. THANH MENU ĐIỀU HƯỚNG DƯỚI ĐÁY (Bottom Navigation) */}
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-around', 
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-around',
                 padding: '15px 10px 25px 10px', // Đệm thêm phía dưới cho giống màn hình điện thoại
                 backgroundColor: '#ffffff',
                 borderTop: '1px solid #ecf0f1',
                 boxShadow: '0 -2px 10px rgba(0,0,0,0.02)'
             }}>
-                <button 
+                <button
                     onClick={() => setActiveTab('dashboard')}
-                    style={{ 
-                        color: activeTab === 'dashboard' ? '#e67e22' : '#95a5a6', 
-                        background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal', cursor: 'pointer' 
+                    style={{
+                        color: activeTab === 'dashboard' ? '#e67e22' : '#95a5a6',
+                        background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal', cursor: 'pointer'
                     }}
                 >
                     <span style={{ fontSize: '20px' }}>📊</span> Tổng quan
                 </button>
-                <button 
+                <button
                     onClick={() => setActiveTab('services')}
-                    style={{ 
-                        color: activeTab === 'services' ? '#e67e22' : '#95a5a6', 
-                        background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: activeTab === 'services' ? 'bold' : 'normal', cursor: 'pointer' 
+                    style={{
+                        color: activeTab === 'services' ? '#e67e22' : '#95a5a6',
+                        background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: activeTab === 'services' ? 'bold' : 'normal', cursor: 'pointer'
                     }}
                 >
                     <span style={{ fontSize: '20px' }}>🛍️</span> Quản lý
                 </button>
-                <button 
+                <button
                     onClick={onOpenProfileEdit}
-                    style={{ 
-                        color: '#95a5a6', 
-                        background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', fontSize: '12px', cursor: 'pointer' 
+                    style={{
+                        color: '#95a5a6',
+                        background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', fontSize: '12px', cursor: 'pointer'
                     }}
                 >
                     <span style={{ fontSize: '20px' }}>⚙️</span> Cài đặt
+                </button>
+                <button
+                    onClick={onLogout}
+                    style={{
+                        color: '#e74c3c',
+                        background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', fontSize: '12px', cursor: 'pointer'
+                    }}
+                >
+                    <span style={{ fontSize: '20px' }}>🚪</span> Đăng xuất
                 </button>
             </div>
         </div>

@@ -183,69 +183,73 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
             }
         }, 12000);
 
+        const executeCheckinAPI = async (lat, lng) => {
+            try {
+                const token = localStorage.getItem('access_token');
+                const checkedStopId = nextStop.stop_id;
+
+                // Gửi tọa độ lên Backend (có thể null nếu fallback)
+                const result = await checkinStop(checkedStopId, {
+                    latitude: lat,
+                    longitude: lng
+                }, token);
+
+                clearTimeout(safetyTimer);
+                setCheckinMsg(result.message || '✅ Check-in thành công!');
+                
+                // OPTIMISTIC UPDATE: Cập nhật state local ngay lập tức
+                setTripDetail(prev => {
+                    if (!prev) return prev;
+                    const updatedStops = prev.stops.map(s => 
+                        s.stop_id === checkedStopId 
+                            ? { ...s, status: 'COMPLETED' } 
+                            : s
+                    );
+                    const allDone = updatedStops.every(s => s.status === 'COMPLETED');
+                    return {
+                        ...prev,
+                        stops: updatedStops,
+                        status: allDone ? 'COMPLETED' : prev.status
+                    };
+                });
+
+                checkinInProgress.current = false;
+                setCheckinLoading(false);
+
+                setTimeout(() => setCheckinMsg(''), 2000);
+
+                setTimeout(() => {
+                    handleRefresh(true).catch(err => 
+                        console.warn('Background refresh failed:', err)
+                    );
+                }, 1500);
+
+            } catch (err) {
+                clearTimeout(safetyTimer);
+                setCheckinMsg(`❌ ${err.message}`);
+                checkinInProgress.current = false;
+                setCheckinLoading(false);
+            }
+        };
+
         // 1. Lấy vị trí thực tế
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
+            (position) => {
                 const { latitude, longitude } = position.coords;
                 setUserLocation({ lat: latitude, lng: longitude });
-
-                try {
-                    const token = localStorage.getItem('access_token');
-                    const checkedStopId = nextStop.stop_id;
-
-                    // 2. Gửi tọa độ THỰC lên Backend để so sánh
-                    const result = await checkinStop(checkedStopId, {
-                        latitude: latitude,
-                        longitude: longitude
-                    }, token);
-
-                    clearTimeout(safetyTimer);
-                    setCheckinMsg(result.message);
-                    
-                    // 3. OPTIMISTIC UPDATE: Cập nhật state local ngay lập tức
-                    //    → Không cần đợi refetch từ backend → nút check-in sẵn sàng ngay
-                    setTripDetail(prev => {
-                        if (!prev) return prev;
-                        const updatedStops = prev.stops.map(s => 
-                            s.stop_id === checkedStopId 
-                                ? { ...s, status: 'COMPLETED' } 
-                                : s
-                        );
-                        // Nếu tất cả trạm đã COMPLETED → cập nhật status trip luôn
-                        const allDone = updatedStops.every(s => s.status === 'COMPLETED');
-                        return {
-                            ...prev,
-                            stops: updatedStops,
-                            status: allDone ? 'COMPLETED' : prev.status
-                        };
-                    });
-
-                    // 4. Mở khóa nút ngay sau khi update local
-                    checkinInProgress.current = false;
-                    setCheckinLoading(false);
-
-                    // 5. Xóa thông báo sau 2 giây
-                    setTimeout(() => setCheckinMsg(''), 2000);
-
-                    // 6. Background refresh — delay 1.5s để DB commit xong và tránh nghẽn pool
-                    setTimeout(() => {
-                        handleRefresh(true).catch(err => 
-                            console.warn('Background refresh failed:', err)
-                        );
-                    }, 1500);
-
-                } catch (err) {
-                    clearTimeout(safetyTimer);
-                    setCheckinMsg(`❌ ${err.message}`);
-                    checkinInProgress.current = false;
-                    setCheckinLoading(false);
-                }
+                executeCheckinAPI(latitude, longitude);
             },
             (error) => {
-                clearTimeout(safetyTimer);
-                checkinInProgress.current = false;
-                setCheckinMsg('❌ Lỗi lấy vị trí: ' + error.message);
-                setCheckinLoading(false);
+                // FALLBACK: Khi lỗi vị trí (như timeout trên máy tính), cho phép check-in không cần tọa độ
+                console.warn("Lỗi lấy vị trí: ", error.message);
+                if (window.confirm(`Không thể lấy vị trí tự động (${error.message}). Bạn có muốn tiếp tục Check-in bỏ qua xác thực vị trí không?`)) {
+                    executeCheckinAPI(null, null);
+                } else {
+                    clearTimeout(safetyTimer);
+                    checkinInProgress.current = false;
+                    setCheckinLoading(false);
+                    setCheckinMsg('❌ Đã hủy check-in');
+                }
             },
             {
                 enableHighAccuracy: false,
@@ -255,12 +259,12 @@ const TripDetailScreen = ({ itineraryId, onBack }) => {
         );
     };
 
-    const statusInfo = getStatusLabel();
-
     return (
         <div className="trip-detail-screen">
             <div className="detail-header">
-                <button className="btn-back-icon" onClick={onBack}>⬅️</button>
+                <button className="btn-back-icon" onClick={onBack}>
+                    <i className="fas fa-arrow-left"></i> Quay lại
+                </button>
                 <h2>{tripDetail.name || "Chi tiết chuyến đi"}</h2>
                 {/* Deviation status badge — click to toggle for demo */}
                 {isTripOngoing && (

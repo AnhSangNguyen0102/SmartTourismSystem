@@ -11,3 +11,23 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Tùy chỉnh thanh cuộn (Scrollbar) cho toàn bộ App */
+/* Ẩn thanh cuộn cho Chrome, Safari và Opera */
+::-webkit-scrollbar {
+  width: 0px;
+  /* Có thể để 0 để ẩn hoàn toàn, hoặc chỉnh màu trùng nền */
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* Ẩn thanh cuộn cho Firefox, IE và Edge */
+* {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE và Edge */
+}

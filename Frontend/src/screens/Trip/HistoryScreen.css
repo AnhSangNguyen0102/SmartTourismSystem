@@ -13,22 +13,27 @@
 }
 
 .back-btn {
-    width: 40px;
+    width: auto;
+    padding: 0 15px;
     height: 40px;
     border-radius: 12px;
     border: none;
-    background: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    background: #e3f2fd;
+    color: #1976d2;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     cursor: pointer;
     display: flex;
     align-items: center;
+    gap: 8px;
     justify-content: center;
     transition: all 0.2s ease;
 }
 
 .back-btn:hover {
     transform: translateX(-3px);
-    background: #f0f0f0;
+    background: #bbdefb;
 }
 
 .history-header h1 {
@@ -47,8 +52,8 @@
     padding: 15px;
     border-radius: 16px;
     margin-bottom: 25px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .filter-group {
@@ -68,7 +73,8 @@
     gap: 6px;
 }
 
-.filter-select, .filter-date {
+.filter-select,
+.filter-date {
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid #dee2e6;
@@ -79,7 +85,8 @@
     width: 100%;
 }
 
-.filter-select:focus, .filter-date:focus {
+.filter-select:focus,
+.filter-date:focus {
     outline: none;
     border-color: #007bff;
     background-color: white;
@@ -117,7 +124,8 @@
     font-size: 14px;
 }
 
-.loading-state, .empty-state {
+.loading-state,
+.empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -129,7 +137,7 @@
 .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(0,123,255,0.1);
+    border: 3px solid rgba(0, 123, 255, 0.1);
     border-top: 3px solid #007bff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -137,8 +145,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .empty-state i {
@@ -158,14 +171,14 @@
     border-radius: 20px;
     padding: 20px;
     position: relative;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 1px solid rgba(0,0,0,0.02);
+    border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
 .history-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
 
 .card-status {

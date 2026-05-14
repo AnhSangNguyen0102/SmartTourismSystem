@@ -67,7 +67,7 @@ const HistoryScreen = ({ onBack }) => {
         <div className="history-container">
             <div className="history-header">
                 <button className="back-btn" onClick={onBack}>
-                    <i className="fas fa-chevron-left"></i>
+                    <i className="fas fa-arrow-left"></i> Quay lại
                 </button>
                 <h1>Lịch sử hành trình</h1>
             </div>

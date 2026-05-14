@@ -58,7 +58,7 @@ const HistoryDetail = ({ itineraryId, onBack }) => {
         <div className="trip-detail-screen">
             <div className="detail-header">
                 <button className="btn-back-icon" onClick={onBack}>
-                    <i className="fas fa-arrow-left"></i>
+                    <i className="fas fa-arrow-left"></i> Quay lại
                 </button>
                 <h2>{tripDetail.name || "Chi tiết hành trình"}</h2>
                 <div className="status-badge-history">

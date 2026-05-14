@@ -4,7 +4,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
     // 1. Kiểm tra vai trò người dùng (Bắt lỗi nếu user lồng nhau)
     const userInfo = user?.user || user;
     const isEnterprise = userInfo?.role === 'ENTERPRISE';
-    
+
     // Biến kiểm soát chế độ Xem hay Sửa
     const [isEditing, setIsEditing] = useState(false);
 
@@ -60,7 +60,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(profileData)
             });
@@ -71,7 +71,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                 // const newName = isEnterprise ? profileData.business_name : profileData.full_name;
                 // if (onUpdateSuccess) onUpdateSuccess(newName);
                 if (onUpdateSuccess) {
-                    onUpdateSuccess(profileData); 
+                    onUpdateSuccess(profileData);
                 }
             } else {
                 const errorData = await response.json();
@@ -88,20 +88,20 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
             <label style={{ fontSize: '14px', fontWeight: 600, color: '#576574' }}>{label}</label>
             {isEditing ? (
                 options ? (
-                    <select 
-                        value={value} 
-                        onChange={(e) => handleChange(field, e.target.value)} 
+                    <select
+                        value={value}
+                        onChange={(e) => handleChange(field, e.target.value)}
                         style={{ padding: '12px', borderRadius: '12px', border: '1px solid #c8d6e5' }}
                     >
                         {options.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
                     </select>
                 ) : type === "textarea" ? (
-                    <textarea 
+                    <textarea
                         rows="3" value={value} onChange={(e) => handleChange(field, e.target.value)}
                         style={{ padding: '12px', borderRadius: '12px', border: '1px solid #c8d6e5', resize: 'none' }}
                     />
                 ) : (
-                    <input 
+                    <input
                         type={type} value={value} onChange={(e) => handleChange(field, e.target.value)}
                         style={{ padding: '12px', borderRadius: '12px', border: '1px solid #c8d6e5' }}
                     />
@@ -121,11 +121,11 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                 <button onClick={onBack} style={{ background: 'none', border: 'none', fontSize: '16px', color: '#576574', cursor: 'pointer' }}>
                     ⬅️ Quay lại
                 </button>
-                
+
                 {/* NÚT BẬT TẮT CHẾ ĐỘ SỬA */}
                 {!isEditing && (
-                    <button 
-                        onClick={() => setIsEditing(true)} 
+                    <button
+                        onClick={() => setIsEditing(true)}
                         style={{ background: '#0abde3', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
                     >
                         ✏️ Sửa hồ sơ
@@ -140,9 +140,9 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
             {/* Avatar Section - Giữ nguyên cho cả 2 hoặc bạn có thể tách ra */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
                 <div style={{ position: 'relative' }}>
-                    <img 
-                        src={profileData.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"} 
-                        alt="Avatar" 
+                    <img
+                        src={profileData.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"}
+                        alt="Avatar"
                         style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #0abde3' }}
                     />
                     {isEditing && (
@@ -152,7 +152,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
             </div>
 
             <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column' }}>
-                
+
                 {isEnterprise ? (
                     /* --- TRƯỜNG CHO DOANH NGHIỆP --- */
                     <>
@@ -179,8 +179,15 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                             <div style={{ flex: 1 }}>
                                 {renderRow("Phong cách Du lịch", profileData.travel_style, "travel_style", "text", [
                                     { val: '', label: '-- Chưa chọn --' },
-                                    { val: 'BACKPACKER', label: 'Phượt' },
-                                    { val: 'RESORT', label: 'Nghỉ dưỡng' }
+                                    { val: 'BACKPACKER', label: 'Phượt/Bụi' },
+                                    { val: 'RESORT', label: 'Nghỉ dưỡng' },
+                                    { val: 'CULTURAL', label: 'Văn hóa & Lịch sử' },
+                                    { val: 'ECO', label: 'Sinh thái & Thiên nhiên' },
+                                    { val: 'ADVENTURE', label: 'Mạo hiểm & Khám phá' },
+                                    { val: 'FAMILY', label: 'Dành cho gia đình' },
+                                    { val: 'FOODIE', label: 'Đam mê ẩm thực' },
+                                    { val: 'LUXURY', label: 'Sang trọng & Cao cấp' },
+                                    { val: 'WELLNESS', label: 'Chữa lành & Sức khỏe' }
                                 ])}
                             </div>
                             <div style={{ flex: 1 }}>

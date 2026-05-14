@@ -42,6 +42,13 @@ class GenderEnum(str, enum.Enum):
 class TravelStyle(str, enum.Enum):
     BACKPACKER = "BACKPACKER"
     RESORT = "RESORT"
+    CULTURAL = "CULTURAL"
+    ECO = "ECO"
+    ADVENTURE = "ADVENTURE"
+    FAMILY = "FAMILY"
+    FOODIE = "FOODIE"
+    LUXURY = "LUXURY"
+    WELLNESS = "WELLNESS"
 
 class PrivacyStatus(str, enum.Enum):
     PUBLIC = "PUBLIC"

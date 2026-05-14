@@ -4,7 +4,7 @@ import './TripInputForm.css';
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 // Nhận vào hàm onSubmit từ component cha 
-const TripInputForm = ({ onSubmitPlan }) => {
+const TripInputForm = ({ onSubmitPlan, onCancel }) => {
     // State quản lý bước hiện tại 
     const [step, setStep] = useState(1);
 
@@ -45,7 +45,7 @@ const TripInputForm = ({ onSubmitPlan }) => {
         pax_adult: 1,
         pax_children: 0,
         budget: 0,
-        tag_ids: [] 
+        tag_ids: []
     });
 
     // Hàm xử lý cập nhật dữ liệu khi gõ
@@ -86,7 +86,14 @@ const TripInputForm = ({ onSubmitPlan }) => {
 
     // Phần giao diện
     return (
-        <div className="wizard-container">
+        <div className="wizard-container" style={{ position: 'relative' }}>
+            <button
+                onClick={onCancel}
+                style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', fontSize: '20px', color: '#576574', cursor: 'pointer', padding: '5px' }}
+                title="Thoát"
+            >
+                ✕
+            </button>
             <div className="step-indicator">Bước {step} / 3</div>
 
             {/* 1: ĐỊA ĐIỂM & THỜI GIAN */}
@@ -95,8 +102,8 @@ const TripInputForm = ({ onSubmitPlan }) => {
                     <h3 className="wizard-title">Bạn muốn đi đâu?</h3>
                     <div className="input-group">
                         <label>Điểm đến (Thành phố/Tỉnh)</label>
-                        <select 
-                            value={tripData.city_id} 
+                        <select
+                            value={tripData.city_id}
                             onChange={(e) => handleChange('city_id', parseInt(e.target.value))}
                             style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '16px' }}
                         >
@@ -106,14 +113,14 @@ const TripInputForm = ({ onSubmitPlan }) => {
                             ))}
                         </select>
                     </div>
-                    
+
                     <div className="input-group">
                         <label>Ngày bắt đầu</label>
-                        <input 
-                            type="date" 
-                            value={tripData.start_day} 
+                        <input
+                            type="date"
+                            value={tripData.start_day}
                             min={getTodayStr()}
-                            onChange={(e) => handleChange('start_day', e.target.value)} 
+                            onChange={(e) => handleChange('start_day', e.target.value)}
                         />
                     </div>
 
@@ -123,7 +130,7 @@ const TripInputForm = ({ onSubmitPlan }) => {
                             <input type="number" min="1" value={tripData.days} onChange={(e) => handleChange('days', parseInt(e.target.value))} />
                         </div>
                     </div>
-                    
+
                     <div className="input-group">
                         <label>Người lớn</label>
                         <input type="number" min="1" value={tripData.pax_adult} onChange={(e) => handleChange('pax_adult', parseInt(e.target.value))} />
@@ -144,14 +151,14 @@ const TripInputForm = ({ onSubmitPlan }) => {
                     <h3 className="wizard-title">Ngân sách dự kiến</h3>
                     <div className="input-group">
                         <label>Tổng chi phí tối đa (VNĐ)</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             step="100000"
-                            placeholder="VD: 5000000" 
+                            placeholder="VD: 5000000"
                             value={tripData.budget}
                             onChange={(e) => handleChange('budget', parseInt(e.target.value))}
                         />
-                        <small style={{color: '#8395a7', marginTop: '5px'}}>
+                        <small style={{ color: '#8395a7', marginTop: '5px' }}>
                             Hệ thống sẽ tối ưu lộ trình dựa trên ngân sách này.
                         </small>
                     </div>
@@ -167,9 +174,9 @@ const TripInputForm = ({ onSubmitPlan }) => {
                 <div className="step-content">
                     <h3 className="wizard-title">Phong cách du lịch</h3>
                     <div className="tags-container">
-                        {tags.length === 0 && <p style={{color: '#636e72', fontSize: '14px'}}>Chưa có tag nào trong hệ thống.</p>}
+                        {tags.length === 0 && <p style={{ color: '#636e72', fontSize: '14px' }}>Chưa có tag nào trong hệ thống.</p>}
                         {tags.map(tag => (
-                            <button 
+                            <button
                                 key={tag.tag_id}
                                 className={`tag-btn ${tripData.tag_ids.includes(tag.tag_id) ? 'selected' : ''}`}
                                 onClick={() => togglePreference(tag.tag_id)}
@@ -180,9 +187,9 @@ const TripInputForm = ({ onSubmitPlan }) => {
                     </div>
                     <div className="btn-row">
                         <button className="btn-back" onClick={() => setStep(2)}>⬅️ Quay lại</button>
-                        <button 
-                            className="btn-next" 
-                            style={{ width: 'auto', background: '#0abde3' }} 
+                        <button
+                            className="btn-next"
+                            style={{ width: 'auto', background: '#0abde3' }}
                             onClick={handleFinalSubmit}
                         >
                             🚀 Tạo Lộ Trình
