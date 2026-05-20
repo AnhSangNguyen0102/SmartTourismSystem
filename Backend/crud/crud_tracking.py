@@ -360,3 +360,23 @@ def verify_stop_ownership(
     )
     result = db.exec(statement).first()
     return result is not None
+
+# MỚI: thêm hàm
+def complete_itinerary_stop(db: Session, user_id: UUID, stop_id: int) -> bool:
+    """
+    Đánh dấu một trạm dừng trong hành trình là ĐÃ HOÀN THÀNH.
+    Được gọi khi người chơi bấm nút 'Check-in hoàn thành' sau khi làm xong các tasks.
+    """
+    # 1. Kiểm tra ownership (chống gian lận IDOR)
+    is_owner = verify_stop_ownership(db, user_id, stop_id)
+    if not is_owner:
+        return False
+        
+    # 2. Cập nhật trạng thái
+    stop = db.get(ItineraryStops, stop_id)
+    if stop and stop.status != StopStatus.COMPLETED:
+        stop.status = StopStatus.COMPLETED
+        db.add(stop)
+        db.commit()
+        return True
+    return False

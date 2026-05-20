@@ -10,9 +10,9 @@ from datetime import date, datetime, time
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import Index, Column, Numeric, UniqueConstraint
+from sqlalchemy import Index, Column, Numeric, UniqueConstraint, TEXT
+import sqlalchemy as sa  # <--- THÊM DÒNG NÀY VÀO ĐÂY
 from sqlmodel import Field, SQLModel
-
 
 # ============================================================
 # ENUMS
@@ -604,3 +604,62 @@ class ItineraryExp(SQLModel, table=True):
     current_level: int = Field(default=1)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+# ============================================================
+# MODELS CHO TÍNH NĂNG HỎI ĐÁP (QA) VÀ QUÉT MÃ (QR)
+# ============================================================
+class TaskTypeEnum(str, enum.Enum):
+    QA = "QA"
+    QR = "QR"
+# Bảng lưu trữ nhiệm vụ Hỏi đáp
+class QATasks(SQLModel, table=True):
+    __tablename__ = "qa_tasks"
+
+    task_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    location_id: UUID = Field(foreign_key="locations.location_id", index=True)
+    question: str = Field(sa_column=Column(TEXT, nullable=False))
+    option_a: str = Field(sa_column=Column(TEXT, nullable=False))
+    option_b: str = Field(sa_column=Column(TEXT, nullable=False))
+    option_c: str = Field(sa_column=Column(TEXT, nullable=False))
+    option_d: str = Field(sa_column=Column(TEXT, nullable=False))
+    correct_answer: str = Field(max_length=5) # 'A', 'B', 'C', 'D' hoặc đáp án rút gọn
+    question_type: str = Field(default="multiple_choice", max_length=50) # multiple_choice / short_answer
+    difficulty: str = Field(default="easy", max_length=20) # easy, medium, hard
+    reward_exp: int = Field(default=10, ge=0)
+    reward_coin: int = Field(default=5, ge=0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class QRTasks(SQLModel, table=True):
+    __tablename__ = "qr_tasks"
+
+    qr_task_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    location_id: UUID = Field(foreign_key="locations.location_id", index=True)
+    qr_token: str = Field(max_length=255, unique=True, index=True)
+    reward_exp: int = Field(default=15, ge=0)
+    reward_coin: int = Field(default=10, ge=0)
+    
+    # Phục vụ luồng NPC / Hóa đơn bán hàng
+    is_one_time: bool = Field(default=False) # True nếu là QR in trên hóa đơn của NPC
+    is_used: bool = Field(default=False)      # Đánh dấu nếu mã dùng 1 lần đã bị quét
+    assigned_user_id: Optional[UUID] = Field(default=None, foreign_key="users.user_id") # Chỉ định đích danh Player nếu NPC hỏi tên/ID
+    
+    expired_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class UserTaskHistory(SQLModel, table=True):
+    __tablename__ = "user_task_history"
+
+    history_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.user_id", index=True)
+    location_id: UUID = Field(foreign_key="locations.location_id")
+    task_type: TaskTypeEnum = Field(sa_column=Column(sa.VARCHAR(20), nullable=False))
+    task_id: UUID = Field(description="ID của qa_tasks hoặc qr_tasks")
+    earned_exp: int = Field(default=0)
+    earned_coin: int = Field(default=0)
+    completed_at: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        # Chống việc một user làm đi làm lại một task tĩnh trong ngày (Anti-cheat)
+        Index("idx_user_task_daily", "user_id", "task_id"),
+    )

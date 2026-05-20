@@ -153,10 +153,11 @@ async def verify_image_with_gemini(user_image_bytes: bytes, reference_image_url:
 
     try:
         # 1. Fetch reference image
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True, verify=False) as client:
+            client.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
             resp = await client.get(reference_image_url, timeout=15)
             if resp.status_code != 200:
-                raise Exception("Không thể tải ảnh mẫu của địa điểm từ storage.")
+                raise Exception(f"Không thể tải ảnh mẫu của địa điểm từ storage. Status: {resp.status_code}")
             ref_image_bytes = resp.content
 
         # 2. Build the prompt
@@ -195,8 +196,11 @@ async def verify_image_with_gemini(user_image_bytes: bytes, reference_image_url:
         # 3. Call Gemini REST API directly (bypasses google-generativeai library v1beta issues)
         gemini_result = await _call_gemini_rest_api(api_key, prompt, ref_image_bytes, user_image_bytes)
         
+        with open("gemini_debug.txt", "w", encoding="utf-8") as f:
+            f.write(str(gemini_result))
+
         if not gemini_result["success"]:
-            raise Exception(gemini_result["error"])
+            raise Exception(gemini_result.get("error", "Unknown error"))
         
         clean_text = gemini_result["text"].strip()
         # Strip markdown code blocks if present
@@ -221,6 +225,8 @@ async def verify_image_with_gemini(user_image_bytes: bytes, reference_image_url:
         return result
         
     except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
         # Fallback to local CLIP if available
         if HAS_CLIP:
             return await _run_clip_async(user_image_bytes, reference_image_url)
@@ -228,7 +234,7 @@ async def verify_image_with_gemini(user_image_bytes: bytes, reference_image_url:
             "is_matched": False,
             "confidence_score": 0.0,
             "anti_cheat_passed": False,
-            "reason": f"Lỗi trong quá trình xác thực AI: {str(e)}"
+            "reason": f"Lỗi trong quá trình xác thực AI: {error_msg}"
         }
 
 async def _run_clip_async(user_image_bytes: bytes, reference_image_url: str) -> dict:
