@@ -389,6 +389,7 @@ class Itineraries(SQLModel, table=True):
     budget_category: str = Field(default="MEDIUM", max_length=20)
     total_travel_time: int = Field(ge=0)
     total_distance: Decimal = Field(sa_column=Column(Numeric(10, 2), nullable=False))
+    score_earned: Optional[int] = Field(default=0)
     create_at: datetime = Field(default_factory=datetime.utcnow)
     update_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -527,3 +528,30 @@ class UserFeedbacks(SQLModel, table=True):
     content: str
     status: FeedbackStatus = Field(default=FeedbackStatus.PENDING)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ============================================================
+# GROUP 9: ACHIEVEMENTS & GAMIFICATION
+# ============================================================
+
+class Achievements(SQLModel, table=True):
+    __tablename__ = "achievements"
+
+    achievement_id: str = Field(primary_key=True)
+    title: str = Field(max_length=100)
+    description: str = Field(max_length=255)
+    points_reward: int = Field(default=50)
+    badge_icon: str = Field(max_length=20)  # Emoji icon e.g. "🏃", "☕"
+    condition_type: str = Field(max_length=50)  # e.g., "distance", "checkin_count", "cafe_checkin", "perfect_trip"
+    condition_value: int = Field(default=1)
+
+
+class UserAchievements(SQLModel, table=True):
+    __tablename__ = "user_achievement_progress"
+
+    user_id: UUID = Field(foreign_key="users.user_id", primary_key=True, index=True)
+    achievement_id: str = Field(foreign_key="achievements.achievement_id", primary_key=True, index=True)
+    current_progress: int = Field(default=0)
+    is_unlocked: bool = Field(default=False)
+    unlocked_at: Optional[datetime] = Field(default=None)
+

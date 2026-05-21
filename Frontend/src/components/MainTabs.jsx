@@ -1,5 +1,5 @@
 // src/components/MainTabs.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './MainTabs.css';
 
 // Tạm thời import file trang chủ cũ của bạn vào Tab 1
@@ -11,6 +11,39 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
     // State quản lý tab đang hiển thị
     const [activeTab, setActiveTab] = useState('home');
     const [userLocation, setUserLocation] = useState(null);
+    
+    // State quản lý Thành tựu
+    const [achievements, setAchievements] = useState([]);
+    const [loadingAch, setLoadingAch] = useState(false);
+    const [achFilter, setAchFilter] = useState('all'); // 'all', 'unlocked', 'locked'
+
+    const fetchAchievements = async () => {
+        if (isGuest) return;
+        setLoadingAch(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch('http://127.0.0.1:8000/api/achievements', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.status === 'success') {
+                    setAchievements(data.achievements || []);
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải thành tựu:", error);
+        } finally {
+            setLoadingAch(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'profile') {
+            fetchAchievements();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab]);
 
     // Lấy vị trí khi chuyển sang tab Location
     const handleTabChange = (tab) => {
@@ -196,6 +229,119 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                         <i className="fab fa-twitter"></i>
                     </div>
                 </div>
+            </div>
+
+            {/* THÀNH TỰU & HUY HIỆU */}
+            <div style={{
+                backgroundColor: '#fff', padding: '20px', borderRadius: '16px',
+                marginBottom: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+            }}>
+                <h4 style={{ margin: '0 0 15px 0', color: '#2d3436', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🏆 Huy hiệu thám hiểm ({achievements.filter(a => a.is_unlocked).length}/{achievements.length})
+                </h4>
+                
+                {/* Thanh bộ lọc thành tựu */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                    {['all', 'unlocked', 'locked'].map((f) => {
+                        const label = f === 'all' ? 'Tất cả' : f === 'unlocked' ? 'Đã đạt ✨' : 'Đang làm 🏃';
+                        const isActive = achFilter === f;
+                        return (
+                            <button
+                                key={f}
+                                onClick={() => setAchFilter(f)}
+                                style={{
+                                    flex: 1, padding: '10px 6px', borderRadius: '12px', border: 'none',
+                                    fontWeight: 'bold', fontSize: '12px', cursor: 'pointer',
+                                    backgroundColor: isActive ? '#0abde3' : '#f1f2f6',
+                                    color: isActive ? '#fff' : '#576574',
+                                    boxShadow: isActive ? '0 4px 10px rgba(10, 189, 227, 0.2)' : 'none',
+                                    transition: 'all 0.2s ease'
+                                }}
+                            >
+                                {f === 'unlocked' ? `Đã đạt (${achievements.filter(a => a.is_unlocked).length})` : f === 'locked' ? `Đang làm (${achievements.filter(a => !a.is_unlocked).length})` : 'Tất cả'}
+                            </button>
+                        );
+                    })}
+                </div>
+                
+                {loadingAch ? (
+                    <div style={{ textAlign: 'center', padding: '10px', color: '#747d8c' }}>
+                        🔄 Đang tải thành tựu...
+                    </div>
+                ) : achievements.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '10px', color: '#747d8c' }}>
+                        Chưa có dữ liệu thành tựu.
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        {achievements
+                            .filter((ach) => {
+                                if (achFilter === 'unlocked') return ach.is_unlocked;
+                                if (achFilter === 'locked') return !ach.is_unlocked;
+                                return true;
+                            })
+                            .map((ach) => {
+                                const percent = (ach.current_progress / ach.condition_value) * 100;
+                            return (
+                                <div 
+                                    key={ach.achievement_id}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '15px',
+                                        padding: '12px', borderRadius: '12px',
+                                        backgroundColor: ach.is_unlocked ? '#f1fcf4' : '#fafafa',
+                                        border: ach.is_unlocked ? '1px solid #d4edda' : '1px solid #f1f2f6',
+                                        opacity: ach.is_unlocked ? 1 : 0.85
+                                    }}
+                                >
+                                    {/* Icon Huy hiệu */}
+                                    <div style={{
+                                        fontSize: '28px', width: '48px', height: '48px',
+                                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        backgroundColor: ach.is_unlocked ? '#e8f8f5' : '#e4e5e6',
+                                        boxShadow: ach.is_unlocked ? '0 4px 8px rgba(46, 204, 113, 0.15)' : 'none'
+                                    }}>
+                                        {ach.badge_icon}
+                                    </div>
+                                    
+                                    {/* Chi tiết thành tựu */}
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <strong style={{ color: '#2d3436', fontSize: '14px' }}>{ach.title}</strong>
+                                            <span style={{
+                                                fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '20px',
+                                                backgroundColor: ach.is_unlocked ? '#2ecc71' : '#ffeaa7',
+                                                color: ach.is_unlocked ? '#fff' : '#d63031'
+                                            }}>
+                                                {ach.is_unlocked ? `+${ach.points_reward} pts` : `Đang khóa`}
+                                            </span>
+                                        </div>
+                                        
+                                        <span style={{ fontSize: '12px', color: '#636e72', textAlign: 'left' }}>{ach.description}</span>
+                                        
+                                        {/* Tiến trình bar */}
+                                        {!ach.is_unlocked && (
+                                            <div style={{ marginTop: '5px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#b2bec3', marginBottom: '2px' }}>
+                                                    <span>Tiến trình</span>
+                                                    <span>{ach.current_progress}/{ach.condition_value}</span>
+                                                </div>
+                                                <div style={{ width: '100%', height: '6px', backgroundColor: '#dfe6e9', borderRadius: '3px', overflow: 'hidden' }}>
+                                                    <div style={{ width: `${percent}%`, height: '100%', backgroundColor: '#0abde3', borderRadius: '3px' }}></div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {ach.is_unlocked && ach.unlocked_at && (
+                                            <span style={{ fontSize: '11px', color: '#2ecc71', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                                                ✨ Đạt được ngày {new Date(ach.unlocked_at).toLocaleDateString('vi-VN')}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Danh sách các nút chức năng */}

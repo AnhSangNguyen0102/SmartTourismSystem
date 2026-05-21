@@ -23,6 +23,14 @@ async def lifespan(app: FastAPI):
         print("🔍 Đang kiểm tra kết nối Database...")
         create_db_and_tables()
         print("✅ Kết nối Database và khởi tạo bảng thành công!")
+        
+        # Tự động seed dữ liệu thành tựu mặc định
+        from sqlmodel import Session
+        from database import engine
+        from api.achievements import seed_default_achievements
+        with Session(engine) as session:
+            seed_default_achievements(session)
+        print("✅ Khởi tạo dữ liệu thành tựu thành công!")
     except Exception as e:
         print(f"❌ LỖI KẾT NỐI DATABASE: {str(e)}")
         print("⚠️ Cảnh báo: Server vẫn chạy nhưng các chức năng liên quan đến DB sẽ lỗi.")
@@ -69,7 +77,7 @@ app.add_middleware(
 # app.include_router(itineraries.router, prefix="/api/v1/itineraries", tags=["Itineraries"])
 
 from routers import auth, enterprise, location_router
-from api import planning, locations, trips, reference, leaderboard
+from api import planning, locations, trips, reference, leaderboard, achievements
 
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(enterprise.router, prefix="/api")
@@ -79,6 +87,7 @@ app.include_router(locations.router)
 app.include_router(trips.router)
 app.include_router(reference.router)
 app.include_router(leaderboard.router)
+app.include_router(achievements.router)
 
 # ============================================================
 # Health check
