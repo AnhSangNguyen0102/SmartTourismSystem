@@ -58,6 +58,10 @@ def complete_trip(
     db: Session = Depends(get_session),
     current_user: dict = Depends(security.verify_token)
 ):
+    from sqlmodel import func, select
+    from api.achievements import check_and_update_achievements
+    from models import UserProfiles, ItineraryStops, ItineraryDays, Itineraries
+    
     user_id = get_current_user_id(db, current_user)
     
     trip = get_itinerary_by_id(db, itinerary_id)
@@ -67,8 +71,60 @@ def complete_trip(
     if trip.status == ItineraryStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Chuyến đi này đã được hoàn thành")
         
-    update_itinerary_status(db, itinerary_id=itinerary_id, new_status=ItineraryStatus.COMPLETED)
-    return MessageResponse(detail="Chúc mừng bạn đã hoàn thành chuyến đi!")
+    # Tính số trạm đã check-in
+    stmt_completed = (
+        select(func.count(ItineraryStops.stop_id))
+        .join(ItineraryDays, ItineraryStops.day_id == ItineraryDays.day_id)
+        .where(ItineraryDays.itinerary_id == itinerary_id)
+        .where(ItineraryStops.status == StopStatus.COMPLETED)
+    )
+    completed_stops = db.exec(stmt_completed).one()
+    
+    stmt_total = (
+        select(func.count(ItineraryStops.stop_id))
+        .join(ItineraryDays, ItineraryStops.day_id == ItineraryDays.day_id)
+        .where(ItineraryDays.itinerary_id == itinerary_id)
+    )
+    total_stops = db.exec(stmt_total).one()
+    
+    # Tính điểm
+    distance_km = float(trip.total_distance)
+    is_perfect = (completed_stops == total_stops and total_stops > 0)
+    
+    completion_score = int(
+        (completed_stops * 20) + 
+        (distance_km * 5) + 
+        (100 if is_perfect else 0)
+    )
+    
+    # Cập nhật trạng thái
+    trip.status = ItineraryStatus.COMPLETED
+    trip.score_earned = completion_score
+    trip.update_at = datetime.utcnow()
+    db.add(trip)
+    
+    # Cộng điểm thưởng lộ trình cho user profile
+    stmt_prof = select(UserProfiles).where(UserProfiles.user_id == user_id)
+    profile = db.exec(stmt_prof).first()
+    if profile:
+        profile.total_points += completion_score
+        profile.points_balance += completion_score
+        db.add(profile)
+        
+    # Kích hoạt kiểm tra thành tựu
+    unlocked_msg = ""
+    new_unlocks = check_and_update_achievements(db, user_id, "complete_itinerary", amount=1)
+    if distance_km > 0:
+        new_unlocks += check_and_update_achievements(db, user_id, "distance", amount=int(distance_km))
+    if is_perfect:
+        new_unlocks += check_and_update_achievements(db, user_id, "perfect_trip", amount=1)
+        
+    if new_unlocks:
+        titles = ", ".join([f"[{ach['badge_icon']} {ach['title']}]" for ach in new_unlocks])
+        unlocked_msg = f" 🎉 Bạn đã mở khóa thành tựu mới: {titles}!"
+        
+    db.commit()
+    return MessageResponse(detail=f"Chúc mừng bạn đã hoàn thành chuyến đi! Bạn nhận được {completion_score} điểm tích lũy.{unlocked_msg}")
 
 @router.put("/{itinerary_id}/cancel", response_model=MessageResponse, summary="Hủy chuyến đi")
 def cancel_trip(
@@ -429,7 +485,7 @@ def checkin_stop(
 
     # --- HACK FOR DEMO ---
     # Luôn cho phép check-in bất chấp khoảng cách
-    is_within = True 
+    is_within = True  
     # ---------------------
 
     if not is_within:
@@ -514,6 +570,15 @@ def checkin_stop(
     profile.points_balance += earned_points
     db.add(profile)
 
+    # Kích hoạt kiểm tra thành tựu Check-in
+    location_name_lower = stop_data.location_name.lower()
+    is_cafe = any(kw in location_name_lower for kw in ["cafe", "cà phê", "coffee", "trà", "tea"])
+    
+    from api.achievements import check_and_update_achievements
+    new_unlocks = []
+    if is_cafe:
+        new_unlocks += check_and_update_achievements(db, user_id, "cafe_checkin", amount=1)
+
     # AUTO-COMPLETE: Nếu tất cả trạm đã check-in → tự động hoàn thành chuyến đi
     itinerary_id = stop_data.itinerary_id
     pending_stop = db.exec(
@@ -526,27 +591,70 @@ def checkin_stop(
     ).first()
     
     auto_completed = False
+    completion_score = 0
     if pending_stop is None:
         # Tất cả trạm đã hoàn thành → auto-complete trip
         trip = db.exec(select(Itineraries).where(Itineraries.itinerary_id == itinerary_id)).first()
         if trip and trip.status not in (ItineraryStatus.COMPLETED, ItineraryStatus.CANCELLED):
-            from datetime import timezone
+            from sqlmodel import func
+            
+            # Tính số trạm đã check-in
+            stmt_completed = (
+                select(func.count(ItineraryStops.stop_id))
+                .join(ItineraryDays, ItineraryStops.day_id == ItineraryDays.day_id)
+                .where(ItineraryDays.itinerary_id == itinerary_id)
+                .where(ItineraryStops.status == StopStatus.COMPLETED)
+            )
+            completed_stops = db.exec(stmt_completed).one()
+            
+            stmt_total = (
+                select(func.count(ItineraryStops.stop_id))
+                .join(ItineraryDays, ItineraryStops.day_id == ItineraryDays.day_id)
+                .where(ItineraryDays.itinerary_id == itinerary_id)
+            )
+            total_stops = db.exec(stmt_total).one()
+            
+            distance_km = float(trip.total_distance)
+            is_perfect = (completed_stops == total_stops and total_stops > 0)
+            
+            completion_score = int(
+                (completed_stops * 20) + 
+                (distance_km * 5) + 
+                (100 if is_perfect else 0)
+            )
+            
             trip.status = ItineraryStatus.COMPLETED
-            trip.update_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            trip.score_earned = completion_score
+            trip.update_at = datetime.utcnow()
             db.add(trip)
             
-            # Điểm đã được cộng thẳng trực tiếp khi check-in, không cần reset total_points nữa
-            pass
-            
+            # Cộng điểm thưởng lộ trình vào profile
+            if profile:
+                profile.total_points += completion_score
+                profile.points_balance += completion_score
+                db.add(profile)
+                
+            # Kích hoạt các thành tựu hoàn thành lộ trình
+            new_unlocks += check_and_update_achievements(db, user_id, "complete_itinerary", amount=1)
+            if distance_km > 0:
+                new_unlocks += check_and_update_achievements(db, user_id, "distance", amount=int(distance_km))
+            if is_perfect:
+                new_unlocks += check_and_update_achievements(db, user_id, "perfect_trip", amount=1)
+                
             auto_completed = True
 
     # KHÔNG cần db.commit() — get_session() tự commit khi request thành công
     # KHÔNG cần db.rollback() — get_session() tự rollback khi có exception
 
+    unlocked_msg = ""
+    if new_unlocks:
+        titles = ", ".join([f"[{ach['badge_icon']} {ach['title']}]" for ach in new_unlocks])
+        unlocked_msg = f" 🎉 Thành tựu mới: {titles}!"
+
     if auto_completed:
         return CheckInResponse(
             success=True,
-            message=f"✅ Check-in thành công! +{earned_points} điểm. 🎉 Tất cả trạm đã hoàn thành — chuyến đi tự động hoàn tất!",
+            message=f"✅ Check-in thành công! +{earned_points} điểm. 🎉 Lộ trình hoàn thành! Bạn nhận thêm +{completion_score} điểm tích lũy.{unlocked_msg}",
             stop_id=stop_id,
             progress_id=progress_id,
             earned_points=earned_points
@@ -554,7 +662,7 @@ def checkin_stop(
 
     return CheckInResponse(
         success=True,
-        message=f"✅ Check-in thành công! Bạn nhận được {earned_points} điểm thưởng.",
+        message=f"✅ Check-in thành công! Bạn nhận được {earned_points} điểm thưởng.{unlocked_msg}",
         stop_id=stop_id,
         progress_id=progress_id,
         earned_points=earned_points
