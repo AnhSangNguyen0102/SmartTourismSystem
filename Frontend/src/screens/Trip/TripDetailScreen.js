@@ -478,7 +478,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         />
                     </div>
                     
-                    <div className="location-action-bar">
+                    <div className="location-action-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {isCheckedIn ? (
                             <button className="btn-checkin-tab btn-already-checked" disabled>
                                 ✅ Bạn đã ghé thăm điểm này
@@ -494,6 +494,34 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                                 </button>
                             )
                         )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLocationForTasks({
+                                    location_id: selectedStop.location_id,
+                                    location_name: selectedStop.location_name
+                                });
+                            }}
+                            className="btn-location-task"
+                            style={{
+                                backgroundColor: '#10b981',
+                                color: '#0b0f19',
+                                border: 'none',
+                                borderRadius: '12px',
+                                padding: '14px 16px',
+                                fontSize: '15px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                                width: '100%',
+                            }}
+                        >
+                            🎮 Nhiệm vụ địa điểm
+                        </button>
                         {checkinMsg && (
                             <div className="checkin-toast">{checkinMsg}</div>
                         )}
@@ -621,109 +649,16 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             </div>
             
             {/* Treasure Overlay */}
-            <TreasureOverlay data={rewardData} />            <div className="trip-itinerary">
-                <h3>Lịch trình chi tiết</h3>
-                {Object.keys(stopsByDay).sort().map(day => (
-                    <div key={day} className="day-group">
-                        <div className="day-header">
-                            Ngày {day}
-                            <span className="day-date">({stopsByDay[day][0]?.travel_date})</span>
-                            {stopsByDay[day][0]?.estimated_budget && (
-                                <span className="day-budget">
-                                    💰 {new Intl.NumberFormat('vi-VN').format(stopsByDay[day][0].estimated_budget)}đ
-                                </span>
-                            )}
-                        </div>
-                        <div className="timeline">
-                            {stopsByDay[day].sort((a, b) => a.stop_order - b.stop_order).map(stop => (
-                                <div key={stop.stop_id} className={`timeline-item`}>
-                                    <div className="time-col">
-                                        <div className="time">{stop.arrival_time?.slice(0, 5)}</div>
-                                        <div className="line"></div>
-                                    </div>
-                                    <div className="content-col">
-                                        <div className={`stop-card ${getStopColorClass(stop)}`}>
-                                            <div className="stop-card-header">
-                                                <h4>{stop.location_name}</h4>
-                                                {stop.min_price && (
-                                                    <span className="stop-price-tag">
-                                                        {new Intl.NumberFormat('vi-VN').format(stop.min_price)}đ
-                                                    </span>
-                                                )}
-                                                {stop.reward > 0 && (
-                                                    <span className="stop-reward-tag">
-                                                        +{stop.reward} ⭐
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p>Khởi hành: {stop.departure_time?.slice(0, 5)}</p>
-                                            {stop.min_price && (
-                                                <p className="stop-price-range">
-                                                    {tripDetail.budget_category === 'MEDIUM' 
-                                                        ? `Dự kiến: ${new Intl.NumberFormat('vi-VN').format(stop.min_price)}đ - ${new Intl.NumberFormat('vi-VN').format(stop.estimated_price)}đ`
-                                                        : `Dự kiến: ${new Intl.NumberFormat('vi-VN').format(stop.estimated_price)}đ`
-                                                    }
-                                                </p>
-                                            )}
-                                            
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedLocationForTasks({
-                                                            location_id: stop.location_id,
-                                                            location_name: stop.location_name
-                                                        });
-                                                    }}
-                                                    style={{
-                                                        backgroundColor: '#10b981',
-                                                        color: '#0b0f19',
-                                                        border: 'none',
-                                                        borderRadius: '8px',
-                                                        padding: '6px 12px',
-                                                        fontSize: '11px',
-                                                        fontWeight: 'bold',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                        boxShadow: '0 2px 8px rgba(16,185,129,0.2)'
-                                                    }}
-                                                >
-                                                    🎮 Nhiệm vụ địa điểm
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <TreasureOverlay data={rewardData} />
 
-            {/* 🗺️ Bản đồ lộ trình với đường đi thực tế từ OSRM + Nhiệm vụ ẩn */}
-            <div style={{ position: 'relative' }}>
-                <RouteMap 
-                    stops={allStops} 
-                    routes={tripDetail.routes || []} 
-                    userLocation={userLocation}
-                    hiddenTasks={hiddenTasks}
-                    //onHiddenTaskClick={handleHiddenTaskClick}
-                    onHiddenTaskClick={(task) => {
-                        setSelectedHiddenTask(task);
-                        setShowChestAnimation(true);
-                    }}
-                />
-                <HiddenQuestDebug
-                    userLocation={userLocation}
-                    onSpawnSuccess={fetchHiddenTasks}
-                    onTestClaim={(testTask) => {
-                        setSelectedHiddenTask(testTask);
-                        setShowChestAnimation(true);
-                    }}
-                />
-            </div>
+            <HiddenQuestDebug
+                userLocation={userLocation}
+                onSpawnSuccess={fetchHiddenTasks}
+                onTestClaim={(testTask) => {
+                    setSelectedHiddenTask(testTask);
+                    setShowChestAnimation(true);
+                }}
+            />
 
             {/* GAMIFICATION OVERLAYS */}
             {selectedLocationForTasks && (
