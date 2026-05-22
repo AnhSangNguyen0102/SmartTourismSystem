@@ -550,4 +550,57 @@ class DeviationLogCreate(BaseModel):
     longitude: Decimal = Field(decimal_places=6)
 
 
+# ============================================================
+# GAMIFIED TASK SCHEMAS
+# ============================================================
 
+class QATaskResponse(BaseModel):
+    task_id: UUID
+    location_id: UUID
+    question: str
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str
+    question_type: str
+    difficulty: str
+    reward_exp: int
+    reward_coin: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QASubmissionRequest(BaseModel):
+    task_id: UUID
+    selected_option: str = Field(..., max_length=5, description="Đáp án người dùng chọn (A, B, C, hoặc D)")
+
+
+class QRScanRequest(BaseModel):
+    qr_token: str = Field(..., description="Token giải mã từ QR Code")
+    latitude: Decimal = Field(..., decimal_places=6)
+    longitude: Decimal = Field(..., decimal_places=6)
+
+
+class TaskCompletionResponse(BaseModel):
+    success: bool
+    message: str
+    reward_exp: int
+    reward_coin: int
+    new_total_points: int
+
+class AggregatedTask(BaseModel):
+    task_id: UUID
+    task_type: str # "QA" hoặc "QR"
+    title: str     # Tiêu đề hiển thị (vd: "Thử thách Q&A")
+    is_completed: bool
+    reward_exp: int
+    reward_coin: int
+
+class TaskListResponse(BaseModel):
+    location_id: UUID
+    tasks: list[AggregatedTask]
+
+class CompleteStopResponse(BaseModel):
+    success: bool
+    message: str
+    stop_id: int

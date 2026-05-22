@@ -8,6 +8,7 @@ Test 6 query mới thêm vào:
 """
 
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
 from sqlmodel import Session

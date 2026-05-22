@@ -3,6 +3,10 @@ main.py - FastAPI application entrypoint
 Backend: FastAPI | Database: Supabase (PostgreSQL) | ORM: SQLModel
 """
 
+import sys
+# Reconfigure stdout to use UTF-8 on Windows
+sys.stdout.reconfigure(encoding='utf-8')
+
 from contextlib import asynccontextmanager
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI
@@ -55,9 +59,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000"
+        #"http://localhost:3000",
+        #"http://localhost:3001",
+        #"http://127.0.0.1:3000"
+        "*"
     ], 
 
     allow_credentials=True,
@@ -76,18 +81,23 @@ app.add_middleware(
 # app.include_router(locations.router, prefix="/api/v1/locations", tags=["Locations"])
 # app.include_router(itineraries.router, prefix="/api/v1/itineraries", tags=["Itineraries"])
 
-from routers import auth, enterprise, location_router
+from routers import auth, enterprise, location_router, gamification, task_router, social_quest, hidden_quest, enterprise_event
 from api import planning, locations, trips, reference, leaderboard, achievements
 
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(enterprise.router, prefix="/api")
 app.include_router(location_router.router, prefix="/api/v1")
+app.include_router(gamification.router)
+app.include_router(task_router.router, prefix="/api/v1")
+app.include_router(social_quest.router)
 app.include_router(planning.router)
 app.include_router(locations.router)
 app.include_router(trips.router)
 app.include_router(reference.router)
 app.include_router(leaderboard.router)
 app.include_router(achievements.router)
+app.include_router(hidden_quest.router)
+app.include_router(enterprise_event.router)
 
 # ============================================================
 # Health check

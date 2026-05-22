@@ -1,0 +1,142 @@
+/* HiddenQuestDebug.css */
+
+.debug-fab {
+    position: fixed;
+    bottom: 90px; /* Above the bottom navigation bar */
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e17055, #d63031);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
+    cursor: pointer;
+    z-index: 9998;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid white;
+}
+
+.debug-fab:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 6px 20px rgba(214, 48, 49, 0.6);
+}
+
+.debug-panel {
+    position: fixed;
+    bottom: 150px;
+    right: 20px;
+    width: 300px;
+    background: rgba(24, 28, 46, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.debug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.debug-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #e17055;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.debug-close {
+    background: none;
+    border: none;
+    color: #a4b0be;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.debug-section {
+    margin-bottom: 15px;
+}
+
+.debug-label {
+    display: block;
+    font-size: 12px;
+    color: #a4b0be;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.debug-select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    outline: none;
+    margin-bottom: 10px;
+}
+
+.debug-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    text-align: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0984e3, #00cec9);
+    color: white;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    color: white;
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, #fdcb6e, #f1c40f);
+    color: #2d3436;
+}
+
+.debug-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+
+.debug-status {
+    font-size: 11px;
+    color: #00cec9;
+    background: rgba(0, 206, 201, 0.1);
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    word-break: break-all;
+    max-height: 80px;
+    overflow-y: auto;
+}

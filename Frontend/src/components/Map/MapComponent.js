@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const MapComponent = ({ stops = [], userLocation = null }) => {
+const MapComponent = ({ stops = [], userLocation = null, hiddenTasks = [], onHiddenTaskClick = null }) => {
     const mapRef = useRef(null);
     const mapInstance = useRef(null);
     const markersLayer = useRef(null);
@@ -96,11 +96,82 @@ const MapComponent = ({ stops = [], userLocation = null }) => {
                 bounds.push([userLocation.lat, userLocation.lng]);
             }
 
+            // 3. Thêm các rương báu và sự kiện động ẩn (Hidden Tasks)
+            hiddenTasks.forEach((task) => {
+                if (!task.latitude || !task.longitude) return;
+                const lat = parseFloat(task.latitude);
+                const lng = parseFloat(task.longitude);
+
+                // Màu theo độ hiếm Rarity
+                const rarityColors = {
+                    COMMON: '#7f8c8d',     // Xám
+                    RARE: '#2980b9',       // Xanh dương
+                    EPIC: '#8e44ad',       // Tím
+                    LEGENDARY: '#f1c40f'   // Vàng Gold
+                };
+                const color = rarityColors[task.rarity] || '#7f8c8d';
+
+                // Icon / ký hiệu dựa trên loại nhiệm vụ ẩn
+                let emoji = '🎁'; // Rương mặc định
+                let label = 'Rương kho báu';
+                if (task.task_type === 'DYNAMIC_QUEST') {
+                    emoji = '🔮'; // Sự kiện doanh nghiệp
+                    label = 'Sự kiện đặc biệt';
+                }
+
+                const marker = window.L.marker([lat, lng], {
+                    icon: window.L.divIcon({
+                        className: 'hidden-task-icon',
+                        html: `<div class="glowing-chest" style="
+                            background-color: ${color}; 
+                            border: 2px solid white; 
+                            border-radius: 50%; 
+                            width: 32px; 
+                            height: 32px; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            font-size: 18px; 
+                            box-shadow: 0 0 12px ${color}; 
+                            cursor: pointer;
+                            animation: float-effect 2s infinite ease-in-out;
+                            position: relative;">
+                            ${emoji}
+                            <div style="
+                                position: absolute;
+                                width: 40px;
+                                height: 40px;
+                                border-radius: 50%;
+                                border: 2px dashed ${color};
+                                top: -6px;
+                                left: -6px;
+                                animation: spin-circle 8s infinite linear;
+                            "></div>
+                           </div>`,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    })
+                });
+
+                marker.bindPopup(`<b>${task.title || label}</b><br/><small>${task.rarity} - Click để xem!</small>`);
+                
+                // Gắn sự kiện click
+                marker.on('click', () => {
+                    if (onHiddenTaskClick) {
+                        onHiddenTaskClick(task);
+                    }
+                });
+
+                marker.addTo(markersLayer.current);
+                bounds.push([lat, lng]);
+            });
+
             if (bounds.length > 0) {
                 mapInstance.current.fitBounds(bounds, { padding: [40, 40] });
             }
         }
-    }, [libLoaded, stops, userLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [libLoaded, stops, userLocation, hiddenTasks]);
 
     return (
         <div style={{ 

@@ -31,3 +31,11 @@ bcrypt<4.0.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 email-validator>=2.1.0
+
+# Gamification AI
+Pillow>=10.3.0
+google-generativeai>=0.5.4
+python-multipart>=0.0.9
+
+# Social Quest
+redis>=5.0.0

@@ -12,6 +12,7 @@ Chạy:
 """
 
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import traceback
 from datetime import date, datetime, timezone
 from decimal import Decimal

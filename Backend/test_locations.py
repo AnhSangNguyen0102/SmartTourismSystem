@@ -6,6 +6,7 @@ từ Supabase DB mới.
 """
 
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 from sqlmodel import Session
 from database import engine
 

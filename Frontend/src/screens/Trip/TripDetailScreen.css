@@ -527,6 +527,7 @@
     animation: fadeSlide 0.3s ease;
 }
 
+
 /* ========== Cloud Transition Overlay ========== */
 .cloud-transition-container {
     position: fixed;
@@ -596,42 +597,349 @@
     transform: translateX(150%);
 }
 
-/* ========== Map View Toggle ========== */
-.map-view-toggle {
-    display: flex;
-    gap: 0;
-    margin: 10px 20px;
-    background: #e9ecef;
-    border-radius: 12px;
-    padding: 4px;
-    position: relative;
+
+/* ============================================================
+   HIDDEN QUEST MARKERS & MODAL STYLES (cho TripDetailScreen)
+   ============================================================ */
+
+/* Keyframes for glowing markers */
+@keyframes float-effect {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-4px) scale(1.05); }
 }
 
-.map-toggle-btn {
-    flex: 1;
-    padding: 10px 16px;
-    border: none;
-    border-radius: 10px;
-    background: transparent;
-    color: #636e72;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s ease;
+@keyframes spin-circle {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Quest Modal Overlay */
+.quest-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.quest-modal-content {
+    background: linear-gradient(135deg, #131931 0%, #0d1225 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 350px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 25px rgba(108, 92, 231, 0.2);
+    overflow: hidden;
+    color: #fff;
+    animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.quest-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.quest-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.quest-close-btn {
+    background: none;
+    border: none;
+    color: #a4b0be;
+    font-size: 18px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.quest-close-btn:hover {
+    color: #fff;
+}
+
+.quest-modal-body {
+    padding: 20px;
+}
+
+.quest-desc {
+    font-size: 13px;
+    color: #dcdde1;
+    line-height: 1.5;
+    margin: 0 0 15px;
+}
+
+.quest-meta-info {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #a29bfe;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.quest-action-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.quest-instruction {
+    font-size: 12px;
+    color: #a4b0be;
+    margin: 0 0 8px;
+}
+
+.quest-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.quest-input:focus {
+    border-color: #6c5ce7;
+    box-shadow: 0 0 8px rgba(108, 92, 231, 0.3);
+}
+
+.quest-action-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.quest-action-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+
+.quest-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Quiz */
+.quiz-options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quiz-option-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.quiz-option-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.quiz-option-card.selected {
+    background: rgba(108, 92, 231, 0.15);
+    border-color: #6c5ce7;
+    box-shadow: 0 0 10px rgba(108, 92, 231, 0.2);
+}
+
+.option-code {
+    background: rgba(255, 255, 255, 0.1);
+    color: #a29bfe;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.quiz-option-card.selected .option-code {
+    background: #6c5ce7;
+    color: #fff;
+}
+
+.option-text {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Photo Quest */
+.photo-upload-placeholder {
+    height: 120px;
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #dcdde1;
+    background: rgba(255, 255, 255, 0.02);
+    transition: border-color 0.2s;
+}
+
+.photo-upload-placeholder:hover {
+    border-color: #6c5ce7;
+}
+
+.photo-preview-box {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    height: 120px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.photo-preview-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-reset {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(232, 65, 24, 0.85);
+    border: none;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.quest-error-msg {
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(235, 77, 75, 0.15);
+    border: 1px solid rgba(235, 77, 75, 0.3);
+    border-radius: 10px;
+    color: #ff7675;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Success Screen */
+.quest-success-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.success-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    animation: bounce 1s infinite alternate;
+}
+
+.quest-success-screen h4 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #2ecc71;
+}
+
+.quest-success-screen p {
+    font-size: 13px;
+    color: #dcdde1;
+    margin: 0 0 20px;
+}
+
+.success-reward-card {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.success-reward-item {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 6px;
-    white-space: nowrap;
+    font-size: 13px;
 }
 
-.map-toggle-btn.active {
-    background: #fff;
-    color: #2d3436;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.success-reward-item strong {
+    color: #fdcb6e;
+    font-size: 16px;
 }
 
-.map-toggle-btn:not(.active):hover {
-    color: #2d3436;
-    background: rgba(255, 255, 255, 0.4);
+.quest-close-success-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background: #2ecc71;
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-8px); }
 }

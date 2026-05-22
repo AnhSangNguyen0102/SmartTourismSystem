@@ -104,30 +104,17 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_session)):
             }
     else:
         profile = db.query(UserProfiles).filter(UserProfiles.user_id == user.user_id).first()
-        if not profile:
-            from datetime import date
-            from models import GenderEnum
-            profile = UserProfiles(
-                user_id=user.user_id,
-                full_name=user.full_name or "Khách du lịch",
-                date_of_birth=date(2000, 1, 1),
-                gender=GenderEnum.OTHER,
-                total_points=0,
-                points_balance=0
-            )
-            db.add(profile)
-            db.commit()
-            db.refresh(profile)
-        profile_data = {
-            "date_of_birth": str(profile.date_of_birth) if profile.date_of_birth else "",
-            "gender": getattr(profile.gender, 'value', profile.gender) if profile.gender else "MALE",
-            "base_location": profile.base_location or "",
-            "bio": profile.bio or "",
-            "travel_style": getattr(profile.travel_style, 'value', profile.travel_style) if profile.travel_style else "",
-            "privacy_status": getattr(profile.privacy_status, 'value', profile.privacy_status) if profile.privacy_status else "PUBLIC",
-            "total_points": profile.total_points or 0,
-            "points_balance": profile.points_balance or 0,
-        }
+        if profile:
+            profile_data = {
+                "date_of_birth": str(profile.date_of_birth) if profile.date_of_birth else "",
+                "gender": getattr(profile.gender, 'value', profile.gender) if profile.gender else "MALE",
+                "base_location": profile.base_location or "",
+                "bio": profile.bio or "",
+                "travel_style": getattr(profile.travel_style, 'value', profile.travel_style) if profile.travel_style else "",
+                "privacy_status": getattr(profile.privacy_status, 'value', profile.privacy_status) if profile.privacy_status else "PUBLIC",
+                "total_points": profile.total_points or 0,
+                "points_balance": profile.points_balance or 0,
+            }
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -215,30 +202,18 @@ def get_my_profile(
     else:
         from models import UserProfiles
         profile = db.exec(select(UserProfiles).where(UserProfiles.user_id == user.user_id)).first()
-        if not profile:
-            from datetime import date
-            from models import GenderEnum
-            profile = UserProfiles(
-                user_id=user.user_id,
-                full_name=user.full_name or "Khách du lịch",
-                date_of_birth=date(2000, 1, 1),
-                gender=GenderEnum.OTHER,
-                total_points=0,
-                points_balance=0
-            )
-            db.add(profile)
-            db.commit()
-            db.refresh(profile)
-        profile_data = {
-            "date_of_birth": str(profile.date_of_birth) if profile.date_of_birth else "",
-            "gender": getattr(profile.gender, 'value', profile.gender) if profile.gender else "MALE",
-            "base_location": profile.base_location or "",
-            "bio": profile.bio or "",
-            "travel_style": getattr(profile.travel_style, 'value', profile.travel_style) if profile.travel_style else "",
-            "privacy_status": getattr(profile.privacy_status, 'value', profile.privacy_status) if profile.privacy_status else "PUBLIC",
-            "total_points": profile.total_points or 0,
-            "points_balance": profile.points_balance or 0,
-        }
+        
+        if profile:
+            profile_data = {
+                "date_of_birth": str(profile.date_of_birth) if profile.date_of_birth else "",
+                "gender": getattr(profile.gender, 'value', profile.gender) if profile.gender else "MALE",
+                "base_location": profile.base_location or "",
+                "bio": profile.bio or "",
+                "travel_style": getattr(profile.travel_style, 'value', profile.travel_style) if profile.travel_style else "",
+                "privacy_status": getattr(profile.privacy_status, 'value', profile.privacy_status) if profile.privacy_status else "PUBLIC",
+                "total_points": profile.total_points or 0,
+                "points_balance": profile.points_balance or 0,
+            }
 
     # 3. Trả về cấu trúc bọc trong key "user" GIỐNG HỆT với API /login
     return {

@@ -2,6 +2,20 @@
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 const API_URL = `${API_BASE}/api/trips`;
 
+const formatError = (err, defaultMsg) => {
+    let message = defaultMsg;
+    if (typeof err.detail === 'string') {
+        message = err.detail;
+    } else if (Array.isArray(err.detail)) {
+        message = err.detail.map(e => e.msg || e.message || JSON.stringify(e)).join('; ');
+    } else if (err.detail) {
+        message = JSON.stringify(err.detail);
+    } else if (err.message) {
+        message = err.message;
+    }
+    return message;
+};
+
 export const getTripHistory = async (token) => {
     try {
         const response = await fetch(`${API_URL}/history`, {
@@ -32,7 +46,7 @@ export const completeTrip = async (itineraryId, token) => {
         });
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.detail || "Lỗi khi hoàn thành chuyến đi");
+            throw new Error(formatError(err, "Lỗi khi hoàn thành chuyến đi"));
         }
         return await response.json();
     } catch (error) {
@@ -52,7 +66,7 @@ export const cancelTrip = async (itineraryId, token) => {
         });
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.detail || "Lỗi khi hủy chuyến đi");
+            throw new Error(formatError(err, "Lỗi khi hủy chuyến đi"));
         }
         return await response.json();
     } catch (error) {
@@ -122,7 +136,7 @@ export const sendTracking = async (payload, token) => {
         });
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.detail || "Lỗi khi gửi tracking");
+            throw new Error(formatError(err, "Lỗi khi gửi tracking"));
         }
         return await response.json();
     } catch (error) {
@@ -143,7 +157,7 @@ export const checkinStop = async (stopId, payload, token) => {
         });
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.detail || "Lỗi khi check-in");
+            throw new Error(formatError(err, "Lỗi khi check-in"));
         }
         return await response.json();
     } catch (error) {

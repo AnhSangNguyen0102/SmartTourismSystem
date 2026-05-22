@@ -10,6 +10,7 @@ Test các query vừa bổ sung:
 """
 
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 from uuid import uuid4
 from datetime import datetime, date, timezone
 from decimal import Decimal

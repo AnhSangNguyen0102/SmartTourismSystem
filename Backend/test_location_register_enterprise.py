@@ -4,13 +4,16 @@ User: Smoke Corp | enterprise_id: 0993a41d-161f-425d-a2a7-76e815e05de9
 Chạy: python test_location_register_enterprise.py
 """
 import httpx, json, sys
+sys.stdout.reconfigure(encoding='utf-8')
+
 
 BASE_URL = "http://127.0.0.1:8000"
 ENDPOINT = f"{BASE_URL}/api/v1/locations/register"
 from core.security import create_access_token
-TOKEN = create_access_token({"sub": "cbe82fad-0a1b-4ed7-816d-aa6b268bc578", "role": "ENTERPRISE"})
+TOKEN = create_access_token({"sub": "c8e96a92-de9e-4a2d-9106-47075aa06978", "role": "ENTERPRISE"})
 HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 GREEN, RED, CYAN, RESET, BOLD = "\033[92m", "\033[91m", "\033[96m", "\033[0m", "\033[1m"
+
 passed = failed = 0
 
 def check(tc, expected, actual, body=None):

@@ -97,18 +97,20 @@ def complete_trip(
         (100 if is_perfect else 0)
     )
     
-    # Cập nhật trạng thái
+    # Cập nhật trạng thái lộ trình
     trip.status = ItineraryStatus.COMPLETED
     trip.score_earned = completion_score
     trip.update_at = datetime.utcnow()
     db.add(trip)
     
-    # Cộng điểm thưởng lộ trình cho user profile
+    # Cộng điểm thưởng lộ trình và chuyển điểm hiện tại vào ví
     stmt_prof = select(UserProfiles).where(UserProfiles.user_id == user_id)
     profile = db.exec(stmt_prof).first()
+    earned_from_trip = 0
     if profile:
-        profile.total_points += completion_score
-        profile.points_balance += completion_score
+        earned_from_trip = profile.total_points
+        profile.points_balance += completion_score + earned_from_trip
+        profile.total_points = 0
         db.add(profile)
         
     # Kích hoạt kiểm tra thành tựu
@@ -124,7 +126,7 @@ def complete_trip(
         unlocked_msg = f" 🎉 Bạn đã mở khóa thành tựu mới: {titles}!"
         
     db.commit()
-    return MessageResponse(detail=f"Chúc mừng bạn đã hoàn thành chuyến đi! Bạn nhận được {completion_score} điểm tích lũy.{unlocked_msg}")
+    return MessageResponse(detail=f"Chúc mừng bạn đã hoàn thành chuyến đi! Bạn nhận được {completion_score} điểm thưởng lộ trình và +{earned_from_trip} điểm đã tích lũy.{unlocked_msg}")
 
 @router.put("/{itinerary_id}/cancel", response_model=MessageResponse, summary="Hủy chuyến đi")
 def cancel_trip(
@@ -145,6 +147,17 @@ def cancel_trip(
         raise HTTPException(status_code=400, detail="Không thể hủy chuyến đi đã hoàn thành")
         
     update_itinerary_status(db, itinerary_id=itinerary_id, new_status=ItineraryStatus.CANCELLED)
+    
+    # Dù hủy, vẫn cộng điểm hiện tại vào ngân sách
+    from models import UserProfiles
+    profile = db.exec(select(UserProfiles).where(UserProfiles.user_id == user_id)).first()
+    if profile and profile.total_points > 0:
+        profile.points_balance += profile.total_points
+        earned = profile.total_points
+        profile.total_points = 0
+        db.add(profile)
+        db.commit()
+        return MessageResponse(detail=f"Chuyến đi đã được hủy. +{earned} điểm đã được cộng vào ngân sách.")
     
     return MessageResponse(detail="Chuyến đi đã được hủy.")
 
@@ -549,26 +562,13 @@ def checkin_stop(
         .values(reward=earned_points)
     )
     
-    # Cộng điểm vào total_points và points_balance lập tức (Tạo mới profile nếu chưa tồn tại)
+    # Cộng điểm vào total_points (điểm hiện tại của chuyến đi)
     from models import UserProfiles
     statement = select(UserProfiles).where(UserProfiles.user_id == user_id)
     profile = db.exec(statement).first()
-    if not profile:
-        from models import Users, GenderEnum
-        from datetime import date
-        user_record = db.exec(select(Users).where(Users.user_id == user_id)).first()
-        full_name = user_record.full_name if user_record else "Khách du lịch"
-        profile = UserProfiles(
-            user_id=user_id,
-            full_name=full_name,
-            date_of_birth=date(2000, 1, 1),
-            gender=GenderEnum.OTHER,
-            total_points=0,
-            points_balance=0
-        )
-    profile.total_points += earned_points
-    profile.points_balance += earned_points
-    db.add(profile)
+    if profile:
+        profile.total_points += earned_points
+        db.add(profile)
 
     # Kích hoạt kiểm tra thành tựu Check-in
     location_name_lower = stop_data.location_name.lower()
@@ -628,10 +628,11 @@ def checkin_stop(
             trip.update_at = datetime.utcnow()
             db.add(trip)
             
-            # Cộng điểm thưởng lộ trình vào profile
+            # Cộng điểm thưởng lộ trình vào profile và chuyển total_points -> points_balance
             if profile:
-                profile.total_points += completion_score
-                profile.points_balance += completion_score
+                earned_from_trip = profile.total_points
+                profile.points_balance += completion_score + earned_from_trip
+                profile.total_points = 0
                 db.add(profile)
                 
             # Kích hoạt các thành tựu hoàn thành lộ trình
@@ -640,7 +641,6 @@ def checkin_stop(
                 new_unlocks += check_and_update_achievements(db, user_id, "distance", amount=int(distance_km))
             if is_perfect:
                 new_unlocks += check_and_update_achievements(db, user_id, "perfect_trip", amount=1)
-                
             auto_completed = True
 
     # KHÔNG cần db.commit() — get_session() tự commit khi request thành công
