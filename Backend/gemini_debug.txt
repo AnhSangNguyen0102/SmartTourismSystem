@@ -1,1 +1,1 @@
-{'success': False, 'error': '429 Rate limit cho model gemini-2.0-flash-001 (đã thử 3 lần)'}
+{'success': True, 'text': '{"is_matched": true, "confidence_score": 99.0, "anti_cheat_passed": true, "reason": "Ảnh người dùng hoàn toàn trùng khớp với ảnh mẫu về địa điểm, cảnh quan, vật thể đặc trưng và góc chụp."}', 'model': 'gemini-2.5-flash'}

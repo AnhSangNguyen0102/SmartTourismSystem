@@ -471,10 +471,15 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         <RouteMap 
                             stops={[selectedStop]} 
                             routes={[]} 
+                            hiddenTasks={hiddenTasks}
                             userLocation={userLocation}
                             user={user}
                             nextStop={selectedStop}
                             onStopClick={setSelectedStop}
+                            onHiddenTaskClick={(task) => {
+                            setSelectedHiddenTask(task);
+                            setShowChestAnimation(true);
+                        }}
                         />
                     </div>
                     

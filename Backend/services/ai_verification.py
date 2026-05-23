@@ -202,15 +202,34 @@ async def verify_image_with_gemini(user_image_bytes: bytes, reference_image_url:
         if not gemini_result["success"]:
             raise Exception(gemini_result.get("error", "Unknown error"))
         
-        clean_text = gemini_result["text"].strip()
-        # Strip markdown code blocks if present
-        if clean_text.startswith("```"):
-            clean_text = clean_text.split("```")[1]
-            if clean_text.startswith("json"):
-                clean_text = clean_text[4:]
-        clean_text = clean_text.strip()
+        raw_text = gemini_result["text"].strip()
         
-        result = json.loads(clean_text)
+        # --- LỚP 1: LỌC JSON THÔNG MINH ---
+        # Bỏ qua mọi thẻ markdown (```json), giải thích dư thừa của AI. 
+        # Chỉ lấy từ dấu { đầu tiên đến dấu } cuối cùng.
+        start_idx = raw_text.find('{')
+        end_idx = raw_text.rfind('}')
+        
+        if start_idx != -1 and end_idx != -1:
+            clean_text = raw_text[start_idx:end_idx+1]
+        else:
+            clean_text = raw_text # Fallback nếu không thấy ngoặc
+            
+        # --- LỚP 2: BẮT LỖI PARSE ĐỂ KHÔNG SẬP APP ---
+        try:
+            result = json.loads(clean_text)
+        except json.JSONDecodeError as e:
+            print(f"⚠️ [CẢNH BÁO] Lỗi Parse JSON từ Gemini: {str(e)}")
+            print(f"Chuỗi AI trả về bị lỗi: {raw_text}")
+            
+            # --- LỚP 3: DỮ LIỆU BẢO HIỂM ---
+            # Trả về kết quả an toàn thay vì crash màn hình đỏ
+            result = {
+                "is_matched": False,
+                "confidence_score": 0.0,
+                "anti_cheat_passed": False,
+                "reason": "AI đang bận xử lý định dạng. Vui lòng chụp lại ảnh rõ nét hơn và thử lại!"
+            }
 
         # Safety guard: enforce consistency between is_matched and confidence_score
         MIN_CONFIDENCE_THRESHOLD = 60.0
