@@ -336,7 +336,7 @@ function App() {
                     {currentScreen === 'trip_detail' && (
                         <TripDetailScreen
                             itineraryId={currentItineraryId}
-                            onBack={() => goBackFromHistory('main')}
+                            onBack={() => navigateTo('main', { resetHistory: true })}
                             refreshUser={refreshUser}
                             onPointsUpdate={refreshUser}
                             user={currentUser?.user || currentUser}

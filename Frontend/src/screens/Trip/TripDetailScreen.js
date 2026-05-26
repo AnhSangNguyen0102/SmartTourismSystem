@@ -14,6 +14,7 @@ import HiddenQuestDebug from '../../components/HiddenQuest/HiddenQuestDebug';
 import { storageGet } from '../../platform/storage';
 import { showAlert, showConfirm } from '../../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../../platform/location';
+import { SHOW_MASCOT } from '../../config/uiFlags';
 import { 
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, 
   MapPin, Sparkles, Coins, Star, Clock, Ticket, Gamepad2, X, Check, Flame, Award, HelpCircle,
@@ -623,7 +624,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 />
                 
                 {/* Mascot Layer */}
-                <Mascot message={mascotMessage} />
+                {SHOW_MASCOT && <Mascot message={mascotMessage} />}
             </div>
         </div>
         );

@@ -1,8 +1,7 @@
-/* ===== USER PROFILE SCREEN ===== */
 .user-profile-screen {
-    padding: 24px;
-    padding-top: calc(24px + env(safe-area-inset-top, 0px));
-    background-color: #fafbfc;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    background-color: var(--st-bg, #e0f2fe);
     min-height: 100%;
     box-sizing: border-box;
 }
@@ -11,36 +10,35 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
+}
+
+.user-profile-back-btn,
+.user-profile-edit-btn {
+    min-height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--st-border, #cbd5e1);
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .user-profile-back-btn {
-    background: none;
-    border: none;
-    font-size: 16px;
-    color: #576574;
-    cursor: pointer;
-    min-height: 44px;
-    min-width: 44px;
-    display: flex;
-    align-items: center;
+    background: var(--st-surface, #ffffff);
+    color: var(--st-text, #243447);
 }
 
 .user-profile-edit-btn {
-    background: #0abde3;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    min-height: 44px;
+    background: var(--st-primary, #2563eb);
+    color: #ffffff;
+    border-color: var(--st-primary, #2563eb);
 }
 
 .user-profile-title {
-    color: #222f3e;
-    margin-bottom: 10px;
-    font-size: 24px;
+    color: var(--st-text, #243447);
+    margin: 0 0 12px;
+    font-size: 22px;
     font-weight: 800;
 }
 
@@ -48,40 +46,36 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background-color: #fff4e6;
-    padding: 15px 20px;
-    border-radius: 16px;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.15);
-    border: 1px solid #ffeaa7;
-}
-
-.user-profile-points-icon {
-    font-size: 24px;
+    background-color: var(--st-surface, #ffffff);
+    padding: 14px;
+    border-radius: var(--st-radius, 16px);
+    margin-bottom: 16px;
+    border: 1px solid var(--st-border, #cbd5e1);
+    box-shadow: var(--st-shadow, 0 8px 24px rgba(15, 23, 42, 0.08));
 }
 
 .user-profile-points-label {
-    font-size: 13px;
-    color: #636e72;
+    font-size: 12px;
+    color: var(--st-text-muted, #64748b);
     font-weight: 600;
 }
 
 .user-profile-points-value {
     font-size: 20px;
-    color: #f39c12;
+    color: var(--st-text, #243447);
     font-weight: 800;
 }
 
 .user-profile-points-unit {
-    font-size: 14px;
-    color: #b2bec3;
-    font-weight: 500;
+    font-size: 13px;
+    color: var(--st-text-muted, #64748b);
+    font-weight: 600;
 }
 
 .user-profile-avatar-section {
     display: flex;
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: 18px;
 }
 
 .user-profile-avatar-wrapper {
@@ -89,19 +83,20 @@
 }
 
 .user-profile-avatar-img {
-    width: 100px;
-    height: 100px;
+    width: 96px;
+    height: 96px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #0abde3;
+    border: 2px solid var(--st-border, #cbd5e1);
+    background: var(--st-surface, #ffffff);
 }
 
 .user-profile-avatar-edit-btn {
     position: absolute;
     bottom: 0;
     right: 0;
-    background: #0abde3;
-    color: white;
+    background: var(--st-primary, #2563eb);
+    color: #ffffff;
     border: none;
     border-radius: 50%;
     width: 30px;
@@ -113,42 +108,51 @@
 .user-profile-form {
     display: flex;
     flex-direction: column;
+    background: var(--st-surface, #ffffff);
+    border: 1px solid var(--st-border, #cbd5e1);
+    border-radius: var(--st-radius, 16px);
+    padding: 14px;
+    box-shadow: var(--st-shadow, 0 8px 24px rgba(15, 23, 42, 0.08));
 }
 
 .user-profile-field {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 15px;
+    gap: 7px;
+    margin-bottom: 12px;
 }
 
 .user-profile-field label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    color: #576574;
+    color: var(--st-text, #243447);
 }
 
 .user-profile-field input,
 .user-profile-field select,
 .user-profile-field textarea {
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid #c8d6e5;
-    font-size: 16px;
-    min-height: 44px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--st-border, #cbd5e1);
+    font-size: 15px;
+    min-height: 42px;
     box-sizing: border-box;
+    color: var(--st-text, #243447);
+    background: #ffffff;
 }
 
 .user-profile-field textarea {
     resize: none;
+    min-height: 84px;
 }
 
 .user-profile-field .view-value {
-    padding: 12px;
-    background-color: #f1f2f6;
-    border-radius: 12px;
-    color: #2d3436;
+    padding: 10px 12px;
+    background-color: var(--st-surface-muted, #f8fafc);
+    border-radius: 10px;
+    color: var(--st-text, #243447);
     min-height: 20px;
+    border: 1px solid var(--st-border, #cbd5e1);
 }
 
 .user-profile-field-row {
@@ -164,26 +168,32 @@
 .user-profile-actions {
     display: flex;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .user-profile-save-btn,
 .user-profile-cancel-btn {
     flex: 1;
-    color: white;
-    padding: 14px;
-    border-radius: 12px;
+    min-height: 44px;
+    border-radius: 10px;
     border: none;
-    font-weight: bold;
-    font-size: 16px;
+    font-weight: 700;
+    font-size: 14px;
     cursor: pointer;
-    min-height: 48px;
 }
 
 .user-profile-save-btn {
-    background: #22a6b3;
+    background: var(--st-primary, #2563eb);
+    color: #ffffff;
 }
 
 .user-profile-cancel-btn {
-    background: #ee5253;
+    background: #ef4444;
+    color: #ffffff;
+}
+
+@media (max-width: 380px) {
+    .user-profile-field-row {
+        flex-direction: column;
+    }
 }

@@ -5,6 +5,7 @@
  */
 import L from 'leaflet';
 import './PlayerAvatar.css';
+import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../../utils/avatar';
 
 /**
  * Lấy URL avatar (giống logic getAvatarSrc ở Leaderboard)
@@ -12,9 +13,8 @@ import './PlayerAvatar.css';
  * @returns {string} URL avatar
  */
 export function getAvatarUrl(user) {
-    if (user?.avatar_url) return user.avatar_url;
-    const name = user?.full_name || 'Player';
-    return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`;
+    const name = user?.full_name || 'Nguoi choi';
+    return getSafeAvatarSrc(user?.avatar_url, name);
 }
 
 /**
@@ -23,8 +23,9 @@ export function getAvatarUrl(user) {
  * @returns {L.DivIcon}
  */
 export function createPlayerAvatarIcon(user) {
-    const avatarUrl = getAvatarUrl(user);
     const displayName = user?.full_name || 'Bạn';
+    const avatarUrl = getAvatarUrl(user);
+    const fallbackAvatar = createInitialAvatarDataUrl(displayName);
     // Cắt tên nếu quá dài
     const shortName = displayName.length > 12 ? displayName.substring(0, 12) + '…' : displayName;
 
@@ -38,7 +39,7 @@ export function createPlayerAvatarIcon(user) {
                         class="player-avatar-img" 
                         src="${avatarUrl}" 
                         alt="${displayName}"
-                        onerror="this.onerror=null;this.src='/mascot.png'"
+                        onerror="this.onerror=null;this.src='${fallbackAvatar}'"
                     />
                 </div>
                 <div class="player-avatar-pointer"></div>

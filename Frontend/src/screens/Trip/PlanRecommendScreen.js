@@ -104,8 +104,8 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
             }
 
             const result = await createTrip(tripPayload, token);
-            await showAlert('Tạo lộ trình thành công!');
             onTripCreated(result.itinerary_id);
+            return;
         } catch (err) {
             const msg = typeof err.message === 'string' ? err.message : JSON.stringify(err.message);
             await showAlert(`Lỗi hệ thống: ${msg}`);
@@ -118,6 +118,7 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
         return (
             <div className="recommend-screen">
                 <div className="loading-state">
+                    <div className="plan-loader-spinner"></div>
                     <h2>Đang AI hóa lộ trình...</h2>
                     <p>Vui lòng đợi giây lát</p>
                 </div>
@@ -252,9 +253,18 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
                     </button>
                 </div>
             </div>
+
+            {creatingTrip && (
+                <div className="plan-creating-overlay">
+                    <div className="plan-creating-card">
+                        <div className="plan-loader-spinner"></div>
+                        <h3>Đang tạo lộ trình</h3>
+                        <p>Hệ thống đang sắp xếp các điểm dừng tối ưu cho bạn...</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 export default PlanRecommendScreen;
-

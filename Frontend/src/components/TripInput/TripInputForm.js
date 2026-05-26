@@ -82,16 +82,25 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
         onSubmitPlan(payload);
     };
 
+    const handleTopBack = () => {
+        if (step > 1) {
+            setStep(step - 1);
+            return;
+        }
+        onCancel();
+    };
+
     return (
-        <div className="wizard-container cartoon-card">
+        <div className="trip-plan-screen">
+        <div className="wizard-container">
             <button
-                onClick={onCancel}
-                className="close-wizard-btn"
-                title="Hủy viễn chinh"
+                onClick={handleTopBack}
+                className="back-wizard-btn"
+                title="Quay lại"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-                ✕
+                <ArrowLeft size={14} /> Quay lại
             </button>
-            <div className="step-indicator">ẢI CHINH PHỤC: {step} / 3</div>
 
             {/* 1: ĐỊA ĐIỂM & THỜI GIAN */}
             {step === 1 && (
@@ -99,7 +108,7 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                     <h3 className="wizard-title"><MapPin size={22} className="inline-icon" /> CHỌN BẢN ĐỒ MUỐN ĐI</h3>
                     
                     <div className="input-group">
-                        <label>Vùng đất thám hiểm (Tỉnh/Thành)</label>
+                        <label>Điểm đến</label>
                         <select
                             value={tripData.city_id}
                             onChange={(e) => handleChange('city_id', parseInt(e.target.value))}
@@ -138,7 +147,7 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
 
                     <div className="input-row-grid-2">
                         <div className="input-group">
-                            <label>Số Chiến binh (Người lớn)</label>
+                            <label>Chiến binh (Adult)</label>
                             <input 
                                 type="number" 
                                 min="1" 
@@ -148,7 +157,7 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                             />
                         </div>
                         <div className="input-group">
-                            <label>Bạn đồng hành (Trẻ em)</label>
+                            <label>Đồng đội nhí (child)</label>
                             <input 
                                 type="number" 
                                 min="0" 
@@ -187,9 +196,7 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                         </small>
                     </div>
                     <div className="btn-row">
-                        <button className="btn-back squishy-btn yellow" onClick={() => setStep(1)}>
-                            <ArrowLeft size={16} /> Quay lại
-                        </button>
+                        <div style={{ flex: 1 }}></div>
                         <button className="btn-next squishy-btn green" onClick={() => {
                             if (!tripData.budget || tripData.budget <= 0) {
                                 alert("Vui lòng thiết lập lượng tài nguyên viễn chinh dự kiến.");
@@ -220,19 +227,18 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                         ))}
                     </div>
                     <div className="btn-row">
-                        <button className="btn-back squishy-btn yellow" onClick={() => setStep(2)}>
-                            <ArrowLeft size={16} /> Quay lại
-                        </button>
+                        <div style={{ flex: 1 }}></div>
                         <button
                             className="btn-next squishy-btn green"
                             onClick={handleFinalSubmit}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                         >
-                            <Compass size={18} /> KHỞI HÀNH 🎮
+                            <Compass size={18} /> KHỞI HÀNH
                         </button>
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 };

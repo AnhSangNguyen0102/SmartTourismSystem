@@ -138,11 +138,11 @@ const HistoryScreen = ({ onBack }) => {
                         >
                             <div className="card-status" data-status={item.status === 'DRAFT' || item.status === 'CONFIRMED' ? 'ONGOING' : item.status} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 {item.status === 'COMPLETED' ? (
-                                    <><CheckCircle2 size={14} /> Hoàn thành</>
+                                    <CheckCircle2 size={14} />
                                 ) : item.status === 'CANCELLED' ? (
-                                    <><XCircle size={14} /> Đã hủy</>
+                                    <XCircle size={14} />
                                 ) : (
-                                    <><RefreshCw size={14} /> Đang diễn ra</>
+                                    <RefreshCw size={14} />
                                 )}
                             </div>
                             <div className="card-info">
@@ -168,5 +168,4 @@ const HistoryScreen = ({ onBack }) => {
 };
 
 export default HistoryScreen;
-
 

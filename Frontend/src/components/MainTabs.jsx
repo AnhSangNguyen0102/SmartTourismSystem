@@ -8,20 +8,22 @@ import {
     User, 
     Compass, 
     Award, 
-    ShieldCheck, 
-    AlertTriangle, 
     Trophy, 
-    Settings, 
-    HelpCircle, 
-    MessageSquare, 
-    LogOut, 
     Sparkles, 
     Coins, 
+    Star,
     QrCode, 
     Camera, 
     CheckCircle2, 
+    MessageCircle,
+    LogOut,
+    Settings,
+    Medal,
+    Crown,
     Globe,
-    Activity
+    Activity,
+    HelpCircle,
+    AlertTriangle
 } from 'lucide-react';
 import './MainTabs.css';
 
@@ -38,6 +40,33 @@ import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
 import { showAlert } from '../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../platform/location';
+import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
+
+const getTierMeta = (level) => {
+    if (level <= 5) {
+        return { label: 'Hạng Đồng', shortLabel: 'Đồng', icon: Medal };
+    }
+    if (level <= 15) {
+        return { label: 'Hạng Bạc', shortLabel: 'Bạc', icon: Award };
+    }
+    if (level <= 30) {
+        return { label: 'Hạng Vàng', shortLabel: 'Vàng', icon: Crown };
+    }
+    return { label: 'Bạch Kim', shortLabel: 'Bạch Kim', icon: Trophy };
+};
+
+const getAchievementIcon = (achievement) => {
+    const category = String(achievement?.category || '').toLowerCase();
+    const type = String(achievement?.type || '').toLowerCase();
+    const title = String(achievement?.title || '').toLowerCase();
+    const key = `${category} ${type} ${title}`;
+
+    if (key.includes('check') || key.includes('gps') || key.includes('địa điểm')) return <MapPin size={18} className="achievement-icon-svg" />;
+    if (key.includes('ảnh') || key.includes('photo')) return <Camera size={18} className="achievement-icon-svg" />;
+    if (key.includes('thưởng') || key.includes('rank') || key.includes('top')) return <Trophy size={18} className="achievement-icon-svg" />;
+    if (key.includes('chuỗi') || key.includes('streak')) return <Star size={18} className="achievement-icon-svg" />;
+    return <Award size={18} className="achievement-icon-svg" />;
+};
 
 const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenLocationRegister, onOpenProfileEdit, onOpenHistory, onOpenTripDetail }) => {
     // State quản lý tab đang hiển thị
@@ -228,6 +257,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
             <MapComponent 
                 ref={mapComponentRef}
                 userLocation={userLocation} 
+                user={userInfo}
                 stops={[]} 
                 hiddenTasks={hiddenTasks} 
                 onHiddenTaskClick={handleHiddenTaskClick}
@@ -337,83 +367,70 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
         </div>
     );
 
-    // Màn hình Cá nhân (Profile) đã được lột xác
-    const ProfileScreen = () => (
+    // Màn hình Cá nhân (Profile) - Game Style
+    const ProfileScreen = () => {
+        const profileName = userInfo?.full_name || 'Khách du lịch';
+        const profileAvatarFallback = createInitialAvatarDataUrl(profileName);
+        const TierIcon = tierMeta.icon;
+
+        return (
         <div className="profile-screen">
-            <h2>Hồ sơ cá nhân</h2>
-
-            {/* Khu vực hiển thị Avatar và Tên */}
-            <div className="profile-user-card">
-                <img
-                    src={user?.avatar_url || '/mascot.png'}
-                    alt="Avatar"
-                    className="profile-avatar"
-                    onError={(event) => {
-                        event.currentTarget.onerror = null;
-                        event.currentTarget.src = '/mascot.png';
-                    }}
-                />
-                <div>
-                    <h3 className="profile-name">{user?.full_name || 'Khách du lịch'}</h3>
-                    <p className="profile-email">{user?.email || 'Chưa cập nhật email'}</p>
+            {/* === PLAYER CARD === */}
+            <div className="profile-player-card">
+                {/* Avatar Frame có viền game */}
+                <div className="profile-avatar-frame">
+                    <img
+                        src={getSafeAvatarSrc(userInfo?.avatar_url, profileName)}
+                        alt="Avatar"
+                        className="profile-avatar"
+                        onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = profileAvatarFallback;
+                        }}
+                    />
+                    <div className="profile-level-badge">Lv.{level}</div>
                 </div>
-            </div>
+                <h3 className="profile-player-name">{profileName}</h3>
+                <span className="profile-player-tier profile-tier-row">
+                    <TierIcon size={13} /> {tierMeta.label}
+                </span>
 
-            {/* Thống kê & Bảo mật (Layout chuyên nghiệp giống TripSummary) */}
-            <div className="profile-stats-card">
-                {/* Điểm thưởng */}
-                <div className="profile-stat-item">
-                    <div className="profile-stat-icon reward" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Award size={18} style={{ color: '#f1c40f' }} />
+                {/* EXP Bar lớn */}
+                <div className="profile-exp-section">
+                    <div className="profile-exp-label">
+                        <span className="profile-exp-title"><Star size={13} /> EXP</span>
+                        <span>{currentExp}/1000</span>
                     </div>
-                    <div className="profile-stat-text">
-                        <small className="profile-stat-label">Điểm thưởng</small>
-                        <strong className="profile-points-value">
-                            {(user?.points_balance || 0) + (user?.total_points || 0)} <span className="profile-points-unit">pts</span>
-                        </strong>
-                    </div>
-                </div>
-
-                <div className="profile-divider"></div>
-
-                {/* Trạng thái bảo mật */}
-                <div className="profile-stat-item">
-                    <div className={`profile-stat-icon ${user?.kyc_status === 'APPROVED' ? 'approved' : 'pending'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {user?.kyc_status === 'APPROVED' ? <ShieldCheck size={18} style={{ color: '#2ecc71' }} /> : <AlertTriangle size={18} style={{ color: '#e67e22' }} />}
-                    </div>
-                    <div className="profile-stat-text">
-                        <small className="profile-stat-label">Trạng thái</small>
-                        <strong className={`profile-status-value ${user?.kyc_status === 'APPROVED' ? 'approved' : 'pending'}`}>
-                            {user?.kyc_status === 'APPROVED' ? 'Đã bảo mật' : 'Chưa bảo mật'}
-                        </strong>
+                    <div className="profile-exp-bar">
+                        <div className="profile-exp-fill" style={{ width: `${expPercentage}%` }}></div>
                     </div>
                 </div>
             </div>
 
-            {/* Mạng xã hội liên kết */}
-            <div className="profile-social-card">
-                <div className="profile-stat-text">
-                    <h4 className="profile-social-title">Tài khoản liên kết</h4>
-                    <span className="profile-social-subtitle">Kết nối để đăng nhập nhanh</span>
+            {/* === STATS ROW (3 cột) === */}
+            <div className="profile-stats-row">
+                <div className="profile-stat-box">
+                    <div className="stat-box-icon"><Coins size={18} /></div>
+                    <div className="stat-box-value">{totalPoints}</div>
+                    <div className="stat-box-label">Xu vàng</div>
                 </div>
-
-                <div className="profile-social-icons">
-                    {/* Facebook (Đã liên kết giả định) */}
-                    <div className="profile-social-icon linked" title="Đã liên kết Facebook">
-                        <i className="fab fa-facebook-f"></i>
+                <div className="profile-stat-box">
+                    <div className="stat-box-icon"><Trophy size={18} /></div>
+                    <div className="stat-box-value">{achievements.filter(a => a.is_unlocked).length}</div>
+                    <div className="stat-box-label">Huy hiệu</div>
+                </div>
+                <div className="profile-stat-box">
+                    <div className="stat-box-icon">
+                        {userInfo?.kyc_status === 'APPROVED' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
                     </div>
-                    {/* Instagram (Chưa liên kết) */}
-                    <div className="profile-social-icon unlinked" title="Chưa liên kết Instagram">
-                        <i className="fab fa-instagram"></i>
+                    <div className="stat-box-value" style={{ fontSize: '12px' }}>
+                        {userInfo?.kyc_status === 'APPROVED' ? 'Đã xác minh' : 'Chưa xác minh'}
                     </div>
-                    {/* Twitter (Chưa liên kết) */}
-                    <div className="profile-social-icon unlinked" title="Chưa liên kết Twitter">
-                        <i className="fab fa-twitter"></i>
-                    </div>
+                    <div className="stat-box-label">Bảo mật</div>
                 </div>
             </div>
 
-            {/* THÀNH TỰU & HUY HIỆU */}
+            {/* === THÀNH TỰU & HUY HIỆU === */}
             <div className="achievements-card">
                 <h4 className="achievements-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Trophy size={18} style={{ color: '#f1c40f' }} /> Huy hiệu thám hiểm ({achievements.filter(a => a.is_unlocked).length}/{achievements.length})
@@ -460,7 +477,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                                 >
                                     {/* Icon Huy hiệu */}
                                     <div className={`achievement-icon ${ach.is_unlocked ? 'unlocked' : 'locked'}`}>
-                                        {ach.badge_icon}
+                                        {getAchievementIcon(ach)}
                                     </div>
                                     
                                     {/* Chi tiết thành tựu */}
@@ -468,7 +485,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                                         <div className="achievement-header">
                                             <strong className="achievement-name">{ach.title}</strong>
                                             <span className={`achievement-badge ${ach.is_unlocked ? 'unlocked' : 'locked'}`}>
-                                                {ach.is_unlocked ? `+${ach.points_reward} pts` : `Đang khóa`}
+                                                {ach.is_unlocked ? `+${ach.points_reward} điểm` : 'Đang khóa'}
                                             </span>
                                         </div>
                                         
@@ -500,37 +517,32 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                 )}
             </div>
 
-            {/* Danh sách các nút chức năng */}
+            {/* === MENU ACTIONS (style game buttons) === */}
             <div className="profile-menu-list">
-                <button
-                    className="profile-menu-btn"
-                    onClick={onOpenProfileEdit} // Khi nhấn sẽ đổi currentScreen sang 'profile_edit'
-                >
-                    <Settings size={18} className="profile-menu-icon" />
+                <button className="profile-menu-btn" onClick={onOpenProfileEdit}>
+                    <span className="menu-btn-icon"><Settings size={18} /></span>
                     <span className="profile-menu-label">Cài đặt quyền riêng tư</span>
+                    <span className="menu-btn-arrow">›</span>
                 </button>
-
                 <button className="profile-menu-btn">
-                    <HelpCircle size={18} className="profile-menu-icon" />
+                    <span className="menu-btn-icon"><HelpCircle size={18} /></span>
                     <span className="profile-menu-label">Trợ giúp và hỗ trợ</span>
+                    <span className="menu-btn-arrow">›</span>
                 </button>
-
                 <button className="profile-menu-btn">
-                    <MessageSquare size={18} className="profile-menu-icon" />
+                    <span className="menu-btn-icon"><MessageCircle size={18} /></span>
                     <span className="profile-menu-label">Đóng góp ý kiến</span>
+                    <span className="menu-btn-arrow">›</span>
                 </button>
-
-                {/* Nút Đăng xuất nổi bật */}
-                <button
-                    onClick={onLogout}
-                    className="profile-menu-btn profile-logout-btn"
-                >
-                    <LogOut size={18} className="profile-menu-icon" />
+                <button onClick={onLogout} className="profile-menu-btn profile-logout-btn">
+                    <span className="menu-btn-icon"><LogOut size={18} /></span>
                     <span className="logout-text">Đăng xuất</span>
+                    <span className="menu-btn-arrow">›</span>
                 </button>
             </div>
         </div>
     );
+    };
     // Render nội dung tương ứng với tab được chọn
     const renderContent = () => {
         switch (activeTab) {
@@ -568,6 +580,8 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
     const level = isGuest ? 1 : (Math.floor(totalPoints / 1000) + 1);
     const currentExp = isGuest ? 0 : (totalPoints % 1000);
     const expPercentage = (currentExp / 1000) * 100;
+    const tierMeta = getTierMeta(level);
+    const HudTierIcon = tierMeta.icon;
 
     const handleHudClick = () => {
         if (isGuest) {
@@ -588,20 +602,20 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                 <div className="hud-player-info">
                     <div className="hud-avatar-wrapper">
                         <img
-                            src={userInfo?.avatar_url || '/mascot.png'}
+                            src={getSafeAvatarSrc(userInfo?.avatar_url, userInfo?.full_name)}
                             alt="Avatar"
                             className="hud-avatar-img"
                             onError={(event) => {
                                 event.currentTarget.onerror = null;
-                                event.currentTarget.src = '/mascot.png';
+                                event.currentTarget.src = createInitialAvatarDataUrl(userInfo?.full_name);
                             }}
                         />
                         <div className="hud-level-badge">{level}</div>
                     </div>
                     <div className="hud-name-container">
                         <span className="hud-player-name">{isGuest ? 'Khách chơi' : (userInfo?.full_name || 'Chiến binh')}</span>
-                        <span className="hud-player-tier">
-                            {level <= 5 ? '🥉 Đồng' : level <= 15 ? '🥈 Bạc' : level <= 30 ? '🥇 Vàng' : '💎 Bạch Kim'}
+                        <span className="hud-player-tier hud-tier-row">
+                            <HudTierIcon size={11} /> {tierMeta.shortLabel}
                         </span>
                     </div>
                 </div>
@@ -609,13 +623,13 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                 <div className="hud-stats-group">
                     {/* Coin Counter Pill */}
                     <div className="hud-stat-pill coin-pill" title="Xu vàng tích lũy">
-                        <div className="pill-icon">🪙</div>
+                        <div className="pill-icon"><Coins size={15} /></div>
                         <div className="pill-value">{totalPoints}</div>
                     </div>
 
                     {/* EXP Counter Pill */}
                     <div className="hud-stat-pill exp-pill" title="Kinh nghiệm cấp">
-                        <div className="pill-icon">⭐️</div>
+                        <div className="pill-icon"><Star size={15} /></div>
                         <div className="pill-value-container">
                             <div className="pill-value">{currentExp}/1000</div>
                             <div className="hud-exp-progress-bar">

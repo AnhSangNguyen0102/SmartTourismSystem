@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
 import { ArrowLeft, Edit2, Award, Camera, Save } from 'lucide-react';
+import { showAlert } from '../platform/dialog';
+import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import './UserProfile.css';
 
 const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
@@ -70,7 +72,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
             });
 
             if (response.ok) {
-                alert("Cập nhật hồ sơ thành công!");
+                void showAlert('Cập nhật hồ sơ thành công!');
                 setIsEditing(false); // Thành công thì khóa form lại (Chế độ xem)
                 // const newName = isEnterprise ? profileData.business_name : profileData.full_name;
                 // if (onUpdateSuccess) onUpdateSuccess(newName);
@@ -79,10 +81,10 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                 }
             } else {
                 const errorData = await response.json();
-                alert("Lỗi: " + (errorData.detail || "Không thể cập nhật"));
+                void showAlert('Lỗi: ' + (errorData.detail || 'Không thể cập nhật'));
             }
         } catch (error) {
-            alert("Không thể kết nối tới máy chủ.");
+            void showAlert('Không thể kết nối tới máy chủ.');
         }
     };
 
@@ -146,21 +148,25 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                         <Award size={20} style={{ color: '#f1c40f' }} />
                     </div>
                     <div>
-                        <div className="user-profile-points-label">Điểm thưởng tích lũy</div>
-                        <div className="user-profile-points-value">
-                            {(userInfo?.points_balance || 0) + (userInfo?.total_points || 0)} <span className="user-profile-points-unit">pts</span>
-                        </div>
+                    <div className="user-profile-points-label">Điểm thưởng tích lũy</div>
+                    <div className="user-profile-points-value">
+                            {(userInfo?.points_balance || 0) + (userInfo?.total_points || 0)} <span className="user-profile-points-unit">điểm</span>
                     </div>
                 </div>
+            </div>
             )}
 
             {/* Avatar Section - Giữ nguyên cho cả 2 hoặc bạn có thể tách ra */}
             <div className="user-profile-avatar-section">
                 <div className="user-profile-avatar-wrapper">
                     <img
-                        src={profileData.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"}
+                        src={getSafeAvatarSrc(profileData.avatar_url, profileData.full_name || profileData.business_name)}
                         alt="Avatar"
                         className="user-profile-avatar-img"
+                        onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = createInitialAvatarDataUrl(profileData.full_name || profileData.business_name);
+                        }}
                     />
                     {isEditing && (
                         <button className="user-profile-avatar-edit-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -193,7 +199,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                                 ])}
                             </div>
                         </div>
-                        {renderRow("Nơi sống (Base Location)", profileData.base_location, "base_location")}
+                        {renderRow("Nơi sống", profileData.base_location, "base_location")}
                         <div className="user-profile-field-row">
                             <div>
                                 {renderRow("Phong cách Du lịch", profileData.travel_style, "travel_style", "text", [

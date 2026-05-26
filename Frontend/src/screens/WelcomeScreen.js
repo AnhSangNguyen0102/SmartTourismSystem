@@ -17,7 +17,7 @@ const WelcomeScreen = ({ onSignIn, onCreateAccount, onSkip }) => {
             <div className="character-lobby-card">
                 <div className="character-avatar-wrapper">
                     <img 
-                        src="/mascot.png" 
+                        src="https://api.dicebear.com/7.x/adventurer/svg?seed=tan-thu-viet-nam" 
                         alt="Hero Character" 
                         className="lobby-mascot-img"
                         onError={(e) => {
@@ -28,8 +28,8 @@ const WelcomeScreen = ({ onSignIn, onCreateAccount, onSkip }) => {
                     <div className="level-badge-float">LV.1</div>
                 </div>
                 <div className="character-stats-row">
-                    <span className="stat-pill">⚔️ Tân thủ</span>
-                    <span className="stat-pill">⭐️ 0 EXP</span>
+                    <span className="stat-pill">Tân thủ</span>
+                    <span className="stat-pill">0 EXP</span>
                 </div>
             </div>
 
@@ -50,10 +50,10 @@ const WelcomeScreen = ({ onSignIn, onCreateAccount, onSkip }) => {
             {/* Khối Nút bấm Game */}
             <div className="btn-group">
                 <button className="btn-primary squishy-btn" onClick={onSignIn}>
-                    BẮT ĐẦU CHƠI ⚔️
+                    BẮT ĐẦU CHƠI
                 </button>
                 <button className="btn-outline squishy-btn yellow" onClick={onCreateAccount}>
-                    TẠO NHÂN VẬT 👤
+                    TẠO TÀI KHOẢN
                 </button>
             </div>
         </div>

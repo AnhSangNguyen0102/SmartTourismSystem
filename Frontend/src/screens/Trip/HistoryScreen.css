@@ -247,3 +247,170 @@
     color: #007bff;
     font-size: 14px;
 }
+
+/* ===== Game-style sync overrides ===== */
+.history-container {
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    background: #e0f2fe;
+}
+
+.history-header {
+    background: #ffffff;
+    border: 3px solid #2c3e50;
+    border-radius: 18px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 0 #2c3e50;
+    margin-bottom: 14px;
+}
+
+.back-btn {
+    border: 2.5px solid #2c3e50;
+    background: #ffd32d;
+    color: #2c3e50;
+    box-shadow: 0 3px 0 #2c3e50;
+}
+
+.back-btn:hover {
+    transform: none;
+    background: #ffdf55;
+}
+
+.back-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 #2c3e50;
+}
+
+.history-header h1 {
+    color: #2c3e50;
+    font-weight: 900;
+}
+
+.filter-bar {
+    background: #fffdf0;
+    border: 3px solid #2c3e50;
+    border-radius: 18px;
+    box-shadow: 0 4px 0 #2c3e50;
+    margin-bottom: 16px;
+}
+
+.filter-group label {
+    color: #2c3e50;
+    font-weight: 800;
+}
+
+.filter-select,
+.filter-date {
+    border: 2px solid #2c3e50;
+    background-color: #ffffff;
+    border-radius: 12px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.filter-select:focus,
+.filter-date:focus {
+    border-color: #1e90ff;
+    box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.2);
+}
+
+.clear-date {
+    border: 1.5px solid #2c3e50;
+    background: #ffffff;
+}
+
+.reset-filter-btn {
+    border: 2.5px solid #2c3e50;
+    background: #1e90ff;
+    color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 3px 0 #2c3e50;
+    font-weight: 800;
+}
+
+.loading-state,
+.empty-state {
+    background: #fffdf0;
+    border: 3px solid #2c3e50;
+    border-radius: 18px;
+    box-shadow: 0 4px 0 #2c3e50;
+    min-height: 280px;
+}
+
+.spinner {
+    border: 3px solid #ffeaa7;
+    border-top: 3px solid #1e90ff;
+}
+
+.history-list {
+    gap: 12px;
+}
+
+.history-card {
+    background: #fffdf0;
+    border: 3px solid #2c3e50;
+    border-radius: 18px;
+    box-shadow: 0 4px 0 #2c3e50;
+    padding: 16px;
+}
+
+.history-card:hover {
+    transform: none;
+    box-shadow: 0 4px 0 #2c3e50;
+}
+
+.card-status {
+    border: 2px solid #2c3e50;
+    font-weight: 800;
+    text-transform: none;
+    border-radius: 12px;
+    min-width: 34px;
+    min-height: 30px;
+    justify-content: center;
+    padding: 4px 8px;
+}
+
+.card-status[data-status='COMPLETED'] {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.card-status[data-status='CANCELLED'] {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.card-status[data-status='ONGOING'] {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.card-info h3 {
+    color: #2c3e50;
+    font-weight: 900;
+    max-width: calc(100% - 110px);
+}
+
+.card-date,
+.card-stats span {
+    color: #475569;
+    font-weight: 700;
+}
+
+@media (max-width: 380px) {
+    .card-status {
+        position: static;
+        width: fit-content;
+        margin-bottom: 8px;
+    }
+
+    .card-info h3 {
+        max-width: 100%;
+    }
+
+    .card-stats {
+        flex-direction: column;
+        gap: 6px;
+    }
+}

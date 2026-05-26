@@ -1,11 +1,18 @@
 .recommend-screen {
-    padding: 20px;
-    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    padding: 14px;
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 100%;
     box-sizing: border-box;
-    background: #f8f9fa;
+    background: #fffdf0;
+    position: relative;
+    overflow-y: auto;
+    border: none;
+    outline: none;
+    border-radius: 0;
 }
 
 .recommend-header {
@@ -14,6 +21,11 @@
     gap: 15px;
     margin-bottom: 10px;
     flex-shrink: 0;
+    background: #fffdf0;
+    border: 2.5px solid #2c3e50;
+    border-radius: 16px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 0 #2c3e50;
 }
 
 .recommend-header h2 {
@@ -37,6 +49,8 @@
     font-size: 14px;
     margin-bottom: 20px;
     flex-shrink: 0;
+    color: #2c3e50;
+    font-weight: 700;
 }
 
 .loading-state, .error-state {
@@ -46,6 +60,11 @@
     justify-content: center;
     height: 100%;
     text-align: center;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 20px;
 }
 
 .locations-list {
@@ -59,24 +78,24 @@
 }
 
 .location-card {
-    background: white;
+    background: #fffdf0;
     border-radius: 10px;
     padding: 12px 14px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 0 #2c3e50;
     cursor: pointer;
-    border: 2px solid transparent;
+    border: 2.5px solid #2c3e50;
     transition: all 0.2s;
     flex-shrink: 0;
     min-height: 92px;
 }
 
 .location-card.selected {
-    border-color: #0abde3;
-    background: #f0faff;
+    border-color: #2c3e50;
+    background: #fff3a6;
 }
 
 .loc-info h4 {
@@ -127,13 +146,64 @@
     margin-top: 15px;
     padding: 15px;
     padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
-    background: white;
+    background: #fffdf0;
     border-radius: 16px;
-    box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+    border: 2.5px solid #2c3e50;
+    box-shadow: 0 4px 0 #2c3e50;
     display: flex;
     flex-direction: column;
     gap: 12px;
     flex-shrink: 0;
+}
+
+.plan-loader-spinner {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 4px solid #ffeaa7;
+    border-top-color: #f59e0b;
+    margin: 0 auto 10px;
+    animation: plan-spin 0.9s linear infinite;
+}
+
+@keyframes plan-spin {
+    to { transform: rotate(360deg); }
+}
+
+.plan-creating-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(14, 25, 43, 0.38);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.plan-creating-card {
+    width: 100%;
+    max-width: 320px;
+    background: #ffffff;
+    border: 3px solid #2c3e50;
+    border-radius: 18px;
+    box-shadow: 0 6px 0 #2c3e50;
+    text-align: center;
+    padding: 18px 14px;
+}
+
+.plan-creating-card h3 {
+    margin: 0 0 8px;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.plan-creating-card p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 .budget-tracker {
@@ -202,15 +272,15 @@
 }
 
 .btn-create-trip {
-    background: #0abde3;
-    color: white;
-    border: none;
+    background: #2ed573;
+    color: #2c3e50;
+    border: 2.5px solid #2c3e50;
     padding: 10px 20px;
     border-radius: 25px;
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(10, 189, 227, 0.3);
+    box-shadow: 0 4px 0 #2c3e50;
     transition: all 0.2s;
     min-height: 44px;
     flex-shrink: 0;
@@ -223,14 +293,19 @@
 }
 
 .btn-create-trip:hover:not(:disabled) {
-    background: #09a1c1;
-    transform: translateY(-2px);
+    background: #2ed573;
+    transform: none;
+}
+
+.btn-create-trip:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #2c3e50;
 }
 
 .loc-view-detail {
     margin-top: 8px;
     font-size: 13px;
-    color: #0abde3;
+    color: #1e90ff;
     font-weight: bold;
     cursor: pointer;
     display: inline-block;

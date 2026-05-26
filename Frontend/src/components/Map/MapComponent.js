@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { createPlayerAvatarIcon } from '../PlayerAvatar/PlayerAvatar';
 
-const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks = [], onHiddenTaskClick = null, fullScreen = false, mapStyle = 'voyager', showHiddenTasks = true }, ref) => {
+const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks = [], onHiddenTaskClick = null, fullScreen = false, mapStyle = 'voyager', showHiddenTasks = true, user = null }, ref) => {
     const mapRef = useRef(null);
     const mapInstance = useRef(null);
     const markersLayer = useRef(null);
     const tileLayerRef = useRef(null);
+    const hasAutoFitRef = useRef(false);
+    const prevStopsKeyRef = useRef('');
+    const hasUserInteractedRef = useRef(false);
 
     useImperativeHandle(ref, () => ({
         flyToUserLocation: () => {
@@ -39,12 +43,20 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
 
         markersLayer.current = L.layerGroup().addTo(mapInstance.current);
 
+        const markUserInteracted = () => {
+            hasUserInteractedRef.current = true;
+        };
+        mapInstance.current.on('zoomstart', markUserInteracted);
+        mapInstance.current.on('dragstart', markUserInteracted);
+
         setTimeout(() => {
             mapInstance.current?.invalidateSize();
         }, 400);
 
         return () => {
             if (mapInstance.current) {
+                mapInstance.current.off('zoomstart');
+                mapInstance.current.off('dragstart');
                 mapInstance.current.remove();
                 mapInstance.current = null;
             }
@@ -100,18 +112,10 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
             bounds.push([lat, lng]);
         });
 
-        // User location marker matching the target image (blue dot with radius)
+        // User location marker with shared game avatar style
         if (userLocation?.lat && userLocation?.lng) {
             L.marker([userLocation.lat, userLocation.lng], {
-                icon: L.divIcon({
-                    className: 'user-icon',
-                    html: `<div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
-                            <div style="position:absolute; width:100%; height:100%; background-color:rgba(37, 99, 235, 0.15); border-radius:50%; animation:pulse-radius 2s infinite;"></div>
-                            <div style="background-color:#2563eb; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow:0 0 6px rgba(37,99,235,0.4); z-index:2;"></div>
-                           </div>`,
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 20],
-                }),
+                icon: createPlayerAvatarIcon(user),
             })
                 .bindPopup('Vị trí của bạn')
                 .addTo(markersLayer.current);
@@ -160,10 +164,20 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
             });
         }
 
-        if (bounds.length > 0) {
+        // Chỉ auto-fit lần đầu hoặc khi danh sách điểm dừng thay đổi,
+        // tránh giật zoom khi GPS/userLocation cập nhật liên tục.
+        const stopsKey = stops
+            .map((stop) => `${stop.stop_id || stop.location_id || stop.location_name}-${stop.latitude}-${stop.longitude}`)
+            .join('|');
+        const shouldAutoFitByData = !hasAutoFitRef.current || prevStopsKeyRef.current !== stopsKey;
+        const shouldAutoFit = shouldAutoFitByData && !hasUserInteractedRef.current;
+
+        if (bounds.length > 0 && shouldAutoFit) {
             mapInstance.current.fitBounds(bounds, { padding: [40, 40], animate: false });
+            hasAutoFitRef.current = true;
+            prevStopsKeyRef.current = stopsKey;
         }
-    }, [stops, userLocation, hiddenTasks, onHiddenTaskClick, showHiddenTasks]);
+    }, [stops, userLocation, hiddenTasks, onHiddenTaskClick, showHiddenTasks, user]);
 
     return (
         <div

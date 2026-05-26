@@ -1,70 +1,92 @@
 .login-container {
     width: 100%;
     min-height: 100%;
-    padding: 24px;
-    padding-top: calc(40px + env(safe-area-inset-top, 0px));
-    background-color: #f8f9fa;
+    padding: 20px;
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+    background: var(--st-bg, #e0f2fe);
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+.login-container form {
+    background: var(--st-surface, #ffffff);
+    border: 3px solid #2c3e50;
+    border-radius: 22px;
+    box-shadow: 0 6px 0 #2c3e50;
+    padding: 18px 14px;
 }
 
 .login-title {
     text-align: center;
-    color: #2c3e50;
-    margin-bottom: 20px;
+    color: var(--st-text, #243447);
+    margin-bottom: 18px;
+    font-size: 34px;
 }
 
 .login-input {
     width: 100%;
-    padding: 14px;
-    margin-bottom: 15px;
-    border: 1px solid #ced4da;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border: 2px solid #2c3e50;
     border-radius: 12px;
     box-sizing: border-box;
     font-size: 16px;
-    min-height: 48px;
+    min-height: 46px;
+    background: #fffde8;
+    color: var(--st-text, #243447);
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #1e90ff;
+    box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.2);
 }
 
 .login-button {
     width: 100%;
-    padding: 14px;
-    background-color: #007bff;
-    color: white;
-    border: none;
+    padding: 12px;
+    background-color: #1e90ff;
+    color: #ffffff;
+    border: 3px solid #2c3e50;
     border-radius: 12px;
     font-size: 16px;
+    font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.3s;
-    min-height: 48px;
-}
-
-.login-button:hover {
-    background-color: #0056b3;
+    min-height: 46px;
+    box-shadow: 0 4px 0 #2c3e50;
 }
 
 .login-button:active {
-    transform: scale(0.98);
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #2c3e50;
 }
 
 .error-msg {
-    color: #dc3545;
+    color: #ef4444;
     text-align: center;
     margin-top: 10px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .auth-back {
     cursor: pointer;
-    margin-bottom: 20px;
-    color: #555;
-    font-weight: bold;
+    margin-bottom: 14px;
+    color: var(--st-text, #243447);
+    font-weight: 700;
     font-size: 18px;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
+    background: #ffffff;
+    border: 2px solid #2c3e50;
+    border-radius: 10px;
+    padding: 0 10px;
+    box-shadow: 0 3px 0 #2c3e50;
 }
 
 .auth-google-row {
-    margin-top: 20px;
+    margin-top: 16px;
     display: flex;
     justify-content: center;
 }
@@ -73,14 +95,14 @@
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 16px;
     font-size: 14px;
 }
 
 .auth-link {
-    color: #0abde3;
+    color: #0ea5e9;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 .auth-center-link-row {
@@ -130,37 +152,43 @@
 .role-toggle-btn {
     flex: 1;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    border: none;
+    border: 2px solid #2c3e50;
     font-weight: bold;
     transition: 0.3s;
     min-height: 44px;
+    box-shadow: 0 3px 0 #2c3e50;
 }
 
 .role-toggle-btn.inactive {
-    background-color: #f1f2f6;
-    color: black;
+    background-color: #ffffff;
+    color: #2c3e50;
 }
 
 .role-toggle-btn.user-active {
-    background-color: #0abde3;
+    background-color: #34d399;
     color: white;
 }
 
 .role-toggle-btn.enterprise-active {
-    background-color: #f0932b;
+    background-color: #f59e0b;
     color: white;
 }
 
+.role-toggle-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #2c3e50;
+}
+
 .register-submit-btn {
-    background-color: #28a745;
+    background-color: #2ed573;
 }
 
 .forgot-submit-btn {
-    background-color: #0abde3;
+    background-color: #1e90ff;
 }
 
 .reset-submit-btn {
-    background-color: #2ed573;
+    background-color: #22c55e;
 }
