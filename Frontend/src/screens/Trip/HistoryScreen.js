@@ -71,8 +71,8 @@ const HistoryScreen = ({ onBack }) => {
     return (
         <div className="history-container">
             <div className="history-header">
-                <button className="back-btn" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ArrowLeft size={16} /> Quay lại
+                <button className="history-back-btn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
+                    <ArrowLeft size={20} />
                 </button>
                 <h1>Lịch sử hành trình</h1>
             </div>
@@ -168,4 +168,3 @@ const HistoryScreen = ({ onBack }) => {
 };
 
 export default HistoryScreen;
-

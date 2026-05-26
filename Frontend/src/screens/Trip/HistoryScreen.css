@@ -14,6 +14,31 @@
     gap: 15px;
 }
 
+.history-back-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 12px;
+    border: none;
+    background: #e3f2fd;
+    color: #1976d2;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.history-back-btn:hover {
+    transform: translateX(-3px);
+    background: #bbdefb;
+}
+
 .back-btn {
     width: auto;
     padding: 0 15px;
@@ -43,6 +68,7 @@
     font-weight: 700;
     color: #1a1a1a;
     margin: 0;
+    min-width: 0;
 }
 
 /* --- Filter Bar Styles --- */
@@ -272,12 +298,29 @@
     box-shadow: 0 3px 0 #2c3e50;
 }
 
+.history-back-btn {
+    border: 2.5px solid #2c3e50;
+    background: #ffd32d;
+    color: #2c3e50;
+    box-shadow: 0 3px 0 #2c3e50;
+}
+
 .back-btn:hover {
     transform: none;
     background: #ffdf55;
 }
 
+.history-back-btn:hover {
+    transform: none;
+    background: #ffdf55;
+}
+
 .back-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 #2c3e50;
+}
+
+.history-back-btn:active {
     transform: translateY(3px);
     box-shadow: 0 0 0 #2c3e50;
 }
