@@ -39,6 +39,7 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
     const mapInstance = useRef(null);
     const markersLayer = useRef(null);
     const tileLayerRef = useRef(null);
+    const hasInitialViewRef = useRef(false);
 
     useImperativeHandle(ref, () => ({
         flyToUserLocation: async () => {
@@ -66,8 +67,25 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
     useEffect(() => {
         if (!mapRef.current || mapInstance.current) return;
 
-        const centerLat = stops.length > 0 ? parseFloat(stops[0].latitude) : 10.762622;
-        const centerLng = stops.length > 0 ? parseFloat(stops[0].longitude) : 106.660172;
+        let centerLat = 10.762622;
+        let centerLng = 106.660172;
+        let initialZoom = 13;
+
+        if (userLocation?.lat && userLocation?.lng) {
+            centerLat = userLocation.lat;
+            centerLng = userLocation.lng;
+            initialZoom = 15;
+            hasInitialViewRef.current = true;
+        } else if (stops.length > 0) {
+            const stopLat = parseFloat(stops[0].latitude);
+            const stopLng = parseFloat(stops[0].longitude);
+            if (!isNaN(stopLat) && !isNaN(stopLng)) {
+                centerLat = stopLat;
+                centerLng = stopLng;
+                initialZoom = 13;
+                hasInitialViewRef.current = true;
+            }
+        }
 
         mapInstance.current = L.map(mapRef.current, {
             zoomControl: !fullScreen, // Hide zoom control if full screen for cleaner look
@@ -77,7 +95,7 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
             zoomAnimation: true,
             fadeAnimation: true,
             markerZoomAnimation: true
-        }).setView([centerLat, centerLng], 13);
+        }).setView([centerLat, centerLng], initialZoom);
         const initialTileStyle = getTileStyleConfig(mapStyle);
         tileLayerRef.current = L.tileLayer(initialTileStyle.url, initialTileStyle.options).addTo(mapInstance.current);
 
@@ -94,9 +112,27 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
             }
             markersLayer.current = null;
             tileLayerRef.current = null;
+            hasInitialViewRef.current = false;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fullScreen]); // stops is removed from dependencies to prevent recreating map when stops reference changes
+
+    useEffect(() => {
+        if (!mapInstance.current) return;
+        if (!hasInitialViewRef.current) {
+            if (userLocation?.lat && userLocation?.lng) {
+                mapInstance.current.setView([userLocation.lat, userLocation.lng], 15);
+                hasInitialViewRef.current = true;
+            } else if (stops.length > 0) {
+                const stopLat = parseFloat(stops[0].latitude);
+                const stopLng = parseFloat(stops[0].longitude);
+                if (!isNaN(stopLat) && !isNaN(stopLng)) {
+                    mapInstance.current.setView([stopLat, stopLng], 13);
+                    hasInitialViewRef.current = true;
+                }
+            }
+        }
+    }, [userLocation, stops]);
 
     useEffect(() => {
         if (!mapInstance.current) return;
