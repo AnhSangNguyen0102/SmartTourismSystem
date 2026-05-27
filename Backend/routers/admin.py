@@ -48,7 +48,7 @@ def check_duplicate_locations(db: Session, name: str, lat: float, lon: float, ad
 
 
 def check_admin_access(current_user: dict = Depends(verify_token), db: Session = Depends(get_session)):
-    """Kiểm tra quyền Admin/Owner/CS"""
+    """Kiểm tra quyền Admin."""
     user_id_str = current_user.get("user_id") or current_user.get("sub")
     if not user_id_str:
         raise HTTPException(status_code=401, detail="Không tìm thấy thông tin user")
@@ -60,9 +60,106 @@ def check_admin_access(current_user: dict = Depends(verify_token), db: Session =
 
     user = db.exec(select(models.Users).where(models.Users.user_id == user_uuid)).first()
 
-    if not user or user.role not in [models.UserRole.ADMIN, "OWNER", "CS"]:
+    if not user or user.role != models.UserRole.ADMIN or user.status != models.UserStatus.ACTIVE:
         raise HTTPException(status_code=403, detail="Bạn không có quyền truy cập tính năng này.")
     return user
+
+
+def _parse_time_value(raw_value: str, fallback: str):
+    value = raw_value or fallback
+    for fmt in ("%H:%M:%S", "%H:%M"):
+        try:
+            return datetime.strptime(value, fmt).time()
+        except ValueError:
+            continue
+    raise HTTPException(status_code=400, detail=f"Định dạng thời gian không hợp lệ: {value}")
+
+
+def _load_submission_data(sub: models.LocationSubmissions) -> dict:
+    try:
+        return json.loads(sub.data_json)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Dữ liệu đề xuất địa điểm không hợp lệ.")
+
+
+def _get_target_user(db: Session, target_user_id: UUID) -> models.Users:
+    user = db.exec(select(models.Users).where(models.Users.user_id == target_user_id)).first()
+    if not user or user.status == models.UserStatus.INACTIVE:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
+    return user
+
+
+def _revoke_user_sessions(db: Session, user_id: UUID) -> None:
+    sessions = db.exec(
+        select(models.UserSessions).where(
+            models.UserSessions.user_id == user_id,
+            models.UserSessions.is_revoked == False,
+        )
+    ).all()
+    for session in sessions:
+        session.is_revoked = True
+        db.add(session)
+
+
+def _create_location_from_submission(
+    db: Session,
+    sub: models.LocationSubmissions,
+    data: dict,
+) -> models.Locations:
+    now = datetime.utcnow()
+    location = models.Locations(
+        location_id=uuid4(),
+        location_name=data.get("location_name", "").strip(),
+        address=data.get("address"),
+        latitude=data.get("latitude", 0),
+        longitude=data.get("longitude", 0),
+        city_id=int(data.get("city_id", 1)),
+        open_time=_parse_time_value(data.get("open_time"), "08:00:00"),
+        close_time=_parse_time_value(data.get("close_time"), "22:00:00"),
+        min_price=data.get("min_price", 0),
+        max_price=data.get("max_price", 0),
+        currency=data.get("currency", "VND"),
+        is_active=True,
+        create_at=now,
+        update_at=now,
+    )
+    if not location.location_name:
+        raise HTTPException(status_code=400, detail="Tên địa điểm trong yêu cầu bị trống.")
+
+    db.add(location)
+    db.flush()
+
+    db.add(models.BusinessLocation(business_id=sub.enterprise_id, location_id=location.location_id))
+
+    # Validate categories against existing category_ids to avoid foreign key violations
+    category_ids = [int(cid) for cid in (data.get("category_ids") or [])]
+    if category_ids:
+        existing_categories = db.exec(select(models.Categories.category_id).where(models.Categories.category_id.in_(category_ids))).all()
+        valid_category_ids = set(existing_categories)
+        for category_id in category_ids:
+            if category_id in valid_category_ids:
+                db.add(models.LocationCategories(location_id=location.location_id, category_id=category_id))
+
+    # Validate tags against existing tag_ids to avoid foreign key violations
+    tag_ids = [int(tid) for tid in (data.get("tag_ids") or [])]
+    if tag_ids:
+        existing_tags = db.exec(select(models.Tags.tag_id).where(models.Tags.tag_id.in_(tag_ids))).all()
+        valid_tag_ids = set(existing_tags)
+        for tag_id in tag_ids:
+            if tag_id in valid_tag_ids:
+                db.add(models.LocationTags(location_id=location.location_id, tag_id=tag_id))
+
+    for index, image_url in enumerate(data.get("images") or [], start=1):
+        if image_url:
+            db.add(
+                models.LocationsImage(
+                    location_id=location.location_id,
+                    url=image_url,
+                    display_order=index,
+                )
+            )
+
+    return location
 
 
 @router.post("/reset-ranks")
@@ -85,7 +182,13 @@ def grant_points(
 ):
     """Gửi thêm điểm cho một người dùng hoặc tất cả người dùng"""
     target_user_id = data.get("user_id") 
-    amount = data.get("amount", 0)
+    try:
+        amount = int(data.get("amount", 0))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Số điểm phải là số nguyên.")
+
+    if amount <= 0 or amount > 100000:
+        raise HTTPException(status_code=400, detail="Số điểm phải nằm trong khoảng 1 đến 100000.")
     
     def update_profile(profile):
         profile.points_balance = (profile.points_balance or 0) + amount
@@ -110,7 +213,9 @@ def grant_points(
 def get_all_users(admin: models.Users = Depends(check_admin_access), db: Session = Depends(get_session)):
     """Lấy danh sách người dùng đầy đủ cho Admin"""
     stmt = select(models.Users, models.UserProfiles).join(
-        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id
+        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
+    ).where(
+        models.Users.status != models.UserStatus.INACTIVE
     )
     users = db.exec(stmt).all()
     
@@ -119,14 +224,81 @@ def get_all_users(admin: models.Users = Depends(check_admin_access), db: Session
             "id": str(u.user_id),
             "name": u.full_name,
             "email": u.email,
-            "role": u.role,
-            "points": p.points_balance,
-            "total_points": p.total_points,
-            "rank": p.status,
-            "status": u.status,
+            "role": getattr(u.role, "value", u.role),
+            "points": p.points_balance if p else 0,
+            "total_points": p.total_points if p else 0,
+            "rank": p.status if p else None,
+            "status": getattr(u.status, "value", u.status),
             "created_at": u.create_at
         } for u, p in users
     ]
+
+
+@router.patch("/users/{target_user_id}/points")
+def update_user_points(
+    target_user_id: UUID,
+    data: dict,
+    admin: models.Users = Depends(check_admin_access),
+    db: Session = Depends(get_session),
+):
+    """Admin trừ hoặc reset điểm của một người dùng. Điểm không bao giờ xuống dưới 0."""
+    _get_target_user(db, target_user_id)
+    profile = db.exec(select(models.UserProfiles).where(models.UserProfiles.user_id == target_user_id)).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ người dùng.")
+
+    action = str(data.get("action", "")).lower()
+    if action == "deduct":
+        try:
+            amount = int(data.get("amount", 0))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="Số điểm phải là số nguyên.")
+        if amount <= 0 or amount > 100000:
+            raise HTTPException(status_code=400, detail="Số điểm phải nằm trong khoảng 1 đến 100000.")
+
+        profile.points_balance = max(0, int(profile.points_balance or 0) - amount)
+        profile.total_points = max(0, int(profile.total_points or 0) - amount)
+    elif action == "reset":
+        profile.points_balance = 0
+        profile.total_points = 0
+    else:
+        raise HTTPException(status_code=400, detail="Hành động điểm không hợp lệ.")
+
+    profile.updated_at = datetime.utcnow()
+    db.add(profile)
+    db.commit()
+    return {
+        "message": "Đã cập nhật điểm người dùng.",
+        "points_balance": profile.points_balance,
+        "total_points": profile.total_points,
+    }
+
+
+@router.patch("/users/{target_user_id}/status")
+def update_user_status(
+    target_user_id: UUID,
+    data: dict,
+    admin: models.Users = Depends(check_admin_access),
+    db: Session = Depends(get_session),
+):
+    """Admin khóa hoặc mở khóa tài khoản."""
+    target_user = _get_target_user(db, target_user_id)
+    if target_user.user_id == admin.user_id:
+        raise HTTPException(status_code=400, detail="Không thể tự khóa tài khoản admin đang thao tác.")
+
+    action = str(data.get("action", "")).lower()
+    if action == "lock":
+        target_user.status = models.UserStatus.BANNED
+        _revoke_user_sessions(db, target_user.user_id)
+    elif action == "unlock":
+        target_user.status = models.UserStatus.ACTIVE
+    else:
+        raise HTTPException(status_code=400, detail="Hành động trạng thái không hợp lệ.")
+
+    target_user.update_at = datetime.utcnow()
+    db.add(target_user)
+    db.commit()
+    return {"message": "Đã cập nhật trạng thái tài khoản.", "status": target_user.status}
 
 
 @router.delete("/social/posts/{post_id}")
@@ -152,12 +324,16 @@ def get_reports(admin: models.Users = Depends(check_admin_access), db: Session =
 @router.get("/stats")
 def get_system_stats(admin: models.Users = Depends(check_admin_access), db: Session = Depends(get_session)):
     """Lấy số liệu thống kê toàn hệ thống"""
-    total_users = db.query(models.Users).count()
+    total_users = db.query(models.Users).filter(models.Users.status != models.UserStatus.INACTIVE).count()
     total_posts = db.query(models.SocialPosts).count()
     
     # Tính tổng điểm
     total_points = 0
-    profiles = db.exec(select(models.UserProfiles)).all()
+    profiles = db.exec(
+        select(models.UserProfiles)
+        .join(models.Users, models.Users.user_id == models.UserProfiles.user_id)
+        .where(models.Users.status != models.UserStatus.INACTIVE)
+    ).all()
     for p in profiles:
         total_points += p.total_points
         
@@ -204,17 +380,22 @@ def update_user_role(
     db: Session = Depends(get_session)
 ):
     """Cập nhật phân quyền người dùng"""
-    target_user = db.exec(select(models.Users).where(models.Users.user_id == target_user_id)).first()
-    if not target_user:
-        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
+    target_user = _get_target_user(db, target_user_id)
+    if target_user.user_id == admin.user_id:
+        raise HTTPException(status_code=400, detail="Không thể tự thay đổi role của admin đang thao tác.")
+    if target_user.role == models.UserRole.ENTERPRISE:
+        raise HTTPException(status_code=400, detail="Không thể đổi role tài khoản ENTERPRISE tại màn này.")
         
     new_role_str = role_data.get("role")
     try:
         new_role = models.UserRole(new_role_str)
     except ValueError:
         raise HTTPException(status_code=400, detail="Vai trò không hợp lệ")
+    if new_role not in (models.UserRole.USER, models.UserRole.ADMIN):
+        raise HTTPException(status_code=400, detail="Chỉ hỗ trợ chuyển giữa USER và ADMIN.")
 
     target_user.role = new_role
+    target_user.update_at = datetime.utcnow()
     db.add(target_user)
     db.commit()
     return {"message": f"Đã cập nhật vai trò cho {target_user.full_name} thành {new_role_str}."}
@@ -311,7 +492,9 @@ def reject_enterprise(
     if profile.status != models.EnterpriseStatus.PENDING:
         raise HTTPException(status_code=400, detail="Hồ sơ không ở trạng thái chờ duyệt.")
 
-    reason = req_body.get("reason") or "Không đạt tiêu chuẩn hệ thống."
+    reason = (req_body.get("reason") or "").strip()
+    if not reason:
+        raise HTTPException(status_code=400, detail="Lý do từ chối là bắt buộc.")
     profile.status = models.EnterpriseStatus.REJECTED
     profile.updated_at = datetime.utcnow()
     db.add(profile)
@@ -444,52 +627,53 @@ def approve_location_submission(
     if sub.status != "PENDING":
         raise HTTPException(status_code=400, detail="Yêu cầu không ở trạng thái chờ duyệt.")
 
-    sub.status = "APPROVED"
-    sub.reviewed_at = datetime.utcnow()
-    sub.reviewed_by = admin.user_id
-    
-    # Áp dụng thay đổi thực tế vào bảng Locations
     try:
-        data = json.loads(sub.data_json)
+        data = _load_submission_data(sub)
         if sub.type == "CREATE":
-            new_loc = models.Locations(
-                location_id=uuid4(),
-                location_name=data.get("location_name", ""),
-                latitude=data.get("latitude", 0.0),
-                longitude=data.get("longitude", 0.0),
-                city_id=data.get("city_id", 1),
-                open_time=datetime.strptime(data.get("open_time", "08:00"), "%H:%M").time(),
-                close_time=datetime.strptime(data.get("close_time", "22:00"), "%H:%M").time(),
-                min_price=data.get("min_price", 0),
-                max_price=data.get("max_price", 0)
-            )
-            db.add(new_loc)
-            db.flush()
-            sub.location_id = new_loc.location_id
-            
-            # Gắn với BusinessLocation
-            bus_loc = models.BusinessLocation(
-                business_id=sub.enterprise_id,
-                location_id=new_loc.location_id
-            )
-            db.add(bus_loc)
-            
+            location = _create_location_from_submission(db, sub, data)
+            sub.location_id = location.location_id
+
         elif sub.type == "UPDATE" and sub.location_id:
             loc = db.exec(select(models.Locations).where(models.Locations.location_id == sub.location_id)).first()
             if loc:
                 loc.location_name = data.get("location_name", loc.location_name)
+                loc.address = data.get("address", loc.address)
                 loc.latitude = data.get("latitude", loc.latitude)
                 loc.longitude = data.get("longitude", loc.longitude)
                 loc.city_id = data.get("city_id", loc.city_id)
+                if data.get("open_time"):
+                    loc.open_time = _parse_time_value(data.get("open_time"), loc.open_time.strftime("%H:%M:%S"))
+                if data.get("close_time"):
+                    loc.close_time = _parse_time_value(data.get("close_time"), loc.close_time.strftime("%H:%M:%S"))
                 loc.min_price = data.get("min_price", loc.min_price)
                 loc.max_price = data.get("max_price", loc.max_price)
+                loc.currency = data.get("currency", loc.currency)
+                loc.update_at = datetime.utcnow()
                 db.add(loc)
+            else:
+                raise HTTPException(status_code=404, detail="Không tìm thấy địa điểm cần cập nhật.")
+        else:
+            raise HTTPException(status_code=400, detail="Loại yêu cầu địa điểm không được hỗ trợ.")
+
+        sub.status = "APPROVED"
+        sub.reviewed_at = datetime.utcnow()
+        sub.reviewed_by = admin.user_id
+        db.add(sub)
+        db.add(
+            models.LocationVerificationLogs(
+                submission_id=sub.submission_id,
+                location_id=sub.location_id,
+                admin_id=admin.user_id,
+                action="APPROVE",
+                reason="Phê duyệt yêu cầu địa điểm.",
+            )
+        )
+        db.commit()
     except Exception as e:
         db.rollback()
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=f"Lỗi phê duyệt dữ liệu: {str(e)}")
-
-    db.add(sub)
-    db.commit()
     return {"message": "Đã phê duyệt địa điểm thành công!"}
 
 
@@ -507,12 +691,23 @@ def reject_location_submission(
     if sub.status != "PENDING":
         raise HTTPException(status_code=400, detail="Yêu cầu không ở trạng thái chờ duyệt.")
 
-    reason = req_body.get("reason") or "Không cung cấp lý do cụ thể."
+    reason = (req_body.get("reason") or "").strip()
+    if not reason:
+        raise HTTPException(status_code=400, detail="Lý do từ chối là bắt buộc.")
     sub.status = "REJECTED"
     sub.reject_reason = reason
     sub.reviewed_at = datetime.utcnow()
     sub.reviewed_by = admin.user_id
     
     db.add(sub)
+    db.add(
+        models.LocationVerificationLogs(
+            submission_id=sub.submission_id,
+            location_id=sub.location_id,
+            admin_id=admin.user_id,
+            action="REJECT",
+            reason=reason,
+        )
+    )
     db.commit()
     return {"message": "Đã từ chối yêu cầu kiểm duyệt địa điểm."}

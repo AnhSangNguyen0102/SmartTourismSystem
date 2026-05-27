@@ -1137,3 +1137,17 @@
 @keyframes trip-spin {
     to { transform: rotate(360deg); }
 }
+
+.image-btn-effect {
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.image-btn-effect:hover:not(:disabled) {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+.image-btn-effect:active:not(:disabled) {
+    transform: scale(0.95);
+    filter: brightness(0.9);
+}

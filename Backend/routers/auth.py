@@ -13,7 +13,7 @@ from database import get_session
 import crud.crud_user as crud_user
 import crud.crud_auth as crud_auth 
 import schemas
-from models import UserRole, UserStatus
+from models import EnterpriseProfiles, EnterpriseStatus, UserRole, UserStatus
 import core.security as security
 
 from google.oauth2 import id_token
@@ -63,7 +63,26 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_session)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email này đã được đăng ký")
     
-    # 2. Tạo user
+    requested_role = str(user_data.role or "USER").upper()
+    is_enterprise_signup = requested_role == UserRole.ENTERPRISE.value
+
+    if is_enterprise_signup:
+        missing_fields = [
+            label for label, value in {
+                "business_name": user_data.business_name,
+                "contact_person": user_data.contact_person,
+                "contact_email": user_data.contact_email,
+                "contact_phone": user_data.contact_phone,
+            }.items()
+            if not value
+        ]
+        if missing_fields:
+            raise HTTPException(
+                status_code=400,
+                detail="Thiếu thông tin hồ sơ doanh nghiệp",
+            )
+
+    # 2. Tạo user. Tài khoản doanh nghiệp vẫn chờ Admin duyệt trước khi nhận role ENTERPRISE.
     new_user = crud_user.create_user(
         db=db, 
         full_name=user_data.full_name, 
@@ -71,10 +90,33 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_session)):
         password=user_data.password,
         register_type=user_data.register_type, 
         role=UserRole.USER,
-        status="ACTIVE" 
+        status=UserStatus.ACTIVE
 
     )
-    return {"message": "Đăng ký thành công", "email": new_user.email}
+
+    if is_enterprise_signup:
+        profile = EnterpriseProfiles(
+            user_id=new_user.user_id,
+            business_name=user_data.business_name.strip(),
+            contact_person=user_data.contact_person.strip(),
+            contact_email=str(user_data.contact_email),
+            contact_phone=user_data.contact_phone.strip(),
+            status=EnterpriseStatus.PENDING,
+        )
+        db.add(profile)
+        db.commit()
+
+    return {
+        "message": (
+            "Đăng ký thành công, hồ sơ doanh nghiệp đang chờ Admin duyệt"
+            if is_enterprise_signup
+            else "Đăng ký thành công"
+        ),
+        "email": new_user.email,
+        "enterprise_profile_status": (
+            EnterpriseStatus.PENDING.value if is_enterprise_signup else None
+        ),
+    }
 
 @router.post("/login", response_model=schemas.TokenResponse)
 def login(credentials: schemas.UserLogin, db: Session = Depends(get_session)):
@@ -153,6 +195,8 @@ def google_login(token_data: dict, db: Session = Depends(get_session)):
         user = crud_user.get_user_by_email(db, email=email)
         if not user:
             user = crud_user.create_social_user(db, full_name, email, social_id, "GOOGLE")
+        elif user.status != UserStatus.ACTIVE:
+            raise HTTPException(status_code=401, detail="Tài khoản không tồn tại hoặc bị khóa")
         
         user_role_str = getattr(user.role, 'value', user.role)
 
@@ -200,6 +244,8 @@ def get_my_profile(
     user = crud_user.get_user_by_id(db, user_id=user_id) 
     if not user:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+    if user.status != UserStatus.ACTIVE:
+        raise HTTPException(status_code=401, detail="Tài khoản không tồn tại hoặc bị khóa")
 
     user_role_str = getattr(user.role, 'value', user.role)
     profile_data = {}

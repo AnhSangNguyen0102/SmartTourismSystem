@@ -52,6 +52,10 @@ class UserCreate(BaseModel):
     full_name: str = Field(max_length=100)
     register_type: RegisterType = RegisterType.EMAIL
     role: str = "USER"
+    business_name: Optional[str] = Field(default=None, max_length=255)
+    contact_person: Optional[str] = Field(default=None, max_length=255)
+    contact_email: Optional[EmailStr] = Field(default=None, max_length=50)
+    contact_phone: Optional[str] = Field(default=None, max_length=10, pattern=r"^\d{10}$")
 
 
 
@@ -318,10 +322,12 @@ class LocationCreate(BaseModel):
 class LocationRegisterResponse(BaseModel):
     """
     Phản hồi sau khi doanh nghiệp đăng ký địa điểm thành công.
-    Bao gồm thông tin địa điểm vừa tạo kèm thông báo chờ duyệt.
+    Không tạo location thật ngay; request được lưu vào hàng chờ admin duyệt.
     """
-    location: LocationResponse
+    submission_id: UUID
+    status: str = "PENDING"
     message: str
+    pending_data: dict = Field(default_factory=dict)
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -238,6 +238,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                     </div>
                 )}
             </form>
+
         </div>
     );
 };

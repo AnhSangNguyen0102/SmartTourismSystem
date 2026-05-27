@@ -7,7 +7,7 @@ const API_URL = `${API_BASE}/api/auth`;
 const getDeviceId = () => (typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown-device');
 
 export const authService = {
-    register: async (fullName, email, password, role) => {
+    register: async (fullName, email, password, role, enterpriseProfile = null) => {
         const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -17,11 +17,13 @@ export const authService = {
                 password,
                 register_type: 'EMAIL',
                 role,
+                ...(enterpriseProfile || {}),
             }),
         });
 
-        if (!response.ok) throw new Error('Đăng ký thất bại hoặc email đã tồn tại');
-        return response.json();
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.detail || 'Đăng ký thất bại hoặc email đã tồn tại');
+        return body;
     },
 
     login: async (email, password) => {

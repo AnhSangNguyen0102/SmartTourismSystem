@@ -143,6 +143,113 @@
     color: red;
 }
 
+.auth-success-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    padding: 22px;
+    background: rgba(36, 52, 71, 0.38);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-success-dialog {
+    position: relative;
+    width: min(100%, 340px);
+    border: 3px solid #2c3e50;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 8px 0 #2c3e50;
+    padding: 24px 18px 18px;
+    text-align: center;
+    color: var(--st-text, #243447);
+}
+
+.auth-success-dialog.enterprise {
+    background: #fff7df;
+}
+
+.auth-success-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    border: 2px solid #2c3e50;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #2c3e50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #2c3e50;
+}
+
+.auth-success-close:active,
+.auth-success-primary:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #2c3e50;
+}
+
+.auth-success-icon {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 12px;
+    border: 3px solid #2c3e50;
+    border-radius: 50%;
+    background: #34d399;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 #2c3e50;
+}
+
+.auth-success-dialog.enterprise .auth-success-icon {
+    background: #f59e0b;
+}
+
+.auth-success-dialog h3 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    line-height: 1.2;
+}
+
+.auth-success-dialog p {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.auth-success-actions {
+    margin-top: 18px;
+}
+
+.auth-success-primary {
+    width: 100%;
+    min-height: 46px;
+    border: 3px solid #2c3e50;
+    border-radius: 12px;
+    background: #1e90ff;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #2c3e50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.auth-success-primary.enterprise {
+    background: #f59e0b;
+}
+
 .role-toggle-row {
     display: flex;
     gap: 10px;
@@ -179,6 +286,24 @@
 .role-toggle-btn:active {
     transform: translateY(2px);
     box-shadow: 0 1px 0 #2c3e50;
+}
+
+.enterprise-profile-fields {
+    margin: 4px 0 12px;
+    padding: 12px;
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.enterprise-profile-fields h3 {
+    margin: 0 0 10px;
+    color: var(--st-text, #243447);
+    font-size: 16px;
+}
+
+.enterprise-profile-fields .login-input:last-child {
+    margin-bottom: 0;
 }
 
 .register-submit-btn {

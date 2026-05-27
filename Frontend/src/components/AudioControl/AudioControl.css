@@ -1,0 +1,31 @@
+.audio-control-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid #2c3e50;
+    box-shadow: 0 4px 0 #2c3e50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 9999;
+    transition: all 0.2s ease;
+}
+
+.audio-control-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #2c3e50;
+}
+
+.audio-control-btn.on {
+    background-color: #2ed573;
+    color: #2c3e50;
+}
+
+.audio-control-btn.off {
+    background-color: #ff4757;
+    color: #ffffff;
+}

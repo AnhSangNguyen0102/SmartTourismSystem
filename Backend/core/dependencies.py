@@ -72,4 +72,7 @@ def require_enterprise_active(
             ),
         )
 
-    return payload
+    enriched_payload = dict(payload)
+    enriched_payload["enterprise_id"] = str(enterprise.enterprise_id)
+    enriched_payload["enterprise_profile"] = enterprise
+    return enriched_payload

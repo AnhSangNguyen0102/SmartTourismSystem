@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import './Mascot.css';
 
 const Mascot = ({ message }) => {
@@ -10,6 +10,17 @@ const Mascot = ({ message }) => {
     const [displayedMessage, setDisplayedMessage] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [animationClass, setAnimationClass] = useState('idle');
+
+    // Vị trí và kéo thả
+    const [position, setPosition] = useState(() => {
+        const savedPos = localStorage.getItem('mascotPosition');
+        if (savedPos) {
+            try { return JSON.parse(savedPos); } catch (e) {}
+        }
+        return { x: 20, y: window.innerHeight - 220 };
+    });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0, dragged: false });
 
     // Reset chuỗi thoại khi có message mới
     useEffect(() => {
@@ -81,14 +92,92 @@ const Mascot = ({ message }) => {
         return () => clearInterval(randomAction);
     }, [isTyping, animationClass]);
 
-    const handleMascotClick = () => {
+    // Drag events
+    const handlePointerDown = (e) => {
+        setIsDragging(true);
+        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        dragRef.current = {
+            startX: clientX,
+            startY: clientY,
+            initialX: position.x,
+            initialY: position.y,
+            dragged: false
+        };
+    };
+
+    const handlePointerMove = useCallback((e) => {
+        if (!isDragging) return;
+        if (e.cancelable) e.preventDefault(); 
+        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        
+        const dx = clientX - dragRef.current.startX;
+        const dy = clientY - dragRef.current.startY;
+        
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            dragRef.current.dragged = true;
+        }
+
+        let newX = dragRef.current.initialX + dx;
+        let newY = dragRef.current.initialY + dy;
+        
+        // Clamp to screen bounds
+        const maxX = window.innerWidth - 80;
+        const maxY = window.innerHeight - 100;
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+        
+        setPosition({ x: newX, y: newY });
+    }, [isDragging]);
+
+    const handlePointerUp = useCallback(() => {
+        if (isDragging) {
+            setIsDragging(false);
+            localStorage.setItem('mascotPosition', JSON.stringify(position));
+        }
+    }, [isDragging, position]);
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', handlePointerUp);
+            window.addEventListener('touchmove', handlePointerMove, { passive: false });
+            window.addEventListener('touchend', handlePointerUp);
+        } else {
+            window.removeEventListener('mousemove', handlePointerMove);
+            window.removeEventListener('mouseup', handlePointerUp);
+            window.removeEventListener('touchmove', handlePointerMove);
+            window.removeEventListener('touchend', handlePointerUp);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handlePointerMove);
+            window.removeEventListener('mouseup', handlePointerUp);
+            window.removeEventListener('touchmove', handlePointerMove);
+            window.removeEventListener('touchend', handlePointerUp);
+        };
+    }, [isDragging, handlePointerMove, handlePointerUp]);
+
+    const handleMascotClick = (e) => {
+        if (dragRef.current.dragged) return; // Prevent click if user was dragging
         if (!isTyping && msgs.length > 0) {
             setCurrentIndex(0); // Phát lại đoạn thoại khi người dùng nhấn vào mascot
         }
     };
 
     return (
-        <div className="mascot-container">
+        <div 
+            className="mascot-container"
+            style={{ 
+                left: `${position.x}px`, 
+                top: `${position.y}px`,
+                bottom: 'auto',
+                touchAction: 'none',
+                zIndex: isDragging ? 9999 : 999
+            }}
+            onMouseDown={handlePointerDown}
+            onTouchStart={handlePointerDown}
+        >
             {displayedMessage && (
                 <div className="mascot-bubble">
                     {displayedMessage}

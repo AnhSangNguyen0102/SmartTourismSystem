@@ -15,6 +15,7 @@ import { storageGet } from '../../platform/storage';
 import { showAlert, showConfirm } from '../../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../../platform/location';
 import { SHOW_MASCOT } from '../../config/uiFlags';
+import { playSound } from '../../utils/soundUtils';
 import { 
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, 
   MapPin, Sparkles, Coins, Star, Clock, Ticket, Gamepad2, X, Check, Flame, Award, HelpCircle,
@@ -181,9 +182,11 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 selectedHiddenTask.quest_type,
                 extraData
             );
+            playSound('success.mp3');
             setQuestSuccess(res);
             fetchHiddenTasks();
         } catch (err) {
+            playSound('error.mp3');
             setQuestError(err.message || 'Xác thực thất bại');
         } finally {
             setQuestLoading(false);
@@ -277,6 +280,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 status: 'COMPLETED',
                 score_earned: completionScore ?? prev.score_earned
             } : prev);
+            playSound('victory.mp3');
             setActionMsg(result.detail || 'Chuyến đi đã được hoàn thành. Điểm thưởng đã được cộng vào tài khoản.');
             await Promise.all([fetchDetail(true), syncUserPoints()]);
         } catch (err) {
@@ -384,6 +388,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 // Lấy điểm thưởng từ API (nếu có) hoặc từ thông tin trạm
                 const earnedPoints = result.reward_points ?? result.earned_points ?? targetStop.reward ?? 50;
 
+                playSound('chest_shake.mp3');
                 // Hiển thị hiệu ứng rương kho báu đang rung
                 setRewardData({ 
                     points: earnedPoints, 
@@ -398,6 +403,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 setTimeout(() => setCheckinMsg(''), 2000);
 
                 setTimeout(() => {
+                    playSound('chest_open.mp3');
                     setRewardData(prev => prev ? { ...prev, stage: 'open' } : null);
                 }, 1500);
 
@@ -536,50 +542,47 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         </div>
                         
                         <div className="location-action-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {isCheckedIn ? (
-                                <button className="btn-checkin-tab btn-already-checked" disabled style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                                    <CheckCircle2 size={16} /> Bạn đã ghé thăm điểm này
-                                </button>
-                            ) : (
-                                isTripOngoing && (
-                                    <button 
-                                        className="btn-checkin-tab" 
-                                        onClick={() => handleCheckin(selectedStop)}
-                                        disabled={checkinLoading}
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                    >
-                                        {checkinLoading ? 'Đang xử lý...' : <><MapPin size={16} /> Xác nhận Check-in</>}
+                            <div style={{ display: 'flex', flexDirection: 'row', gap: '15px', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                                {isCheckedIn ? (
+                                    <button disabled style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'not-allowed', opacity: 0.6, flex: 1, display: 'flex', justifyContent: 'center', boxShadow: 'none', outline: 'none' }}>
+                                        <img src="/assets/island/btn_checkin.png" alt="Đã Check-in" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
                                     </button>
-                                )
-                            )}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedLocationForTasks({
-                                        location_id: selectedStop.location_id,
-                                        location_name: selectedStop.location_name
-                                    });
-                                }}
-                                className="btn-location-task"
-                                style={{
-                                    backgroundColor: '#10b981',
-                                    color: '#0b0f19',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    padding: '14px 16px',
-                                    fontSize: '15px',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                                    width: '100%',
-                                }}
-                            >
-                                <Gamepad2 size={16} /> Nhiệm vụ địa điểm
-                            </button>
+                                ) : (
+                                    isTripOngoing && (
+                                        <button 
+                                            className="image-btn-effect"
+                                            onClick={() => handleCheckin(selectedStop)}
+                                            disabled={checkinLoading}
+                                            style={{ background: 'transparent', border: 'none', padding: 0, cursor: checkinLoading ? 'not-allowed' : 'pointer', flex: 1, opacity: checkinLoading ? 0.7 : 1, display: 'flex', justifyContent: 'center', boxShadow: 'none', outline: 'none' }}
+                                        >
+                                            <img src="/assets/island/btn_checkin.png" alt="Xác nhận Check-in" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
+                                        </button>
+                                    )
+                                )}
+                                <button
+                                    className="image-btn-effect"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedLocationForTasks({
+                                            location_id: selectedStop.location_id,
+                                            location_name: selectedStop.location_name
+                                        });
+                                    }}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        padding: 0,
+                                        cursor: 'pointer',
+                                        flex: 1,
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        boxShadow: 'none',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <img src="/assets/island/btn_mission.png" alt="Nhiệm vụ địa điểm" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
+                                </button>
+                            </div>
                             {checkinMsg && (
                                 <div className="checkin-toast">{checkinMsg}</div>
                             )}

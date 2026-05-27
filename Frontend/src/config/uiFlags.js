@@ -1,1 +1,1 @@
-export const SHOW_MASCOT = false;
+export const SHOW_MASCOT = true;

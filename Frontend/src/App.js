@@ -24,6 +24,8 @@ import { showConfirm } from './platform/dialog';
 
 import { SocialQuestProvider } from './components/SocialQuest/SocialQuestProvider';
 import SocialQuestOverlay from './components/SocialQuest/SocialQuestOverlay';
+import AudioControl from './components/AudioControl/AudioControl';
+import { playBGM, pauseBGM, playSound } from './utils/soundUtils';
 // Bỏ comment nếu muốn test giả lập tương tác
 //import LocationSimulator from './components/SocialQuest/LocationSimulator';
 
@@ -43,13 +45,52 @@ function App() {
     const [planPayload, setPlanPayload] = useState(null);
     const [currentItineraryId, setCurrentItineraryId] = useState(null);
     const [currentLocationDetail, setCurrentLocationDetail] = useState(null);
+    const userRole = currentUser?.user?.role || currentUser?.role;
+    const isAdminMode = currentScreen === 'admin_moderation';
+    const isWorkMode = isAdminMode || (currentScreen === 'main' && userRole === 'ENTERPRISE');
 
     const screenHistoryRef = useRef([]);
     const currentScreenRef = useRef(currentScreen);
+    const workModeRef = useRef(isWorkMode);
 
     useEffect(() => {
         currentScreenRef.current = currentScreen;
-    }, [currentScreen]);
+        workModeRef.current = isWorkMode;
+    }, [currentScreen, isWorkMode]);
+
+    useEffect(() => {
+        if (isWorkMode) {
+            pauseBGM();
+        } else {
+            if (window._bgmStarted) {
+                playBGM();
+            }
+        }
+    }, [isWorkMode]);
+
+    useEffect(() => {
+        const handleGlobalClick = (e) => {
+            if (workModeRef.current) return;
+
+            // Kích hoạt BGM ở lần tương tác đầu tiên
+            if (!window._bgmStarted) {
+                window._bgmStarted = true;
+                playBGM();
+            }
+
+            // Phát âm thanh click nếu nhấn vào button hoặc phần tử có thể click (ngoại trừ nút tắt/mở loa tổng)
+            const isClickableTag = e.target.closest('button, a, [role="button"], input[type="button"], input[type="submit"]');
+            const style = window.getComputedStyle(e.target);
+            const isPointer = style.cursor === 'pointer';
+
+            if ((isClickableTag || isPointer) && !e.target.closest('.audio-control-btn')) {
+                playSound('click.mp3');
+            }
+        };
+        
+        document.addEventListener('click', handleGlobalClick);
+        return () => document.removeEventListener('click', handleGlobalClick);
+    }, []);
 
     const navigateTo = useCallback((nextScreen, options = {}) => {
         const { resetHistory = false } = options;
@@ -191,13 +232,14 @@ function App() {
         navigateTo('welcome', { resetHistory: true });
     };
 
-    const userRole = currentUser?.user?.role || currentUser?.role;
-
     return (
         <SocialQuestProvider user={currentUser?.user || currentUser}>
             <div className="app-outer">
-                <div className="app-container">
-                    <SocialQuestOverlay />
+                <div className={`app-container ${isWorkMode ? 'app-container-workmode' : ''} ${isAdminMode ? 'app-container-adminmode' : ''}`}>
+                    {['splash', 'welcome'].includes(currentScreen) && (
+                        <AudioControl />
+                    )}
+                    {!isWorkMode && <SocialQuestOverlay />}
                     {/* ❌ XÓA HOẶC COMMENT DÒNG NÀY ĐỂ ẨN BẢNG GIẢ LẬP: */}
                     {/* <LocationSimulator /> */}
 
@@ -276,10 +318,20 @@ function App() {
                     )}
 
                     {currentScreen === 'admin_moderation' && (
-                        <AdminModerationScreen
-                            user={currentUser?.user || currentUser}
-                            onBack={() => navigateTo('main')}
-                        />
+                        userRole === 'ADMIN' ? (
+                            <AdminModerationScreen
+                                user={currentUser?.user || currentUser}
+                                onBack={() => navigateTo('main')}
+                            />
+                        ) : (
+                            <div className="app-forbidden-screen">
+                                <h2>Không có quyền truy cập</h2>
+                                <p>Khu vực quản trị chỉ dành cho tài khoản ADMIN.</p>
+                                <button type="button" onClick={() => navigateTo('main', { resetHistory: true })}>
+                                    Quay lại
+                                </button>
+                            </div>
+                        )
                     )}
 
                     {currentScreen === 'profile_edit' && (

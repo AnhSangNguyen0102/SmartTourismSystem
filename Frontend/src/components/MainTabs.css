@@ -1384,6 +1384,22 @@
     color: #334155;
 }
 
+.profile-admin-dashboard-btn {
+    border-color: #b91c1c !important;
+    border-left: 6px solid #dc2626 !important;
+    color: #b91c1c;
+}
+
+.profile-admin-dashboard-btn .menu-btn-icon {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.profile-admin-dashboard-btn .profile-menu-label,
+.profile-admin-dashboard-btn .menu-btn-arrow {
+    color: #b91c1c;
+}
+
 .profile-logout-btn {
     background-color: #ef4444 !important;
     border-color: #2c3e50 !important;

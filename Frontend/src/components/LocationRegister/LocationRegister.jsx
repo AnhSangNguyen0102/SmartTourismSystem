@@ -44,7 +44,11 @@ const LocationRegister = ({ onBack }) => {
             };
 
             const response = await businessService.registerLocation(payload);
-            setMessage({ type: 'success', text: response.message || 'Đăng ký thành công! Đang chờ duyệt.' });
+            const submissionSuffix = response.submission_id ? ` Mã yêu cầu: ${response.submission_id}` : '';
+            setMessage({
+                type: 'success',
+                text: `${response.message || 'Đã gửi yêu cầu, chờ admin duyệt.'}${submissionSuffix}`,
+            });
         } catch (error) {
             setMessage({ type: 'error', text: error.message });
         } finally {

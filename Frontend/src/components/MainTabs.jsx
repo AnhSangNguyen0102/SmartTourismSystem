@@ -45,6 +45,7 @@ import { storageGet } from '../platform/storage';
 import { showAlert } from '../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../platform/location';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
+import { isBgmEnabled, isSfxEnabled, setBgmEnabled, setSfxEnabled, getBgmVolume, setBgmVolume } from '../utils/soundUtils';
 
 const getTierMeta = (level) => {
     if (level <= 5) {
@@ -735,6 +736,40 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
         const profileAvatarFallback = createInitialAvatarDataUrl(profileName);
         const TierIcon = tierMeta.icon;
 
+        // Audio Settings
+        const [bgmOn, setBgmOn] = useState(isBgmEnabled());
+        const [sfxOn, setSfxOn] = useState(isSfxEnabled());
+        const [bgmVol, setBgmVol] = useState(getBgmVolume());
+        
+        useEffect(() => {
+            const syncAudioSettings = () => {
+                setBgmOn(isBgmEnabled());
+                setSfxOn(isSfxEnabled());
+                setBgmVol(getBgmVolume());
+            };
+            window.addEventListener('audioSettingsChanged', syncAudioSettings);
+            return () => window.removeEventListener('audioSettingsChanged', syncAudioSettings);
+        }, []);
+
+        const toggleBgm = () => {
+            const newState = !bgmOn;
+            setBgmEnabled(newState);
+            setBgmOn(newState);
+            window.dispatchEvent(new Event('audioSettingsChanged'));
+        };
+
+        const toggleSfx = () => {
+            const newState = !sfxOn;
+            setSfxEnabled(newState);
+            setSfxOn(newState);
+        };
+
+        const handleVolumeChange = (e) => {
+            const val = parseFloat(e.target.value);
+            setBgmVol(val);
+            setBgmVolume(val);
+        };
+
         return (
         <div className="profile-screen">
             {/* === PLAYER CARD === */}
@@ -1034,13 +1069,85 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                 )}
             </div>
 
+            {/* === CÀI ĐẶT ÂM THANH === */}
+            <div className="achievements-card profile-settings-section" style={{ marginTop: '16px', padding: '16px', border: '2.5px solid #2c3e50', borderRadius: '16px', backgroundColor: '#ffffff', boxShadow: '0 4px 0 #2c3e50' }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 16px 0', color: '#2c3e50', fontSize: '15px', fontWeight: '800' }}>
+                    <Settings size={18} /> Cài đặt Trò chơi
+                </h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1.5px dashed #cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <strong style={{ fontSize: '14px', color: '#2c3e50' }}>Nhạc nền (BGM)</strong>
+                            <span style={{ fontSize: '11px', color: '#747d8c' }}>Phát nhạc nền khi mở app</span>
+                        </div>
+                        <button 
+                            onClick={toggleBgm}
+                            style={{
+                                padding: '6px 16px',
+                                borderRadius: '20px',
+                                fontWeight: 'bold',
+                                fontSize: '12px',
+                                border: '2px solid #2c3e50',
+                                backgroundColor: bgmOn ? '#2ed573' : '#ff4757',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                boxShadow: '0 3px 0 #2c3e50',
+                                transition: 'all 0.1s'
+                            }}
+                        >
+                            {bgmOn ? 'BẬT' : 'TẮT'}
+                        </button>
+                    </div>
+                    {bgmOn && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0 4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#747d8c' }}>Âm lượng:</span>
+                            <input 
+                                type="range" 
+                                min="0" max="1" step="0.05" 
+                                value={bgmVol}
+                                onChange={handleVolumeChange}
+                                style={{ flex: 1, accentColor: '#2563eb' }}
+                            />
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2563eb', minWidth: '32px', textAlign: 'right' }}>
+                                {Math.round(bgmVol * 100)}%
+                            </span>
+                        </div>
+                    )}
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <strong style={{ fontSize: '14px', color: '#2c3e50' }}>Âm thanh hiệu ứng (SFX)</strong>
+                        <span style={{ fontSize: '11px', color: '#747d8c' }}>Tiếng click, nhận thưởng</span>
+                    </div>
+                    <button 
+                        onClick={toggleSfx}
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                            border: '2px solid #2c3e50',
+                            backgroundColor: sfxOn ? '#2ed573' : '#ff4757',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            boxShadow: '0 3px 0 #2c3e50',
+                            transition: 'all 0.1s'
+                        }}
+                    >
+                        {sfxOn ? 'BẬT' : 'TẮT'}
+                    </button>
+                </div>
+            </div>
+
             {/* === MENU ACTIONS (style game buttons) === */}
             <div className="profile-menu-list">
-                {(userInfo?.role === 'ADMIN' || userInfo?.role === 'OWNER' || userInfo?.role === 'CS') && (
-                    <button className="profile-menu-btn" onClick={onOpenAdminModeration} style={{ borderLeft: '4px solid #ff4757' }}>
-                        <span className="menu-btn-icon"><ShieldAlert size={18} style={{ color: '#ff4757' }} /></span>
-                        <span className="profile-menu-label" style={{ color: '#ff4757', fontWeight: 'bold' }}>Bảng Kiểm Duyệt Admin</span>
-                        <span className="menu-btn-arrow" style={{ color: '#ff4757' }}>›</span>
+                {userInfo?.role === 'ADMIN' && (
+                    <button className="profile-menu-btn profile-admin-dashboard-btn" onClick={onOpenAdminModeration}>
+                        <span className="menu-btn-icon"><ShieldAlert size={18} /></span>
+                        <span className="profile-menu-label">Admin Dashboard</span>
+                        <span className="menu-btn-arrow">›</span>
                     </button>
                 )}
                 <button className="profile-menu-btn" onClick={onOpenProfileEdit}>

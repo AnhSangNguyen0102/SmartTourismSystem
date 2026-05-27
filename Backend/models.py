@@ -312,6 +312,7 @@ class Locations(SQLModel, table=True):
 
     location_id: UUID = Field(default_factory=uuid4, primary_key=True)
     location_name: str = Field(max_length=255, index=True)
+    address: Optional[str] = Field(default=None, max_length=500)
     latitude: Decimal = Field(sa_column=Column(Numeric(10, 6), nullable=False))
     longitude: Decimal = Field(sa_column=Column(Numeric(10, 6), nullable=False))
     city_id: int = Field(foreign_key="cities.city_id", index=True)
@@ -320,6 +321,8 @@ class Locations(SQLModel, table=True):
     min_price: Decimal = Field(sa_column=Column(Numeric(18, 2), nullable=False))
     max_price: Decimal = Field(sa_column=Column(Numeric(18, 2), nullable=False))
     currency: CurrencyEnum = Field(default=CurrencyEnum.VND)
+    is_active: bool = Field(default=True)
+    deleted_at: Optional[datetime] = Field(default=None)
     create_at: datetime = Field(default_factory=datetime.utcnow)
     update_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -1039,6 +1042,5 @@ class LocalAmbassadors(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="users.user_id", index=True)
     month: date
     checkin_count: int = Field(default=0)
-
 
 
