@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { WS_BASE } from '../../config/api';
+import { startWatchingPosition } from '../../platform/location';
+import { showAlert } from '../../platform/dialog';
 
 const SocialQuestContext = createContext();
 
@@ -18,7 +20,7 @@ export const SocialQuestProvider = ({ children, user }) => {
         if (!userId) return;
 
         let ws;
-        let watchId; // Biến lưu ID của trình theo dõi GPS
+        let stopWatchingFn; // Lưu hàm dừng theo dõi GPS
 
         try {
             ws = new WebSocket(`${WS_BASE}/ws/social_quest/${userId}`);
@@ -33,29 +35,27 @@ export const SocialQuestProvider = ({ children, user }) => {
             console.log('🟢 Social Quest Radar: ONLINE');
             
             // 🚀 BẮT ĐẦU THEO DÕI GPS THẬT KHI WEBSOCKET ĐÃ MỞ
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(
-                    (position) => {
-                        const { latitude, longitude } = position.coords;
-                        // Tự động bắn tọa độ lên Server mỗi khi người dùng di chuyển
-                        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                            wsRef.current.send(JSON.stringify({ 
-                                action: 'update_location', 
-                                payload: { lat: latitude, lng: longitude } 
-                            }));
-                            console.log(`📍 Đang cập nhật GPS lên radar: ${latitude}, ${longitude}`);
-                        }
-                    },
-                    (error) => {
-                        console.warn("⚠️ Không thể lấy GPS thật:", error.message);
-                    },
-                    {
-                        enableHighAccuracy: true, // BẮT BUỘC TRUE để lấy sai số thấp (<15m)
-                        timeout: 10000,
-                        maximumAge: 5000 // Cập nhật tối đa mỗi 5 giây
+            stopWatchingFn = startWatchingPosition({
+                onSuccess: (position) => {
+                    const { latitude, longitude } = position;
+                    // Tự động bắn tọa độ lên Server mỗi khi người dùng di chuyển
+                    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                        wsRef.current.send(JSON.stringify({ 
+                            action: 'update_location', 
+                            payload: { lat: latitude, lng: longitude } 
+                        }));
+                        console.log(`📍 Đang cập nhật GPS lên radar: ${latitude}, ${longitude}`);
                     }
-                );
-            }
+                },
+                onError: (error) => {
+                    console.warn("⚠️ Không thể lấy GPS thật:", error.message);
+                },
+                options: {
+                    enableHighAccuracy: true, // BẮT BUỘC TRUE để lấy sai số thấp (<15m)
+                    timeout: 10000,
+                    maximumAge: 5000 // Cập nhật tối đa mỗi 5 giây
+                }
+            });
         };
 
         ws.onmessage = (event) => {
@@ -82,7 +82,7 @@ export const SocialQuestProvider = ({ children, user }) => {
                     setQuestMessage(message || 'Hoàn thành xuất sắc!');
                 } 
                 else if (eventName === 'quest_cancelled') {
-                    alert(`Nhiệm vụ bị hủy: ${reason}`);
+                    void showAlert(`Nhiệm vụ bị hủy: ${reason}`);
                     resetQuest();
                 } 
                 else if (eventName === 'error') {
@@ -97,7 +97,7 @@ export const SocialQuestProvider = ({ children, user }) => {
 
         // Dọn dẹp cả WebSocket lẫn GPS Watcher khi Component Unmount
         return () => {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (stopWatchingFn) stopWatchingFn();
             if (ws) ws.close();
         };
     }, [userId]);

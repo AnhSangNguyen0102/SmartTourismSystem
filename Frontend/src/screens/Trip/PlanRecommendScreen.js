@@ -119,7 +119,7 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
             <div className="recommend-screen">
                 <div className="loading-state">
                     <div className="plan-loader-spinner"></div>
-                    <h2>Đang AI hóa lộ trình...</h2>
+                    <h2>Đang tìm kiếm gợi ý...</h2>
                     <p>Vui lòng đợi giây lát</p>
                 </div>
             </div>
@@ -249,7 +249,7 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
                         onClick={handleCreateTrip}
                         disabled={creatingTrip || selectedLocations.length === 0}
                     >
-                        {creatingTrip ? 'Đang tạo...' : 'Tạo Lộ Trình Ngay'}
+                        {creatingTrip ? 'Đang chuẩn bị...' : 'Bắt đầu khám phá'}
                     </button>
                 </div>
             </div>
@@ -258,8 +258,8 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
                 <div className="plan-creating-overlay">
                     <div className="plan-creating-card">
                         <div className="plan-loader-spinner"></div>
-                        <h3>Đang tạo lộ trình</h3>
-                        <p>Hệ thống đang sắp xếp các điểm dừng tối ưu cho bạn...</p>
+                        <h3>Đang chuẩn bị chuyến đi</h3>
+                        <p>Hệ thống đang thiết lập các điểm đến cho bạn...</p>
                     </div>
                 </div>
             )}

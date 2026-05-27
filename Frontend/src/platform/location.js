@@ -1,6 +1,5 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
-
-const Geolocation = registerPlugin('Geolocation');
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 const toLocationError = (error) => {
     const message = error?.message || 'Không thể lấy dữ liệu GPS.';

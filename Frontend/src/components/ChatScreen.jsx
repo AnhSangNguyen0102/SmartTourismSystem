@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, ArrowLeft, Trash2, ShieldAlert, Image as ImageIcon, Smile, Clock } from 'lucide-react';
 import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
+import { showConfirm } from '../platform/dialog';
 import './ChatScreen.css';
 
 export default function ChatScreen({ user, onRequireLogin }) {
@@ -128,7 +129,8 @@ export default function ChatScreen({ user, onRequireLogin }) {
     };
 
     const handleClearChat = async () => {
-        if (!window.confirm(`Bạn có muốn xóa cuộc trò chuyện với ${selectedFriend.name}?`)) return;
+        const confirmed = await showConfirm(`Bạn có muốn xóa cuộc trò chuyện với ${selectedFriend.name}?`);
+        if (!confirmed) return;
         try {
             const token = await storageGet('access_token');
             const res = await fetch(`${API_BASE}/api/social/messages/${selectedFriend.id}`, {

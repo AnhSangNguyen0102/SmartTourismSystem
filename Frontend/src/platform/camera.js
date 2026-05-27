@@ -1,6 +1,5 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
-
-const Camera = registerPlugin('Camera');
+import { Capacitor } from '@capacitor/core';
+import { Camera } from '@capacitor/camera';
 
 const createFileFromDataUrl = (dataUrl, fileName = 'photo.jpg') => {
     const [meta, base64Data] = String(dataUrl || '').split(',');
@@ -91,6 +90,29 @@ export const capturePhotoFile = async ({ quality = 85 } = {}) => {
 };
 
 export const pickPhotoFile = async () => {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            const photo = await Camera.getPhoto({
+                quality: 85,
+                resultType: 'dataUrl',
+                source: 'PHOTOS',
+                correctOrientation: true,
+            });
+
+            const file = await photoToFile(photo);
+            return {
+                file,
+                previewUrl: photo?.webPath || URL.createObjectURL(file),
+                source: 'native',
+            };
+        } catch (error) {
+            if (error.message?.includes('User cancelled') || error.message?.includes('cancel')) {
+                throw new Error('Đã hủy thao tác chọn ảnh.');
+            }
+            // Fall through to browser file picker if it was a different error (e.g. plugin loading/permission issue).
+        }
+    }
+
     const file = await pickFileFromInput();
     return {
         file,

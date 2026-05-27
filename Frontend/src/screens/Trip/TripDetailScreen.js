@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getTripDetail, getDeviationStatus, checkinStop, completeTrip, cancelTrip } from '../../services/tripService';
+import { getTripDetail, checkinStop, completeTrip, cancelTrip } from '../../services/tripService';
 import IslandMap from '../../components/IslandMap/IslandMap';
 import LocationTasks from './LocationTasks';
 import TaskDetail from './TaskDetail';
@@ -18,7 +18,7 @@ import { SHOW_MASCOT } from '../../config/uiFlags';
 import { playSound } from '../../utils/soundUtils';
 import { 
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, 
-  MapPin, Sparkles, Coins, Star, Clock, Ticket, Gamepad2, X, Check, Flame, Award, HelpCircle,
+  MapPin, Sparkles, Coins, Star, Clock, Ticket, X, Check, Flame, Award, HelpCircle,
   QrCode, Camera
 } from 'lucide-react';
 
@@ -27,7 +27,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [error, setError] = useState(null);
     const [tripDetail, setTripDetail] = useState(null);
     const [userLocation, setUserLocation] = useState(null);
-    const [mapViewMode, setMapViewMode] = useState('island'); // 'island' | 'route'
 
     // Gamification state variables
     const [selectedLocationForTasks, setSelectedLocationForTasks] = useState(null);
@@ -48,9 +47,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     const userId = user?.user_id || user?.id || '296be4b0-9556-42bb-9be1-fdb1277a06c2';
 
-    // Deviation state — updated by click (demo) OR by fetching from backend (real)
     const [selectedStop, setSelectedStop] = useState(null);
-    const [isDeviated, setIsDeviated] = useState(false);
     const [checkinLoading, setCheckinLoading] = useState(false);
     const [checkinMsg, setCheckinMsg] = useState('');
     const checkinInProgress = useRef(false);
@@ -132,18 +129,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         }
     };
 
-    const fetchDeviationStatus = async () => {
-        try {
-            const token = await storageGet('access_token');
-            const result = await getDeviationStatus(itineraryId, token);
-            setIsDeviated(result.is_deviated);
-        } catch (err) {
-            console.error("Lỗi khi lấy trạng thái lệch hướng:", err);
-        }
-    };
-
     const handleRefresh = async (silent = false) => {
-        await Promise.all([fetchDetail(silent), fetchDeviationStatus()]);
+        await fetchDetail(silent);
     };
 
     // Fetch active hidden tasks
@@ -205,7 +192,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
         if (itineraryId) {
             fetchDetail();
-            fetchDeviationStatus();
             fetchHiddenTasks();
         }
 
@@ -336,25 +322,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     if (!tripDetail) return null;
 
-    // Nhóm các điểm dừng theo ngày
     const allStops = (tripDetail.stops || []);
-    const stopsByDay = allStops.reduce((acc, stop) => {
-        const day = stop.day_order;
-        if (!acc[day]) acc[day] = [];
-        acc[day].push(stop);
-        return acc;
-    }, {});
-
-    // Find the first PENDING stop = "next" stop
-    const sortedStops = [...allStops].sort((a, b) => a.stop_order - b.stop_order);
-    const nextStop = sortedStops.find(s => s.status === 'PENDING' || s.status === 'VISITING');
-
-    // Determine stop card color class
-    const getStopColorClass = (stop) => {
-        if (stop.status === 'COMPLETED') return 'stop-completed';    // green
-        if (nextStop && stop.stop_id === nextStop.stop_id) return 'stop-next';  // orange
-        return 'stop-default'; // blue
-    };
 
     const handleCheckin = async (targetStop) => {
         // Guard: nếu đang xử lý thì không cho bấm nữa (tránh click đúp)
@@ -599,17 +567,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     <ArrowLeft size={20} />
                 </button>
                 <h2>{tripDetail.name || "Chi tiết chuyến đi"}</h2>
-                {/* Deviation status badge — click to toggle for demo */}
-                {isTripOngoing && (
-                    <div
-                        className={`deviation-badge ${isDeviated ? 'deviated' : 'on-track'}`}
-                        onClick={() => setIsDeviated(!isDeviated)}
-                        title="Nhấn để chuyển trạng thái (demo)"
-                    >
-                        <span className="badge-dot"></span>
-                        <span className="badge-text">{isDeviated ? 'Lệch hướng' : 'Đúng hướng'}</span>
-                    </div>
-                )}
             </div>
 
             {/* Trip action buttons — Hoàn thành / Hủy */}

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { showAlert } from '../../platform/dialog';
 import './LocationDetailMap.css';
 
 const DETAIL_TILE_STYLE = {
@@ -120,14 +121,14 @@ const LocationDetailMap = ({ stop, userLocation }) => {
 
     }, [stop, userLocation]);
 
-    const focusUserLocation = () => {
+    const focusUserLocation = async () => {
         const map = mapInstanceRef.current;
         if (map && userLocation?.lat && userLocation?.lng) {
             const currentZoom = map.getZoom();
             const targetZoom = Math.max(currentZoom, USER_LOCATION_ZOOM);
             map.flyTo([userLocation.lat, userLocation.lng], targetZoom, { animate: true, duration: 0.8 });
         } else {
-            alert("Vui lòng bật định vị GPS và chờ trong giây lát.");
+            await showAlert("Vui lòng bật định vị GPS và chờ trong giây lát.");
         }
     };
 

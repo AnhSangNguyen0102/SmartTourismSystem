@@ -1,6 +1,5 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
-
-const Preferences = registerPlugin('Preferences');
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 
 const canUseLocalStorage = () => typeof window !== 'undefined' && !!window.localStorage;
 

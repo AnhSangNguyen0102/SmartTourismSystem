@@ -43,7 +43,7 @@ import ChestOpeningAnimation from './HiddenQuest/ChestOpeningAnimation';
 import HiddenQuestDebug from './HiddenQuest/HiddenQuestDebug';
 import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
-import { showAlert } from '../platform/dialog';
+import { showAlert, showConfirm } from '../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../platform/location';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import { isBgmEnabled, isSfxEnabled, setBgmEnabled, setSfxEnabled, getBgmVolume, setBgmVolume } from '../utils/soundUtils';
@@ -148,7 +148,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
     };
 
     const handleRedeemVoucher = async (voucher) => {
-        const confirmRedeem = window.confirm(`Bạn có chắc chắn muốn dùng ${voucher.cost} xu để đổi lấy voucher "${voucher.discount}" không?`);
+        const confirmRedeem = await showConfirm(`Bạn có chắc chắn muốn dùng ${voucher.cost} xu để đổi lấy voucher "${voucher.discount}" không?`);
         if (!confirmRedeem) return;
 
         try {
@@ -173,15 +173,15 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                     setShowRedeemSuccessModal(true);
                     fetchRewards();
                 } else {
-                    alert(data.message || "Đổi quà thất bại.");
+                    await showAlert(data.message || "Đổi quà thất bại.");
                 }
             } else {
                 const errData = await res.json();
-                alert(errData.detail || "Đổi quà thất bại.");
+                await showAlert(errData.detail || "Đổi quà thất bại.");
             }
         } catch (error) {
             console.error("Lỗi khi đổi voucher:", error);
-            alert("Có lỗi kết nối hệ thống. Vui lòng thử lại!");
+            await showAlert("Có lỗi kết nối hệ thống. Vui lòng thử lại!");
         }
     };
 

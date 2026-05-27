@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Heart, MessageCircle, Bookmark, Send, MapPin, Flag, Image as ImageIcon, X, AlertTriangle, Plus, Smile, MoreHorizontal, Check, ArrowLeft, Trash2, ShieldAlert, Globe, Lock, Users, Locate } from 'lucide-react';
 import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
+import { getCurrentPosition } from '../platform/location';
+import { showAlert, showConfirm } from '../platform/dialog';
 import './SocialFeedScreen.css';
 
 export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }) {
@@ -162,12 +164,11 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
     };
 
     const handleLocate = () => {
-        if (!navigator.geolocation) return;
         setIsLocating(true);
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
+        getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 })
+            .then(async (pos) => {
                 try {
-                    const res = await fetch(`${API_BASE}/api/discovery/geocode/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+                    const res = await fetch(`${API_BASE}/api/discovery/geocode/reverse?lat=${pos.latitude}&lon=${pos.longitude}`);
                     if (res.ok) {
                         const data = await res.json();
                         setPostLocation(data.address?.city || data.address?.state || data.address?.country || 'Việt Nam');
@@ -177,12 +178,11 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                 } finally {
                     setIsLocating(false);
                 }
-            },
-            (error) => {
+            })
+            .catch((error) => {
                 console.error('Geolocation error:', error);
                 setIsLocating(false);
-            }
-        );
+            });
     };
 
     const handleCreatePost = async (e) => {
@@ -214,7 +214,7 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                 fetchPosts();
             }
         } catch (error) {
-            alert('Đăng bài viết thất bại: ' + error.message);
+            await showAlert('Đăng bài viết thất bại: ' + error.message);
         } finally {
             setIsSubmittingPost(false);
         }
@@ -278,7 +278,8 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
     };
 
     const handleDeletePost = async (postId) => {
-        if (!window.confirm('Bạn có muốn xóa bài đăng này không?')) return;
+        const confirmed = await showConfirm('Bạn có muốn xóa bài đăng này không?');
+        if (!confirmed) return;
         try {
             const token = await storageGet('access_token');
             const res = await fetch(`${API_BASE}/api/social/posts/${postId}`, {
@@ -313,7 +314,7 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                 })
             });
             if (res.ok) {
-                alert('Báo cáo bài viết thành công. Quản trị viên sẽ xem xét.');
+                await showAlert('Báo cáo bài viết thành công. Quản trị viên sẽ xem xét.');
                 setReportPostId(null);
                 setReportReason('');
             }

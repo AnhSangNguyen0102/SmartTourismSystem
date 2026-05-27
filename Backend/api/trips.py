@@ -309,24 +309,12 @@ def create_new_itinerary(
         global_total_distance = 0.0
         global_total_budget = 0.0
 
-        # 4. Tối ưu TSP & Tính thời gian từng ngày
+        # 4. Tự đi: Không tối ưu TSP & Không vẽ route/polyline giữa các địa điểm
         for day_index, chunk_ids in enumerate(chunks):
             current_date = request.start_date + timedelta(days=day_index)
 
-            # Chuẩn bị data cho TSP: List[(id, lat, lon)]
-            tsp_input = [(lid, float(loc_map[lid].latitude), float(loc_map[lid].longitude)) for lid in chunk_ids]
-
-            # MỚI: Nếu là ngày đầu tiên và có GPS người dùng, chèn GPS vào đầu danh sách để làm điểm xuất phát
-            if day_index == 0 and request.start_lat is not None and request.start_lon is not None:
-                # Dùng một UUID ảo hoặc None cho ID của điểm xuất phát
-                tsp_input.insert(0, ("START_POINT", float(request.start_lat), float(request.start_lon)))
-
-            # Gọi thuật toán tối ưu của team để lấy thứ tự đi chuẩn nhất
-            optimized_ids, daily_dist = tsp_dp_bitmask(tsp_input)
-
-            # Nếu có điểm xuất phát ảo, loại bỏ nó khỏi danh sách ID kết quả (vì nó không phải địa điểm tham quan)
-            if "START_POINT" in optimized_ids:
-                optimized_ids.remove("START_POINT")
+            # Giữ nguyên thứ tự người dùng chọn ban đầu
+            optimized_ids = list(chunk_ids)
 
             # Tính toán ngân sách dự kiến cho ngày này dựa trên allocated_prices đã tính
             day_budget = sum(allocated_prices[lid] for lid in chunk_ids)
@@ -342,55 +330,24 @@ def create_new_itinerary(
             current_dt = datetime.combine(current_date, time(8, 0))
             daily_time = 0
 
-            # Biến tạm để giữ ID của trạm trước đó (phục vụ vẽ Route)
-            prev_stop_id = None
-
             for order, loc_id in enumerate(optimized_ids, start=1):
                 loc = loc_map[loc_id]
-
-                # Vẽ Route từ trạm trước đến trạm này và cộng thời gian di chuyển TRƯỚC KHI tính thời gian đến
-                if prev_stop_id is not None:
-                    prev_loc = loc_map[optimized_ids[order - 2]]
-                    route_info = get_route_polyline(
-                        float(prev_loc.latitude), float(prev_loc.longitude),
-                        float(loc.latitude), float(loc.longitude)
-                    )
-                    
-                    dev_log(f"Route source: {route_info.source.upper()}, distance={route_info.distance_km}km, time={route_info.travel_time_min}m")
-                    
-                    # Cộng thời gian di chuyển vào current_dt
-                    if route_info is not None:
-                        current_dt += timedelta(minutes=route_info.travel_time_min)
-                        daily_time += route_info.travel_time_min
-                else:
-                    route_info = None
-                    dev_log(f"Diem xuat phat ngay {day_index + 1}")
 
                 # Thời gian đến (Arrival)
                 arrival_time = current_dt.time()
 
-                # Giả định thời gian chơi mặc định tại 1 điểm là 90 phút (có thể lấy từ DB sau)
+                # Giả định thời gian chơi mặc định tại 1 điểm là 90 phút
                 play_duration_mins = 90
                 current_dt += timedelta(minutes=play_duration_mins)
                 departure_time = current_dt.time()
 
                 # Lưu Stop vào DB kèm ngân sách đã phân bổ
-                new_stop = create_itinerary_stop(
+                create_itinerary_stop(
                     db, day_id=day.day_id, location_id=loc_id, stop_order=order,
                     arrival_time=arrival_time, departure_time=departure_time, 
                     estimated_price=allocated_prices[loc_id], commit=False
                 )
                 daily_time += play_duration_mins
-
-                # Bây giờ mới tạo Route vì đã có new_stop.stop_id
-                if prev_stop_id is not None and route_info is not None:
-                    create_itinerary_route(
-                        db, from_stop_id=prev_stop_id, to_stop_id=new_stop.stop_id,
-                        travel_time=route_info.travel_time_min, distance=route_info.distance_km, polyline=route_info.polyline_data, commit=False
-                    )
-                    global_total_distance += route_info.distance_km
-                    
-                prev_stop_id = new_stop.stop_id
 
             global_total_time += daily_time
             dev_log(f"Ngay {day_index + 1}: Tong {daily_time} phut")

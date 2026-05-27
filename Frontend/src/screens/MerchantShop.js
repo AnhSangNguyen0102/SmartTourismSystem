@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Coffee, Landmark, Hotel, Puzzle, Coins, ArrowLeft } from 'lucide-react';
+import { showAlert, showConfirm } from '../platform/dialog';
 
 const MerchantShop = ({ user, onBack }) => {
     const [purchased, setPurchased] = useState([]);
@@ -12,17 +13,18 @@ const MerchantShop = ({ user, onBack }) => {
         { id: 4, title: 'Mảnh ghép Áo choàng phiêu lưu', cost: 50, IconComponent: Puzzle },
     ];
 
-    const handleBuy = (item) => {
+    const handleBuy = async (item) => {
         if (user.points_balance < item.cost) {
-            alert('Bạn không đủ xu để đổi vật phẩm này!');
+            await showAlert('Bạn không đủ xu để đổi vật phẩm này!');
             return;
         }
         
-        if (window.confirm(`Bạn có chắc muốn đổi ${item.cost} xu lấy ${item.title} không?`)) {
+        const confirmed = await showConfirm(`Bạn có chắc muốn đổi ${item.cost} xu lấy ${item.title} không?`);
+        if (confirmed) {
             // Deduct points locally for demo
             user.points_balance -= item.cost;
             setPurchased([...purchased, item.id]);
-            alert(`Chúc mừng! Bạn đã nhận được ${item.title}`);
+            await showAlert(`Chúc mừng! Bạn đã nhận được ${item.title}`);
         }
     };
 

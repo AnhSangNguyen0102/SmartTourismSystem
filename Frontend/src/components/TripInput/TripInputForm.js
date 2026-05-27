@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '../../config/api';
 import { ArrowLeft, ArrowRight, Compass, Sparkles, Coins, MapPin } from 'lucide-react';
+import { showAlert } from '../../platform/dialog';
 import './TripInputForm.css';
 
 const TripInputForm = ({ onSubmitPlan, onCancel }) => {
@@ -197,9 +198,9 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                     </div>
                     <div className="btn-row">
                         <div style={{ flex: 1 }}></div>
-                        <button className="btn-next squishy-btn green" onClick={() => {
+                        <button className="btn-next squishy-btn green" onClick={async () => {
                             if (!tripData.budget || tripData.budget <= 0) {
-                                alert("Vui lòng thiết lập lượng tài nguyên viễn chinh dự kiến.");
+                                await showAlert("Vui lòng thiết lập lượng tài nguyên viễn chinh dự kiến.");
                                 return;
                             }
                             setStep(3);

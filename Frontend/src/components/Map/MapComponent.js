@@ -2,6 +2,7 @@ import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createPlayerAvatarIcon } from '../PlayerAvatar/PlayerAvatar';
+import { showAlert } from '../../platform/dialog';
 import './MapComponent.css';
 
 const TILE_STYLES = {
@@ -40,13 +41,13 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
     const tileLayerRef = useRef(null);
 
     useImperativeHandle(ref, () => ({
-        flyToUserLocation: () => {
+        flyToUserLocation: async () => {
             if (mapInstance.current && userLocation?.lat && userLocation?.lng) {
                 const currentZoom = mapInstance.current.getZoom();
                 const targetZoom = Math.max(currentZoom, USER_LOCATION_ZOOM);
                 mapInstance.current.flyTo([userLocation.lat, userLocation.lng], targetZoom, { animate: true, duration: 0.8 });
             } else {
-                alert("Vui lòng bật định vị GPS và chờ trong giây lát.");
+                await showAlert("Vui lòng bật định vị GPS và chờ trong giây lát.");
             }
         },
         flyToLocation: (lat, lon, name) => {

@@ -1,6 +1,5 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
-
-const Dialog = registerPlugin('Dialog');
+import { Capacitor } from '@capacitor/core';
+import { Dialog } from '@capacitor/dialog';
 
 export const showAlert = async (message, options = {}) => {
     const text = typeof message === 'string' ? message : String(message ?? '');
