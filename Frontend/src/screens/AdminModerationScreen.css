@@ -958,13 +958,6 @@
         align-items: stretch;
         flex-direction: column;
     }
-
-    .admin-action-row .admin-primary-btn,
-    .admin-action-row .admin-danger-btn,
-    .admin-action-row .admin-secondary-btn {
-        width: 100%;
-        flex: 1 1 120px;
-    }
 }
 
 @media (max-width: 380px) {
@@ -980,3 +973,21 @@
         min-height: 80px;
     }
 }
+
+/* Force reports action buttons to be compact and inline on all viewports */
+.admin-report-row .admin-action-row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.admin-report-row .admin-action-row .admin-danger-btn {
+    width: auto !important;
+    flex: none !important;
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+}
+

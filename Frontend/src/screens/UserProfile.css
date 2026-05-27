@@ -180,6 +180,10 @@
     font-weight: 700;
     font-size: 14px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .user-profile-save-btn {

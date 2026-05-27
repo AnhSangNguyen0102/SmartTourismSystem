@@ -264,7 +264,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                 {/* Các nút bấm chỉ hiện khi ở chế độ Edit */}
                 {isEditing && (
                     <div className="user-profile-actions">
-                        <button type="submit" className="user-profile-save-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <button type="submit" className="user-profile-save-btn">
                             <Save size={16} /> Lưu hồ sơ
                         </button>
                         <button type="button" onClick={() => setIsEditing(false)} className="user-profile-cancel-btn">
