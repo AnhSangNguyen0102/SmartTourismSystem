@@ -1,172 +1,62 @@
 """
-================================================================================
- services/location_service.py  │  USE CASE: Đăng ký địa điểm kinh doanh
-================================================================================
+services/location_service.py - Enterprise location registration workflow.
 
-Luồng xử lý ``register_location``:
-  1. Lấy enterprise_id từ user_id (bảng ENTERPRISE_PROFILES)
-  2. Gọi Google Maps Geocoding API với address → latitude, longitude
-  3. Validate nghiệp vụ:
-       - Trùng tên địa điểm trong cùng thành phố
-       - close_time > open_time
-       - max_price >= min_price
-  4. Transaction: INSERT LOCATIONS → BUSINESS_LOCATION
-                           → LOCATION_CATEGORIES → LOCATION_TAGS
-  5. Trả về LocationRegisterResponse kèm thông báo chờ duyệt
-
-Biến môi trường cần có:
-  GOOGLE_API_KEY  — Google Maps Geocoding API key
-================================================================================
+Enterprise submissions are moderated: this service validates and geocodes the
+payload, then stores a PENDING LocationSubmissions row. Admin approval is the
+only path that creates/updates real Locations rows.
 """
 
 from __future__ import annotations
 
-import os
-import httpx
-
+import json
 from uuid import UUID
-from sqlmodel import Session, select
-
-from models import EnterpriseProfiles, EnterpriseStatus
-from schemas import LocationCreate, LocationRegisterResponse, LocationResponse
-
-from crud.crud_location import (
-    check_location_exists,
-    create_location,
-    create_business_location,
-    create_location_categories,
-    create_location_tags,
-)
 
 from fastapi import HTTPException, status
+from sqlmodel import Session, select
 
+from crud.crud_location import check_location_exists
+from models import EnterpriseProfiles, EnterpriseStatus, LocationSubmissions
+from schemas import LocationCreate, LocationRegisterResponse
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _get_enterprise_by_user(db: Session, user_id: UUID) -> EnterpriseProfiles:
-    """
-    Lấy hồ sơ doanh nghiệp từ user_id.
-    Raise 404 nếu không tìm thấy.
-    """
-    statement = select(EnterpriseProfiles).where(
-        EnterpriseProfiles.user_id == user_id
-    )
-    enterprise = db.exec(statement).first()
+    enterprise = db.exec(
+        select(EnterpriseProfiles).where(EnterpriseProfiles.user_id == user_id)
+    ).first()
     if enterprise is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Không tìm thấy hồ sơ doanh nghiệp cho user này.",
         )
+    if enterprise.status != EnterpriseStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hồ sơ doanh nghiệp chưa được duyệt nên chưa thể đăng ký địa điểm.",
+        )
     return enterprise
 
-'''
+
 def _geocode_address(address: str) -> tuple[float, float]:
     """
-    Gọi Google Maps Geocoding API để lấy (latitude, longitude) từ *address*.
-
-    Raises
-    ------
-    HTTPException 400
-        Khi API không tìm được tọa độ hoặc API key không hợp lệ.
-    HTTPException 503
-        Khi không thể kết nối tới Google Maps API.
-    """
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="GOOGLE_API_KEY chưa được cấu hình trên server.",
-        )
-
-    url = "https://maps.googleapis.com/maps/api/geocode/json"
-    params = {"address": address, "key": api_key, "language": "vi"}
-
-    try:
-        response = httpx.get(url, params=params, timeout=10.0)
-        response.raise_for_status()
-    except httpx.RequestError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Không thể kết nối Google Maps API: {exc}",
-        )
-
-    data = response.json()
-    results = data.get("results", [])
-
-    if not results or data.get("status") not in ("OK",):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"Google Maps không tìm được tọa độ cho địa chỉ: '{address}'. "
-                f"API status: {data.get('status', 'UNKNOWN')}"
-            ),
-        )
-
-    location_geo = results[0]["geometry"]["location"]
-    return location_geo["lat"], location_geo["lng"]
-
-'''
-def _geocode_address(address: str) -> tuple[float, float]:
-    """
-    TẠM BYPASS Google Maps API cho POC.
-    Trả về tọa độ mặc định theo thành phố trong địa chỉ.
+    Temporary local geocoder for the current POC environment.
+    Replace with Google Maps in production once GOOGLE_API_KEY is configured.
     """
     address_lower = address.lower()
-    
+
     if "hà nội" in address_lower or "hanoi" in address_lower:
         return 21.027764, 105.834160
-    elif "đà nẵng" in address_lower or "da nang" in address_lower:
+    if "đà nẵng" in address_lower or "da nang" in address_lower:
         return 16.054407, 108.202167
-    else:
-        # Mặc định Hồ Chí Minh
-        return 10.776797, 106.700981
-# ---------------------------------------------------------------------------
-# Main service
-# ---------------------------------------------------------------------------
+    return 10.776797, 106.700981
+
 
 def register_location(
     db: Session,
     user_id: UUID,
     data: LocationCreate,
 ) -> LocationRegisterResponse:
-    """
-    Đăng ký địa điểm kinh doanh mới cho doanh nghiệp.
-
-    Parameters
-    ----------
-    db : Session
-        SQLModel session (được inject từ FastAPI Depends).
-    user_id : UUID
-        ID user đang đăng nhập (đã xác thực là ENTERPRISE + ACTIVE).
-    data : LocationCreate
-        Payload request body từ client.
-
-    Returns
-    -------
-    LocationRegisterResponse
-        Thông tin địa điểm vừa tạo + thông báo chờ Admin duyệt.
-
-    Raises
-    ------
-    HTTPException 400
-        - Địa điểm trùng tên trong cùng thành phố
-        - close_time <= open_time
-        - max_price < min_price
-        - Google Maps không trả về tọa độ
-    HTTPException 404
-        Không tìm thấy hồ sơ doanh nghiệp
-    """
-
-    # ------------------------------------------------------------------ #
-    # 1. Lấy enterprise_id từ user_id
-    # ------------------------------------------------------------------ #
     enterprise = _get_enterprise_by_user(db, user_id)
 
-    # ------------------------------------------------------------------ #
-    # 2. Validate nghiệp vụ (trước khi gọi API để tiết kiệm quota)
-    # ------------------------------------------------------------------ #
     if data.close_time <= data.open_time:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -189,84 +79,43 @@ def register_location(
             ),
         )
 
-    # ------------------------------------------------------------------ #
-    # 3. Gọi Google Maps Geocoding API
-    # ------------------------------------------------------------------ #
     latitude, longitude = _geocode_address(data.address)
+    pending_data = {
+        "location_name": data.location_name,
+        "address": data.address,
+        "latitude": latitude,
+        "longitude": longitude,
+        "city_id": data.city_id,
+        "open_time": data.open_time.strftime("%H:%M:%S"),
+        "close_time": data.close_time.strftime("%H:%M:%S"),
+        "min_price": str(data.min_price),
+        "max_price": str(data.max_price),
+        "currency": getattr(data.currency, "value", data.currency),
+        "category_ids": data.category_ids,
+        "tag_ids": data.tag_ids,
+        "images": [],
+    }
 
-    # ------------------------------------------------------------------ #
-    # 4. Transaction: INSERT 4 bảng, rollback toàn bộ nếu bất kỳ bước nào lỗi
-    # ------------------------------------------------------------------ #
     try:
-        # INSERT LOCATIONS
-        location = create_location(
-            db,
-            location_name=data.location_name,
-            latitude=latitude,
-            longitude=longitude,
-            city_id=data.city_id,
-            open_time=data.open_time,
-            close_time=data.close_time,
-            min_price=data.min_price,
-            max_price=data.max_price,
-            currency=data.currency,
-            address=data.address,
+        submission = LocationSubmissions(
+            enterprise_id=enterprise.enterprise_id,
+            type="CREATE",
+            status="PENDING",
+            data_json=json.dumps(pending_data, ensure_ascii=False),
         )
-
-        # INSERT BUSINESS_LOCATION
-        create_business_location(
-            db,
-            business_id=enterprise.enterprise_id,
-            location_id=location.location_id,
-        )
-
-        # INSERT LOCATION_CATEGORIES (bỏ qua nếu danh sách rỗng)
-        if data.category_ids:
-            create_location_categories(
-                db,
-                location_id=location.location_id,
-                category_ids=data.category_ids,
-            )
-
-        # INSERT LOCATION_TAGS (bỏ qua nếu danh sách rỗng)
-        if data.tag_ids:
-            create_location_tags(
-                db,
-                location_id=location.location_id,
-                tag_ids=data.tag_ids,
-            )
-
-        # Commit toàn bộ transaction một lần
+        db.add(submission)
         db.commit()
-        db.refresh(location)
-
-    except HTTPException:
-        db.rollback()
-        raise
+        db.refresh(submission)
     except Exception as exc:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Lỗi khi lưu địa điểm vào cơ sở dữ liệu: {exc}",
+            detail=f"Lỗi khi lưu yêu cầu đăng ký địa điểm: {exc}",
         ) from exc
 
-    # ------------------------------------------------------------------ #
-    # 5. Trả về response
-    # ------------------------------------------------------------------ #
-    location_resp = LocationResponse(
-        location_id=location.location_id,
-        location_name=location.location_name,
-        latitude=location.latitude,
-        longitude=location.longitude,
-        city_id=location.city_id,
-        min_price=location.min_price,
-        max_price=location.max_price,
-        currency=location.currency,
-        open_time=location.open_time,
-        close_time=location.close_time,
-    )
-
     return LocationRegisterResponse(
-        location=location_resp,
-        message="Địa điểm đang chờ Admin duyệt. Chúng tôi sẽ thông báo khi có kết quả.",
+        submission_id=submission.submission_id,
+        status=submission.status,
+        pending_data=pending_data,
+        message="Đã gửi yêu cầu đăng ký địa điểm. Địa điểm sẽ hiển thị sau khi Admin duyệt.",
     )

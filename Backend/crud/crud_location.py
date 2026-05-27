@@ -287,6 +287,7 @@ def create_location(
     location = Locations(
         location_id=uuid4(),
         location_name=location_name,
+        address=address,
         latitude=latitude,
         longitude=longitude,
         city_id=city_id,
@@ -372,4 +373,3 @@ def create_location_tags(
         db.add(r)
     db.flush()
     return records
-

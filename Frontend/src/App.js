@@ -45,16 +45,23 @@ function App() {
     const [planPayload, setPlanPayload] = useState(null);
     const [currentItineraryId, setCurrentItineraryId] = useState(null);
     const [currentLocationDetail, setCurrentLocationDetail] = useState(null);
+    const userRole = currentUser?.user?.role || currentUser?.role;
+    const isAdminMode = currentScreen === 'admin_moderation';
+    const isWorkMode = isAdminMode || (currentScreen === 'main' && userRole === 'ENTERPRISE');
 
     const screenHistoryRef = useRef([]);
     const currentScreenRef = useRef(currentScreen);
+    const workModeRef = useRef(isWorkMode);
 
     useEffect(() => {
         currentScreenRef.current = currentScreen;
-    }, [currentScreen]);
+        workModeRef.current = isWorkMode;
+    }, [currentScreen, isWorkMode]);
 
     useEffect(() => {
         const handleGlobalClick = (e) => {
+            if (workModeRef.current) return;
+
             // Kích hoạt BGM ở lần tương tác đầu tiên
             if (!window._bgmStarted) {
                 window._bgmStarted = true;
@@ -215,16 +222,14 @@ function App() {
         navigateTo('welcome', { resetHistory: true });
     };
 
-    const userRole = currentUser?.user?.role || currentUser?.role;
-
     return (
         <SocialQuestProvider user={currentUser?.user || currentUser}>
             <div className="app-outer">
-                <div className="app-container">
+                <div className={`app-container ${isWorkMode ? 'app-container-workmode' : ''} ${isAdminMode ? 'app-container-adminmode' : ''}`}>
                     {['splash', 'welcome'].includes(currentScreen) && (
                         <AudioControl />
                     )}
-                    <SocialQuestOverlay />
+                    {!isWorkMode && <SocialQuestOverlay />}
                     {/* ❌ XÓA HOẶC COMMENT DÒNG NÀY ĐỂ ẨN BẢNG GIẢ LẬP: */}
                     {/* <LocationSimulator /> */}
 
@@ -303,10 +308,20 @@ function App() {
                     )}
 
                     {currentScreen === 'admin_moderation' && (
-                        <AdminModerationScreen
-                            user={currentUser?.user || currentUser}
-                            onBack={() => navigateTo('main')}
-                        />
+                        userRole === 'ADMIN' ? (
+                            <AdminModerationScreen
+                                user={currentUser?.user || currentUser}
+                                onBack={() => navigateTo('main')}
+                            />
+                        ) : (
+                            <div className="app-forbidden-screen">
+                                <h2>Không có quyền truy cập</h2>
+                                <p>Khu vực quản trị chỉ dành cho tài khoản ADMIN.</p>
+                                <button type="button" onClick={() => navigateTo('main', { resetHistory: true })}>
+                                    Quay lại
+                                </button>
+                            </div>
+                        )
                     )}
 
                     {currentScreen === 'profile_edit' && (

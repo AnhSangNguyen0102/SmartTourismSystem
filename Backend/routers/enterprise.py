@@ -1,104 +1,197 @@
+from datetime import datetime
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session
+from sqlmodel import Session, select
 
-from database import get_session
-from core.security import verify_token
-from core.dependencies import require_admin # File bạn vừa tạo ở trên
-from models import EnterpriseStatus, VerificationAction, UserRole, Users
 import schemas
-
-import crud.crud_enterprise as crud_enterprise
+from core.dependencies import require_admin, require_enterprise_active
+from core.security import verify_token
+from database import get_session
+from models import (
+    BusinessLocation,
+    EnterpriseProfiles,
+    EnterpriseStatus,
+    LocationSubmissions,
+    Locations,
+    UserRole,
+    Users,
+    VerificationAction,
+    VerificationLogs,
+)
 
 router = APIRouter(prefix="/enterprise", tags=["Enterprise Accounts"])
 
-# ---------------------------------------------------------------------------
-# API 1: Người dùng (Role: USER) nộp hồ sơ đăng ký doanh nghiệp
-# ---------------------------------------------------------------------------
+
+def _user_id_from_payload(payload: dict) -> UUID:
+    try:
+        return UUID(str(payload.get("sub")))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=401, detail="Token không hợp lệ")
+
+
+def _apply_enterprise_verification(
+    *,
+    db: Session,
+    enterprise_id: UUID,
+    admin_id: UUID,
+    new_status: EnterpriseStatus,
+    reason: str | None = None,
+) -> EnterpriseProfiles:
+    profile = db.exec(
+        select(EnterpriseProfiles).where(EnterpriseProfiles.enterprise_id == enterprise_id)
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ doanh nghiệp")
+    if profile.status != EnterpriseStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Hồ sơ không ở trạng thái chờ duyệt")
+    if new_status not in (EnterpriseStatus.ACTIVE, EnterpriseStatus.REJECTED):
+        raise HTTPException(status_code=400, detail="Trạng thái cập nhật không hợp lệ")
+    if new_status == EnterpriseStatus.REJECTED and not (reason or "").strip():
+        raise HTTPException(status_code=400, detail="Lý do từ chối là bắt buộc")
+
+    profile.status = new_status
+    profile.updated_at = datetime.utcnow()
+    db.add(profile)
+
+    if new_status == EnterpriseStatus.ACTIVE:
+        user = db.get(Users, profile.user_id)
+        if user:
+            user.role = UserRole.ENTERPRISE
+            db.add(user)
+
+    db.add(
+        VerificationLogs(
+            enterprise_id=enterprise_id,
+            admin_id=admin_id,
+            action=(
+                VerificationAction.APPROVE
+                if new_status == EnterpriseStatus.ACTIVE
+                else VerificationAction.REJECT
+            ),
+            reason=reason,
+        )
+    )
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+
 @router.post("/register-profile", response_model=schemas.EnterpriseProfileResponse)
 def submit_enterprise_profile(
     profile_data: schemas.EnterpriseProfileCreate,
     db: Session = Depends(get_session),
-    current_user: dict = Depends(verify_token) # Yêu cầu đã đăng nhập
+    current_user: dict = Depends(verify_token),
 ):
-    """
-    Doanh nghiệp (B2B) gửi yêu cầu đăng ký hồ sơ doanh nghiệp.
-    Trạng thái mặc định sẽ là PENDING[cite: 638, 659].
-    """
-    # Payload token của bạn lưu user_id ở key 'sub'
-    user_id_str = current_user.get("sub")
-    if not user_id_str:
-         raise HTTPException(status_code=401, detail="Token không hợp lệ")
-    
-    user_id = UUID(user_id_str)
+    user_id = _user_id_from_payload(current_user)
+    user = db.get(Users, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
 
-    try:
-        profile = crud_enterprise.create_enterprise_profile(
-            db=db,
-            user_id=user_id,
-            business_name=profile_data.business_name,
-            contact_person=profile_data.contact_person,
-            contact_email=profile_data.contact_email,
-            contact_phone=profile_data.contact_phone
-        )
-        return profile
-    except Exception as e:
+    existing = db.exec(
+        select(EnterpriseProfiles).where(EnterpriseProfiles.user_id == user_id)
+    ).first()
+    if existing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tài khoản này đã có hồ sơ hoặc dữ liệu không hợp lệ."
+            status_code=400,
+            detail="Tài khoản này đã có hồ sơ doanh nghiệp",
         )
 
+    profile = EnterpriseProfiles(
+        user_id=user_id,
+        business_name=profile_data.business_name,
+        contact_person=profile_data.contact_person,
+        contact_email=str(profile_data.contact_email),
+        contact_phone=profile_data.contact_phone,
+        status=EnterpriseStatus.PENDING,
+    )
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    return profile
 
-# ---------------------------------------------------------------------------
-# API 2: Admin duyệt/từ chối hồ sơ & Cấp quyền
-# ---------------------------------------------------------------------------
+
+@router.get("/profile", response_model=schemas.EnterpriseProfileResponse)
+def get_enterprise_profile(
+    db: Session = Depends(get_session),
+    current_user: dict = Depends(verify_token),
+):
+    user_id = _user_id_from_payload(current_user)
+    profile = db.exec(
+        select(EnterpriseProfiles).where(EnterpriseProfiles.user_id == user_id)
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Chưa có hồ sơ doanh nghiệp")
+    return profile
+
+
+@router.get("/location-submissions")
+def get_my_location_submissions(
+    payload: dict = Depends(require_enterprise_active),
+    db: Session = Depends(get_session),
+):
+    enterprise_id = UUID(str(payload["enterprise_id"]))
+    submissions = db.exec(
+        select(LocationSubmissions)
+        .where(LocationSubmissions.enterprise_id == enterprise_id)
+        .order_by(LocationSubmissions.created_at.desc())
+    ).all()
+    return [
+        {
+            "submission_id": str(sub.submission_id),
+            "location_id": str(sub.location_id) if sub.location_id else None,
+            "type": sub.type,
+            "status": sub.status,
+            "created_at": sub.created_at,
+            "reviewed_at": sub.reviewed_at,
+            "reject_reason": sub.reject_reason,
+        }
+        for sub in submissions
+    ]
+
+
+@router.get("/locations")
+def get_my_enterprise_locations(
+    payload: dict = Depends(require_enterprise_active),
+    db: Session = Depends(get_session),
+):
+    enterprise_id = UUID(str(payload["enterprise_id"]))
+    rows = db.exec(
+        select(Locations)
+        .join(BusinessLocation, Locations.location_id == BusinessLocation.location_id)
+        .where(BusinessLocation.business_id == enterprise_id)
+        .order_by(Locations.create_at.desc())
+    ).all()
+    return [
+        {
+            "location_id": str(loc.location_id),
+            "location_name": loc.location_name,
+            "address": loc.address,
+            "latitude": float(loc.latitude),
+            "longitude": float(loc.longitude),
+            "city_id": loc.city_id,
+            "open_time": loc.open_time.isoformat(),
+            "close_time": loc.close_time.isoformat(),
+            "min_price": float(loc.min_price),
+            "max_price": float(loc.max_price),
+            "currency": getattr(loc.currency, "value", loc.currency),
+            "is_active": loc.is_active,
+        }
+        for loc in rows
+    ]
+
+
 @router.put("/{enterprise_id}/verify", response_model=schemas.EnterpriseProfileResponse)
 def verify_enterprise_profile(
     enterprise_id: UUID,
     action_data: schemas.EnterpriseStatusUpdate,
     db: Session = Depends(get_session),
-    current_admin: dict = Depends(require_admin) # BẮT BUỘC ROLE ADMIN
+    current_admin: dict = Depends(require_admin),
 ):
-    """
-    Admin kiểm tra và xác nhận 'Phê duyệt' hoặc 'Từ chối' hồ sơ[cite: 643, 665].
-    Nâng cấp role lên ENTERPRISE nếu được duyệt[cite: 645].
-    """
-    admin_id = UUID(current_admin.get("sub"))
-
-    # 1. Cập nhật trạng thái Profile (PENDING -> ACTIVE/REJECTED)
-    updated_profile = crud_enterprise.update_enterprise_status(
+    return _apply_enterprise_verification(
         db=db,
         enterprise_id=enterprise_id,
-        new_status=action_data.status
+        admin_id=UUID(str(current_admin.get("sub"))),
+        new_status=action_data.status,
+        reason=action_data.reason,
     )
-    
-    if not updated_profile:
-        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ doanh nghiệp")
-
-    # 2. Map trạng thái để ghi Verification Log
-    if action_data.status == EnterpriseStatus.ACTIVE:
-        action_type = VerificationAction.APPROVE
-    elif action_data.status == EnterpriseStatus.REJECTED:
-        action_type = VerificationAction.REJECT
-    else:
-        raise HTTPException(status_code=400, detail="Trạng thái cập nhật không hợp lệ")
-
-    # Ghi log hành động của Admin
-    crud_enterprise.create_verification_log(
-        db=db,
-        enterprise_id=enterprise_id,
-        admin_id=admin_id,
-        action=action_type,
-        reason=action_data.reason
-    )
-
-    # 3. Nâng cấp Role cho User nếu hồ sơ được duyệt (ACTIVE)
-    if action_data.status == EnterpriseStatus.ACTIVE:
-        # Fetch user trực tiếp bằng SQLModel
-        user = db.get(Users, updated_profile.user_id)
-        if user and user.role != UserRole.ENTERPRISE:
-            user.role = UserRole.ENTERPRISE
-            db.add(user)
-            db.commit()
-
-    return updated_profile

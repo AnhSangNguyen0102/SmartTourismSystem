@@ -1143,11 +1143,11 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
             {/* === MENU ACTIONS (style game buttons) === */}
             <div className="profile-menu-list">
-                {(userInfo?.role === 'ADMIN' || userInfo?.role === 'OWNER' || userInfo?.role === 'CS') && (
-                    <button className="profile-menu-btn" onClick={onOpenAdminModeration} style={{ borderLeft: '4px solid #ff4757' }}>
-                        <span className="menu-btn-icon"><ShieldAlert size={18} style={{ color: '#ff4757' }} /></span>
-                        <span className="profile-menu-label" style={{ color: '#ff4757', fontWeight: 'bold' }}>Bảng Kiểm Duyệt Admin</span>
-                        <span className="menu-btn-arrow" style={{ color: '#ff4757' }}>›</span>
+                {userInfo?.role === 'ADMIN' && (
+                    <button className="profile-menu-btn profile-admin-dashboard-btn" onClick={onOpenAdminModeration}>
+                        <span className="menu-btn-icon"><ShieldAlert size={18} /></span>
+                        <span className="profile-menu-label">Admin Dashboard</span>
+                        <span className="menu-btn-arrow">›</span>
                     </button>
                 )}
                 <button className="profile-menu-btn" onClick={onOpenProfileEdit}>
