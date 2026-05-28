@@ -236,6 +236,37 @@ def create_comment(
     return new_comment
 
 
+@router.delete("/comments/{comment_id}")
+def delete_comment(
+    comment_id: int,
+    current_user: dict = Depends(verify_token),
+    db: Session = Depends(get_session)
+):
+    """Xóa bình luận nếu là tác giả bình luận hoặc tác giả bài viết"""
+    user_id = get_user_uuid(current_user)
+    
+    comment = db.exec(select(models.PostComments).where(models.PostComments.comment_id == comment_id)).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Bình luận không tồn tại")
+        
+    post = db.exec(select(models.SocialPosts).where(models.SocialPosts.post_id == comment.post_id)).first()
+    
+    is_comment_owner = comment.user_id == user_id
+    is_post_owner = post is not None and post.user_id == user_id
+    
+    if not (is_comment_owner or is_post_owner):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bình luận này")
+        
+    if post:
+        post.comments_count = max(0, (post.comments_count or 0) - 1)
+        db.add(post)
+        
+    db.delete(comment)
+    db.commit()
+    
+    return {"message": "Đã xóa bình luận thành công"}
+
+
 @router.post("/like/{post_id}")
 def toggle_like(
     post_id: UUID,
@@ -621,17 +652,46 @@ def get_friends(current_user: dict = Depends(verify_token), db: Session = Depend
         ).where(models.Users.user_id.in_(friend_ids))
     ).all()
     
-    return [
-        {
+    friend_list = []
+    for u, p in results:
+        # Get latest message between current_user and this friend
+        last_msg = db.exec(
+            select(models.ChatMessages).where(
+                or_(
+                    and_(models.ChatMessages.sender_id == user_id, models.ChatMessages.receiver_id == u.user_id),
+                    and_(models.ChatMessages.sender_id == u.user_id, models.ChatMessages.receiver_id == user_id)
+                )
+            ).order_by(models.ChatMessages.created_at.desc())
+        ).first()
+        
+        last_msg_data = None
+        if last_msg:
+            last_msg_data = {
+                "content": last_msg.content,
+                "created_at": last_msg.created_at.isoformat() if last_msg.created_at else None,
+                "sender_id": str(last_msg.sender_id),
+                "is_read": last_msg.is_read
+            }
+            
+        friend_list.append({
             "id": str(u.user_id),
             "name": p.full_name if p else u.full_name,
             "avatar": (p.avatar_url if p else None) or f"https://api.dicebear.com/7.x/avataaars/svg?seed={u.full_name}",
             "bio": (p.bio if p else None) or "Sẵn sàng cho những hành trình mới!",
             "location": (p.base_location if p else None) or "Việt Nam",
             "points": p.points_balance if p else 0,
-            "rank": p.status if p else "Tân binh"
-        } for u, p in results
-    ]
+            "rank": p.status if p else "Tân binh",
+            "last_message": last_msg_data
+        })
+        
+    def get_sort_key(item):
+        last_msg = item.get("last_message")
+        if last_msg and last_msg.get("created_at"):
+            return (1, last_msg.get("created_at"))
+        return (0, "")
+        
+    friend_list.sort(key=get_sort_key, reverse=True)
+    return friend_list
 
 
 @router.post("/friend-request")

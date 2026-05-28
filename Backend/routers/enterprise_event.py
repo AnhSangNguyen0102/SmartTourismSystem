@@ -99,7 +99,7 @@ def _serialize_event(db: Session, event: EnterpriseEvents) -> dict:
 
 
 @router.post("/api/enterprise/events")
-def create_enterprise_event(
+async def create_enterprise_event(
     event_data: dict,
     current_user: dict = Depends(verify_token),
     db: Session = Depends(get_session),
@@ -184,6 +184,42 @@ def create_enterprise_event(
             "max_scans": qr_entry.max_scans,
         }
 
+    # Phát thông báo WebSocket thời gian thực tới các người chơi ở gần trong vòng 5km
+    try:
+        from routers.social_quest import manager, player_locations
+        from core.spatial_logic import calculate_haversine_distance
+
+        evt_lat = float(new_event.latitude)
+        evt_lng = float(new_event.longitude)
+
+        for user_id_str in list(manager.active_connections.keys()):
+            if user_id_str in player_locations:
+                loc = player_locations[user_id_str]
+                u_lat = float(loc.get("lat", 0))
+                u_lng = float(loc.get("lng", 0))
+
+                dist = calculate_haversine_distance(u_lat, u_lng, evt_lat, evt_lng)
+                if dist <= 5000.0:  # Bán kính gửi tin nhắn là 5km
+                    await manager.send_personal_message({
+                        "event": "new_campaign",
+                        "data": {
+                            "event_id": str(new_event.event_id),
+                            "title": new_event.title,
+                            "description": new_event.description,
+                            "quest_type": new_event.quest_type.value,
+                            "latitude": float(new_event.latitude),
+                            "longitude": float(new_event.longitude),
+                            "radius_meters": new_event.radius_meters,
+                            "reward_exp": new_event.reward_exp,
+                            "reward_coin": new_event.reward_coin,
+                            "rarity": new_event.rarity.value,
+                            "start_time": new_event.start_time.isoformat(),
+                            "end_time": new_event.end_time.isoformat()
+                        }
+                    }, user_id_str)
+    except Exception as ws_err:
+        print(f"[Realtime Campaign] Lỗi khi phát WebSocket: {ws_err}")
+
     return {
         "status": "ok",
         "message": "Tạo chiến dịch thành công",
@@ -267,3 +303,145 @@ def get_enterprise_daily_flow(
         {"day": "T7", "count": flow_data[5]},
         {"day": "CN", "count": flow_data[6]},
     ]
+
+
+@router.get("/api/v1/campaigns/active", response_model=list[dict])
+def get_active_campaigns(
+    current_user: dict = Depends(verify_token),
+    db: Session = Depends(get_session)
+):
+    """Lấy danh sách tất cả chiến dịch doanh nghiệp đang hoạt động cho người chơi."""
+    now = datetime.utcnow()
+    events = db.exec(
+        select(EnterpriseEvents)
+        .where(EnterpriseEvents.is_active == True)
+        .where(EnterpriseEvents.start_time <= now)
+        .where(EnterpriseEvents.end_time >= now)
+    ).all()
+
+    # Chỉ trả về những chiến dịch mà người chơi chưa hoàn thành
+    from routers.hidden_quest import get_db_user
+    user = get_db_user(current_user, db)
+
+    result = []
+    for event in events:
+        participated = db.exec(
+            select(HiddenEventParticipants)
+            .where(HiddenEventParticipants.user_id == user.user_id)
+            .where(HiddenEventParticipants.event_id == event.event_id)
+        ).first()
+        if not participated:
+            result.append(_serialize_event(db, event))
+
+    return result
+
+
+@router.post("/api/v1/campaigns/verify")
+def verify_campaign(
+    verify_data: dict,
+    current_user: dict = Depends(verify_token),
+    db: Session = Depends(get_session)
+):
+    """Xác thực và hoàn thành thử thách của chiến dịch doanh nghiệp cho người chơi."""
+    from routers.hidden_quest import get_db_user, validate_coordinates, haversine_distance
+    from models import UserProfiles
+
+    user = get_db_user(current_user, db)
+    event_id = verify_data.get("event_id")
+    player_lat = verify_data.get("latitude")
+    player_lng = verify_data.get("longitude")
+
+    if not event_id or player_lat is None or player_lng is None:
+        raise HTTPException(status_code=400, detail="Thiếu thông tin xác thực")
+
+    player_lat, player_lng = validate_coordinates(player_lat, player_lng)
+    now = datetime.utcnow()
+    target_user_id = user.user_id
+
+    event = db.get(EnterpriseEvents, UUID(event_id))
+    if not event or not event.is_active:
+        raise HTTPException(status_code=404, detail="Chiến dịch doanh nghiệp không tồn tại hoặc đã kết thúc")
+
+    # Kiểm tra nếu đã hoàn thành rồi
+    participated = db.exec(
+        select(HiddenEventParticipants)
+        .where(HiddenEventParticipants.user_id == target_user_id)
+        .where(HiddenEventParticipants.event_id == event.event_id)
+    ).first()
+    if participated:
+        raise HTTPException(status_code=400, detail="Bạn đã hoàn thành chiến dịch này rồi!")
+
+    # Kiểm tra khoảng cách đứng trong bán kính quét
+    dist = haversine_distance(float(player_lat), float(player_lng), float(event.latitude), float(event.longitude))
+    if dist > float(event.radius_meters) + 20.0:  # Dung sai 20m do GPS drift
+        raise HTTPException(
+            status_code=400,
+            detail=f"Bạn ở quá xa địa điểm chiến dịch ({int(dist)}m / Bán kính: {event.radius_meters}m)"
+        )
+
+    # Xác thực cụ thể theo loại thử thách
+    if event.quest_type == QuestTypeEnum.QR:
+        qr_token = verify_data.get("qr_token")
+        if not qr_token:
+            raise HTTPException(status_code=400, detail="Yêu cầu quét mã QR sự kiện")
+
+        qr_entry = db.exec(
+            select(EnterpriseEventQR)
+            .where(EnterpriseEventQR.event_id == event.event_id)
+            .where(EnterpriseEventQR.qr_token == qr_token)
+        ).first()
+
+        if not qr_entry:
+            raise HTTPException(status_code=400, detail="Mã QR sự kiện không hợp lệ")
+
+        if qr_entry.scanned_count >= qr_entry.max_scans:
+            raise HTTPException(status_code=400, detail="Số lượng quà tặng qua mã QR này đã đạt giới hạn")
+
+        qr_entry.scanned_count += 1
+        db.add(qr_entry)
+
+    elif event.quest_type == QuestTypeEnum.QUIZ:
+        user_answer = verify_data.get("answer")
+        correct_answer = verify_data.get("correct_answer", "A")
+        if not user_answer or user_answer.strip().upper() != correct_answer.strip().upper():
+            raise HTTPException(status_code=400, detail="Đáp án câu hỏi chưa chính xác")
+
+    elif event.quest_type == QuestTypeEnum.PHOTO:
+        image_url = verify_data.get("image_url")
+        if not image_url:
+            raise HTTPException(status_code=400, detail="Vui lòng cung cấp ảnh chụp check-in")
+
+    final_exp = event.reward_exp * event.multiplier
+    final_coin = event.reward_coin * event.multiplier
+
+    # Cộng thưởng
+    profile = db.exec(select(UserProfiles).where(UserProfiles.user_id == target_user_id)).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ người dùng")
+
+    profile.total_points = (profile.total_points or 0) + final_exp
+    profile.points_balance = (profile.points_balance or 0) + final_coin
+    profile.updated_at = now
+    db.add(profile)
+
+    # Lưu lịch sử tham gia
+    participation = HiddenEventParticipants(
+        user_id=target_user_id,
+        event_id=event.event_id,
+        earned_exp=final_exp,
+        earned_coin=final_coin,
+        feedback_image_url=verify_data.get("image_url"),
+        completed_at=now
+    )
+    db.add(participation)
+    db.commit()
+    db.refresh(profile)
+
+    return {
+        "status": "ok",
+        "title": event.title,
+        "reward_exp": final_exp,
+        "reward_coin": final_coin,
+        "total_points": profile.total_points,
+        "points_balance": profile.points_balance
+    }

@@ -522,3 +522,25 @@
 .cancel-btn, .submit-btn {
     flex: 1;
 }
+
+.comment-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-delete-comment {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--game-red, #ff4757);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease;
+}
+
+.btn-delete-comment:hover {
+    transform: scale(1.15);
+}

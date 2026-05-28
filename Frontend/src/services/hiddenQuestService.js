@@ -219,3 +219,57 @@ export const deleteEnterpriseEvent = async (eventId) => {
     }
     return response.json();
 };
+
+// ─── Public Campaign APIs for Players ────────────────────────────────────────
+
+/**
+ * Lấy danh sách toàn bộ chiến dịch doanh nghiệp đang hoạt động.
+ * @returns {Promise<Array>}
+ */
+export const getActiveCampaigns = async () => {
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${BASE_URL}/api/v1/campaigns/active`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+        }
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(formatError(err, 'Lỗi tải danh sách chiến dịch hoạt động'));
+    }
+    return response.json();
+};
+
+/**
+ * Xác thực và hoàn thành thử thách chiến dịch cho người chơi.
+ * @param {string} eventId
+ * @param {number} lat
+ * @param {number} lng
+ * @param {string} questType
+ * @param {object} extraData
+ * @returns {Promise<object>}
+ */
+export const verifyCampaign = async (eventId, lat, lng, questType, extraData = {}) => {
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${BASE_URL}/api/v1/campaigns/verify`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+        },
+        body: JSON.stringify({
+            event_id: eventId,
+            latitude: lat,
+            longitude: lng,
+            quest_type: questType,
+            ...extraData
+        })
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(formatError(err, 'Xác thực thử thách chiến dịch thất bại'));
+    }
+    return response.json();
+};

@@ -5,6 +5,31 @@ import { storageGet } from '../platform/storage';
 import { showConfirm } from '../platform/dialog';
 import './ChatScreen.css';
 
+const formatLastMessageTime = (isoString) => {
+    if (!isoString) return '';
+    try {
+        const date = new Date(isoString);
+        const now = new Date();
+        
+        // Hôm nay: hiển thị giờ
+        if (date.toDateString() === now.toDateString()) {
+            return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+        
+        // Hôm qua
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        if (date.toDateString() === yesterday.toDateString()) {
+            return 'Hôm qua';
+        }
+        
+        // Cũ hơn
+        return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    } catch (e) {
+        return '';
+    }
+};
+
 export default function ChatScreen({ user, onRequireLogin }) {
     const [friends, setFriends] = useState([]);
     const [selectedFriend, setSelectedFriend] = useState(null);
@@ -15,6 +40,7 @@ export default function ChatScreen({ user, onRequireLogin }) {
     const [sending, setSending] = useState(false);
     const chatEndRef = useRef(null);
     const pollIntervalRef = useRef(null);
+    const isFirstRender = useRef(true);
 
     useEffect(() => {
         if (!user) {
@@ -33,6 +59,11 @@ export default function ChatScreen({ user, onRequireLogin }) {
             startPolling(selectedFriend.id);
         } else {
             stopPolling();
+            if (!isFirstRender.current) {
+                fetchFriends();
+            } else {
+                isFirstRender.current = false;
+            }
         }
     }, [selectedFriend]);
 
@@ -184,7 +215,24 @@ export default function ChatScreen({ user, onRequireLogin }) {
                                             <h4 className="friend-name">{friend.name}</h4>
                                             <span className="friend-rank-badge">{friend.rank}</span>
                                         </div>
-                                        <p className="friend-bio truncate">{friend.bio}</p>
+                                        {friend.last_message ? (
+                                            <p className={`friend-last-message truncate ${(!friend.last_message.is_read && friend.last_message.sender_id === friend.id) ? 'unread-bold' : ''}`}>
+                                                {friend.last_message.sender_id === (user.user_id || user.id) ? 'Bạn: ' : ''}
+                                                {friend.last_message.content}
+                                            </p>
+                                        ) : (
+                                            <p className="friend-bio truncate">{friend.bio}</p>
+                                        )}
+                                    </div>
+                                    <div className="friend-time-col">
+                                        {friend.last_message && (
+                                            <span className="friend-time">
+                                                {formatLastMessageTime(friend.last_message.created_at)}
+                                            </span>
+                                        )}
+                                        {friend.last_message && !friend.last_message.is_read && friend.last_message.sender_id === friend.id && (
+                                            <span className="unread-badge"></span>
+                                        )}
                                     </div>
                                     <span className="chat-arrow">›</span>
                                 </div>

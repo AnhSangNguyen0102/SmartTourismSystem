@@ -277,6 +277,34 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
         }
     };
 
+    const handleDeleteComment = async (commentId) => {
+        const confirmed = await showConfirm('Bạn có muốn xóa bình luận này không?');
+        if (!confirmed) return;
+        try {
+            const token = await storageGet('access_token');
+            const res = await fetch(`${API_BASE}/api/social/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                // Refresh comments list
+                handleOpenComments(activeCommentsPostId);
+                // Decrement local comments count
+                setPosts(prev => prev.map(p => {
+                    if (p.post_id === activeCommentsPostId) {
+                        return { ...p, comments_count: Math.max(0, (p.comments_count || 0) - 1) };
+                    }
+                    return p;
+                }));
+            } else {
+                const data = await res.json();
+                await showAlert(data.detail || 'Không thể xóa bình luận.');
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+        }
+    };
+
     const handleDeletePost = async (postId) => {
         const confirmed = await showConfirm('Bạn có muốn xóa bài đăng này không?');
         if (!confirmed) return;
@@ -517,22 +545,39 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                             {comments.length === 0 ? (
                                 <p className="comments-empty">Chưa có bình luận nào. Hãy bình luận đầu tiên!</p>
                             ) : (
-                                comments.map(comment => (
-                                    <div key={comment.comment_id} className="comment-item">
-                                        <img 
-                                            src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.profiles?.full_name || 'Visitor'}`} 
-                                            alt="avatar" 
-                                            className="comment-avatar"
-                                        />
-                                        <div className="comment-bubble cartoon-card">
-                                            <div className="comment-bubble-header">
-                                                <span className="commenter-name">{comment.profiles?.full_name || 'Traveler'}</span>
-                                                <span className="comment-time">{new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                comments.map(comment => {
+                                    const activePost = posts.find(p => p.post_id === activeCommentsPostId);
+                                    const isPostOwner = activePost && user && (activePost.user_id === (user.user_id || user.id));
+                                    const isCommentOwner = user && (comment.user_id === (user.user_id || user.id));
+                                    const canDelete = isPostOwner || isCommentOwner;
+                                    return (
+                                        <div key={comment.comment_id} className="comment-item">
+                                            <img 
+                                                src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.profiles?.full_name || 'Visitor'}`} 
+                                                alt="avatar" 
+                                                className="comment-avatar"
+                                            />
+                                            <div className="comment-bubble cartoon-card">
+                                                <div className="comment-bubble-header">
+                                                    <span className="commenter-name">{comment.profiles?.full_name || 'Traveler'}</span>
+                                                    <div className="comment-meta-right">
+                                                        <span className="comment-time">{new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        {canDelete && (
+                                                            <button 
+                                                                className="btn-delete-comment" 
+                                                                onClick={() => handleDeleteComment(comment.comment_id)}
+                                                                title="Xóa bình luận"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <p className="comment-text-content">{comment.content}</p>
                                             </div>
-                                            <p className="comment-text-content">{comment.content}</p>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                         {user && (
