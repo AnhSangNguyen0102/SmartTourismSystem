@@ -111,6 +111,15 @@ def _create_location_from_submission(
 
     now = datetime.utcnow()
     
+    # Kiểm tra xem city_id có tồn tại không để tránh ForeignKeyViolation
+    city_id = int(data.get("city_id", 1))
+    city_exists = db.exec(select(models.Cities).where(models.Cities.city_id == city_id)).first()
+    if not city_exists:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Thành phố có ID {city_id} không tồn tại. Không thể phê duyệt địa điểm này."
+        )
+    
     # Lấy tọa độ từ yêu cầu đề xuất
     lat = Decimal(str(data.get("latitude", 0)))
     lon = Decimal(str(data.get("longitude", 0)))
@@ -660,6 +669,15 @@ def approve_location_submission(
             if loc:
                 import random
                 from decimal import Decimal
+
+                # Kiểm tra xem city_id có tồn tại không để tránh ForeignKeyViolation
+                city_id = int(data.get("city_id", loc.city_id))
+                city_exists = db.exec(select(models.Cities).where(models.Cities.city_id == city_id)).first()
+                if not city_exists:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Thành phố có ID {city_id} không tồn tại. Không thể phê duyệt cập nhật địa điểm này."
+                    )
 
                 lat = Decimal(str(data.get("latitude", loc.latitude)))
                 lon = Decimal(str(data.get("longitude", loc.longitude)))

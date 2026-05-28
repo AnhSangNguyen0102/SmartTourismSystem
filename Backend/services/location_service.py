@@ -75,6 +75,14 @@ def register_location(
             detail="max_price phải lớn hơn hoặc bằng min_price.",
         )
 
+    from models import Cities
+    city = db.exec(select(Cities).where(Cities.city_id == data.city_id)).first()
+    if city is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Thành phố có ID {data.city_id} không tồn tại. Vui lòng chọn thành phố khác.",
+        )
+
     existing = check_location_exists(db, data.location_name, data.city_id)
     if existing is not None:
         raise HTTPException(
