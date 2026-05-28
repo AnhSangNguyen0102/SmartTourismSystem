@@ -189,7 +189,7 @@ def get_comments(post_id: UUID, db: Session = Depends(get_session)):
         models.Users, models.PostComments.user_id == models.Users.user_id
     ).join(
         models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
-    ).where(models.PostComments.post_id == post_id).order_by(models.PostComments.created_at.asc())
+    ).where(models.PostComments.post_id == post_id).order_by(models.PostComments.created_at.desc())
     
     results = db.exec(stmt).all()
     
@@ -214,26 +214,55 @@ def create_comment(
     current_user: dict = Depends(verify_token),
     db: Session = Depends(get_session)
 ):
-    """Gửi bình luận mới và cập nhật số lượng bình luận bài viết"""
+    """Create comment and update post comment count."""
     user_id = get_user_uuid(current_user)
-    post_id = UUID(comment_data.get("post_id"))
-    
+    post_id_raw = comment_data.get("post_id")
+    content = (comment_data.get("content") or "").strip()
+
+    if not post_id_raw:
+        raise HTTPException(status_code=400, detail="Missing post_id")
+    if not content:
+        raise HTTPException(status_code=400, detail="Comment content cannot be empty")
+
+    try:
+        post_id = UUID(str(post_id_raw))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid post_id")
+
+    post = db.exec(select(models.SocialPosts).where(models.SocialPosts.post_id == post_id)).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
     new_comment = models.PostComments(
         user_id=user_id,
         post_id=post_id,
-        content=comment_data.get("content", "")
+        content=content
     )
     db.add(new_comment)
-    
-    # Cập nhật số lượng bình luận bài viết
-    post = db.exec(select(models.SocialPosts).where(models.SocialPosts.post_id == post_id)).first()
-    if post:
-        post.comments_count = (post.comments_count or 0) + 1
-        db.add(post)
-        
+
+    # Update denormalized comment counter on post
+    post.comments_count = (post.comments_count or 0) + 1
+    db.add(post)
+
     db.commit()
     db.refresh(new_comment)
-    return new_comment
+
+    author = db.exec(select(models.Users).where(models.Users.user_id == user_id)).first()
+    author_profile = db.exec(
+        select(models.UserProfiles).where(models.UserProfiles.user_id == user_id)
+    ).first()
+
+    return {
+        "comment_id": new_comment.comment_id,
+        "user_id": str(new_comment.user_id),
+        "content": new_comment.content,
+        "created_at": new_comment.created_at,
+        "profiles": {
+            "full_name": author_profile.full_name if author_profile else (author.full_name if author else "Traveler"),
+            "avatar_url": author_profile.avatar_url if author_profile else None,
+            "total_points": author_profile.total_points if author_profile else 0
+        }
+    }
 
 
 @router.delete("/comments/{comment_id}")
