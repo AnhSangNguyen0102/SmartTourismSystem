@@ -97,11 +97,11 @@ def get_posts(
     db: Session = Depends(get_session)
 ):
     """Lấy bài viết từ cộng đồng kèm thông tin tác giả và lọc theo quyền riêng tư"""
-    # Query join SocialPosts, Users, UserProfiles
-    query_stmt = select(models.SocialPosts, models.UserProfiles).join(
+    # Query join SocialPosts, Users, UserProfiles (outer join)
+    query_stmt = select(models.SocialPosts, models.Users, models.UserProfiles).join(
         models.Users, models.SocialPosts.user_id == models.Users.user_id
     ).join(
-        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id
+        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
     )
     
     if current_user:
@@ -148,11 +148,11 @@ def get_posts(
             "privacy_status": post.privacy_status,
             "created_at": post.created_at,
             "profiles": {
-                "full_name": profile.full_name,
-                "avatar_url": profile.avatar_url,
-                "total_points": profile.total_points
+                "full_name": profile.full_name if profile else (user.full_name if user else "Thám hiểm gia"),
+                "avatar_url": profile.avatar_url if profile else None,
+                "total_points": profile.total_points if profile else 0
             }
-        } for post, profile in results
+        } for post, user, profile in results
     ]
 
 
@@ -185,10 +185,10 @@ def create_post(
 @router.get("/comments/{post_id}")
 def get_comments(post_id: UUID, db: Session = Depends(get_session)):
     """Lấy danh sách bình luận kèm avatar và tên người dùng"""
-    stmt = select(models.PostComments, models.UserProfiles).join(
+    stmt = select(models.PostComments, models.Users, models.UserProfiles).join(
         models.Users, models.PostComments.user_id == models.Users.user_id
     ).join(
-        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id
+        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
     ).where(models.PostComments.post_id == post_id).order_by(models.PostComments.created_at.asc())
     
     results = db.exec(stmt).all()
@@ -200,9 +200,9 @@ def get_comments(post_id: UUID, db: Session = Depends(get_session)):
             "content": r[0].content,
             "created_at": r[0].created_at,
             "profiles": {
-                "full_name": r[1].full_name,
-                "avatar_url": r[1].avatar_url,
-                "total_points": r[1].total_points
+                "full_name": r[2].full_name if r[2] else (r[1].full_name if r[1] else "Thám hiểm gia"),
+                "avatar_url": r[2].avatar_url if r[2] else None,
+                "total_points": r[2].total_points if r[2] else 0
             }
         } for r in results
     ]
@@ -615,20 +615,22 @@ def get_friends(current_user: dict = Depends(verify_token), db: Session = Depend
     if not friend_ids:
         return []
         
-    profiles = db.exec(
-        select(models.UserProfiles).where(models.UserProfiles.user_id.in_(friend_ids))
+    results = db.exec(
+        select(models.Users, models.UserProfiles).join(
+            models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
+        ).where(models.Users.user_id.in_(friend_ids))
     ).all()
     
     return [
         {
-            "id": str(p.user_id),
-            "name": p.full_name,
-            "avatar": p.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={p.full_name}",
-            "bio": p.bio or "Sẵn sàng cho những hành trình mới!",
-            "location": p.base_location or "Việt Nam",
-            "points": p.points_balance,
-            "rank": p.status or "Tân binh"
-        } for p in profiles
+            "id": str(u.user_id),
+            "name": p.full_name if p else u.full_name,
+            "avatar": (p.avatar_url if p else None) or f"https://api.dicebear.com/7.x/avataaars/svg?seed={u.full_name}",
+            "bio": (p.bio if p else None) or "Sẵn sàng cho những hành trình mới!",
+            "location": (p.base_location if p else None) or "Việt Nam",
+            "points": p.points_balance if p else 0,
+            "rank": p.status if p else "Tân binh"
+        } for u, p in results
     ]
 
 
@@ -673,8 +675,10 @@ def get_pending_friend_requests(
     user_id = get_user_uuid(current_user)
     
     requests = db.exec(
-        select(models.Friendships, models.UserProfiles).join(
-            models.UserProfiles, models.Friendships.user_id == models.UserProfiles.user_id
+        select(models.Friendships, models.Users, models.UserProfiles).join(
+            models.Users, models.Friendships.user_id == models.Users.user_id
+        ).join(
+            models.UserProfiles, models.Friendships.user_id == models.UserProfiles.user_id, isouter=True
         ).where(
             models.Friendships.friend_id == user_id,
             models.Friendships.status == "PENDING"
@@ -685,10 +689,10 @@ def get_pending_friend_requests(
         {
             "friendship_id": str(f.friendship_id),
             "user_id": str(f.user_id),
-            "name": p.full_name,
-            "avatar": p.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={p.full_name}",
+            "name": p.full_name if p else (u.full_name if u else "Thám hiểm gia"),
+            "avatar": (p.avatar_url if p else None) or f"https://api.dicebear.com/7.x/avataaars/svg?seed={u.full_name if u else 'Traveler'}",
             "created_at": f.created_at
-        } for f, p in requests
+        } for f, u, p in requests
     ]
 
 
@@ -814,10 +818,12 @@ def get_saved_posts(current_user: dict = Depends(verify_token), db: Session = De
     user_id = get_user_uuid(current_user)
     
     results = db.exec(
-        select(models.SocialPosts, models.UserProfiles).join(
+        select(models.SocialPosts, models.Users, models.UserProfiles).join(
             models.PostSaves, models.SocialPosts.post_id == models.PostSaves.post_id
         ).join(
-            models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id
+            models.Users, models.SocialPosts.user_id == models.Users.user_id
+        ).join(
+            models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id, isouter=True
         ).where(models.PostSaves.user_id == user_id).order_by(models.PostSaves.created_at.desc())
     ).all()
     
@@ -830,10 +836,10 @@ def get_saved_posts(current_user: dict = Depends(verify_token), db: Session = De
             "location_name": post.location_name,
             "created_at": post.created_at,
             "profiles": {
-                "full_name": profile.full_name,
-                "avatar_url": profile.avatar_url
+                "full_name": profile.full_name if profile else (user.full_name if user else "Thám hiểm gia"),
+                "avatar_url": profile.avatar_url if profile else None
             }
-        } for post, profile in results
+        } for post, user, profile in results
     ]
 
 
