@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: smart-tourism-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=smart_tourism_super_secret_dev_key_123456789
+      - ENVIRONMENT=development
+      - REQUIRE_HTTPS=false
+      - RATE_LIMIT_ENABLED=true
+      - DB_ECHO=false
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://localhost,capacitor://localhost
+      - TRUSTED_HOSTS=localhost,127.0.0.1,0.0.0.0,backend
+    depends_on:
+      - db
+      - redis
+    networks:
+      - travel-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: smart-tourism-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./Backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks:
+      - travel-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: smart-tourism-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - travel-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  travel-network:
+    driver: bridge
