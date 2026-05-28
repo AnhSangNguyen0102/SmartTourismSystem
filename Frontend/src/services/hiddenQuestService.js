@@ -226,9 +226,17 @@ export const deleteEnterpriseEvent = async (eventId) => {
  * Lấy danh sách toàn bộ chiến dịch doanh nghiệp đang hoạt động.
  * @returns {Promise<Array>}
  */
-export const getActiveCampaigns = async () => {
+export const getActiveCampaigns = async (location = null) => {
+    if (!location || typeof location.lat === 'undefined' || typeof location.lng === 'undefined') {
+        return [];
+    }
+
     const authHeader = await getAuthHeader();
-    const response = await fetch(`${BASE_URL}/api/v1/campaigns/active`, {
+    const params = new URLSearchParams({
+        latitude: String(location.lat),
+        longitude: String(location.lng),
+    });
+    const response = await fetch(`${BASE_URL}/api/v1/campaigns/active?${params.toString()}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

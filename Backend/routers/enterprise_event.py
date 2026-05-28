@@ -1,9 +1,9 @@
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlmodel import Session, select
 
@@ -27,12 +27,21 @@ router = APIRouter(tags=["Enterprise - Event Management"])
 
 def _parse_datetime(value: str, field_name: str) -> datetime:
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed
     except (AttributeError, ValueError):
         raise HTTPException(
             status_code=400,
             detail=f"{field_name} không đúng định dạng ISO 8601.",
         )
+
+
+def _serialize_datetime(value: datetime) -> str:
+    if value.tzinfo is None:
+        return f"{value.isoformat()}Z"
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def get_enterprise_profile(current_user: dict, db: Session) -> EnterpriseProfiles:
@@ -89,8 +98,8 @@ def _serialize_event(db: Session, event: EnterpriseEvents) -> dict:
         "reward_coin": event.reward_coin,
         "rarity": event.rarity.value,
         "multiplier": event.multiplier,
-        "start_time": event.start_time.isoformat(),
-        "end_time": event.end_time.isoformat(),
+        "start_time": _serialize_datetime(event.start_time),
+        "end_time": _serialize_datetime(event.end_time),
         "is_active": event.is_active,
         "qr_token": qr_entry.qr_token if qr_entry else None,
         "scanned_count": scanned_count,
@@ -184,16 +193,34 @@ async def create_enterprise_event(
             "max_scans": qr_entry.max_scans,
         }
 
-    # Phat thong bao realtime toi tat ca player dang online.
-    # Frontend se refetch /campaigns/active de chi hien thi campaign hop le voi user.
+    # Phat thong bao realtime toi player dang online va nam trong ban kinh campaign.
+    # Frontend van refetch /campaigns/active voi GPS hien tai de tranh hien sai vung.
     try:
-        from routers.social_quest import manager
+        from routers.social_quest import manager, player_locations
+        from core.spatial_logic import calculate_haversine_distance
+
+        evt_lat = float(new_event.latitude)
+        evt_lng = float(new_event.longitude)
+        visible_radius = float(new_event.radius_meters) + 20.0
         campaign_message = {
             "event": "new_campaign",
             "data": _serialize_event(db, new_event),
         }
 
         for user_id_str in list(manager.active_connections.keys()):
+            loc = player_locations.get(user_id_str)
+            if not loc:
+                continue
+
+            dist = calculate_haversine_distance(
+                float(loc.get("lat", 0)),
+                float(loc.get("lng", 0)),
+                evt_lat,
+                evt_lng,
+            )
+            if dist > visible_radius:
+                continue
+
             await manager.send_personal_message(campaign_message, user_id_str)
     except Exception as ws_err:
         print(f"[Realtime Campaign] Lỗi khi phát WebSocket: {ws_err}")
@@ -285,6 +312,8 @@ def get_enterprise_daily_flow(
 
 @router.get("/api/v1/campaigns/active", response_model=list[dict])
 def get_active_campaigns(
+    latitude: float | None = Query(default=None),
+    longitude: float | None = Query(default=None),
     current_user: dict = Depends(verify_token),
     db: Session = Depends(get_session)
 ):
@@ -302,14 +331,30 @@ def get_active_campaigns(
     user = get_db_user(current_user, db)
 
     result = []
+    has_player_location = latitude is not None and longitude is not None
+    if has_player_location:
+        from core.spatial_logic import calculate_haversine_distance
+
     for event in events:
         participated = db.exec(
             select(HiddenEventParticipants)
             .where(HiddenEventParticipants.user_id == user.user_id)
             .where(HiddenEventParticipants.event_id == event.event_id)
         ).first()
-        if not participated:
-            result.append(_serialize_event(db, event))
+        if participated:
+            continue
+
+        if has_player_location:
+            dist = calculate_haversine_distance(
+                float(latitude),
+                float(longitude),
+                float(event.latitude),
+                float(event.longitude),
+            )
+            if dist > float(event.radius_meters) + 20.0:
+                continue
+
+        result.append(_serialize_event(db, event))
 
     return result
 

@@ -297,6 +297,14 @@
     flex: 0 0 auto;
 }
 
+.enterprise-meta-grid span.enterprise-meta-time {
+    white-space: normal;
+    line-height: 1.35;
+    align-items: flex-start;
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
 .enterprise-badge {
     align-self: flex-start;
     border-radius: 999px;

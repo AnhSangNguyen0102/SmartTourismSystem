@@ -181,10 +181,10 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
     const [showCampaignModal, setShowCampaignModal] = useState(false);
 
     // Fetch active campaigns list
-    const fetchActiveCampaigns = async () => {
+    const fetchActiveCampaigns = async (locationOverride = null) => {
         if (isGuest) return;
         try {
-            const activeCampaigns = await getActiveCampaigns();
+            const activeCampaigns = await getActiveCampaigns(locationOverride || userLocationRef.current);
             setCampaigns(activeCampaigns);
         } catch (err) {
             console.error("Lỗi lấy danh sách chiến dịch hoạt động:", err);
@@ -306,7 +306,9 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                     lng: position.longitude
                 };
                 setUserLocation(loc);
-                sendLocation(loc.lat, loc.lng);
+                sendLocation(loc.lat, loc.lng);
+
+                fetchActiveCampaigns(loc);
             },
             onError: (geoError) => console.warn("Watch position error:", geoError),
             options: { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 }
@@ -355,7 +357,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                 sendLocation(loc.lat, loc.lng);
 
                 if (!isGuest) {
-                    fetchActiveCampaigns();
+                    fetchActiveCampaigns(loc);
                     pingLocation(loc.lat, loc.lng)
                         .then((res) => {
                             if (res.spawned) {

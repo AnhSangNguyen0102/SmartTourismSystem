@@ -52,9 +52,9 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [showCampaignModal, setShowCampaignModal] = useState(false);
 
     // Fetch active campaigns list
-    const fetchActiveCampaigns = async () => {
+    const fetchActiveCampaigns = async (locationOverride = null) => {
         try {
-            const activeCampaigns = await getActiveCampaigns();
+            const activeCampaigns = await getActiveCampaigns(locationOverride || userLocationRef.current);
             setCampaigns(activeCampaigns);
         } catch (err) {
             console.error('Lỗi lấy chiến dịch hoạt động:', err);
@@ -256,7 +256,9 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     lng: position.longitude
                 };
                 setUserLocation(loc);
-                sendLocation(loc.lat, loc.lng);
+                sendLocation(loc.lat, loc.lng);
+
+                fetchActiveCampaigns(loc);
             },
             onError: (geoError) => console.warn("Không thể lấy vị trí:", geoError),
             options: {

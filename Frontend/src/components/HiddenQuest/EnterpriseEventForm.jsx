@@ -11,6 +11,11 @@ import {
 } from 'lucide-react';
 import './EnterpriseEventForm.css';
 
+const formatDateTimeLocal = (date) => {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+};
+
 export const EnterpriseEventForm = ({ onClose }) => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -78,10 +83,10 @@ export const EnterpriseEventForm = ({ onClose }) => {
         
         // Set default start/end times
         const now = new Date();
-        const startIso = now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+        const startIso = formatDateTimeLocal(now);
         
         const inOneDay = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        const endIso = inOneDay.toISOString().slice(0, 16);
+        const endIso = formatDateTimeLocal(inOneDay);
         
         setStartTime(startIso);
         setEndTime(endIso);
@@ -174,8 +179,21 @@ export const EnterpriseEventForm = ({ onClose }) => {
 
         try {
             // Convert local datetime input value to ISO UTC string
-            const startUtc = new Date(startTime).toISOString();
-            const endUtc = new Date(endTime).toISOString();
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+            if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+                setErrorMsg('Thời gian bắt đầu/kết thúc không hợp lệ');
+                setLoading(false);
+                return;
+            }
+            if (startDate >= endDate) {
+                setErrorMsg('Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc');
+                setLoading(false);
+                return;
+            }
+
+            const startUtc = startDate.toISOString();
+            const endUtc = endDate.toISOString();
 
             const payload = {
                 title,
