@@ -27,7 +27,8 @@ import './AdminModerationScreen.css';
 
 const tabs = [
     { id: 'enterprise', label: 'DN', title: 'Doanh nghiệp', icon: Building2 },
-    { id: 'location', label: 'Địa điểm', title: 'Địa điểm', icon: MapPin },
+    { id: 'location', label: 'Duyệt ĐĐ', title: 'Duyệt địa điểm', icon: MapPin },
+    { id: 'approved_locations', label: 'Đã duyệt', title: 'Địa điểm đã duyệt', icon: ClipboardList },
     { id: 'users', label: 'Users', title: 'Thành viên', icon: Users },
     { id: 'stats', label: 'Stats', title: 'Thống kê', icon: BarChart3 },
     { id: 'reports', label: 'Reports', title: 'Báo cáo', icon: FileText },
@@ -71,6 +72,8 @@ export default function AdminModerationScreen({ onBack }) {
     const [locationSubmissions, setLocationSubmissions] = useState([]);
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [submissionDetail, setSubmissionDetail] = useState(null);
+    const [approvedLocations, setApprovedLocations] = useState([]);
+    const [locationSearch, setLocationSearch] = useState('');
     const [usersList, setUsersList] = useState([]);
     const [stats, setStats] = useState(null);
     const [reports, setReports] = useState([]);
@@ -132,6 +135,9 @@ export default function AdminModerationScreen({ onBack }) {
                 setOverview((current) => ({ ...current, pendingLocations: data.length }));
                 setSelectedSubmission(null);
                 setSubmissionDetail(null);
+            } else if (activeTab === 'approved_locations') {
+                const data = await adminService.getApprovedLocations();
+                setApprovedLocations(data);
             } else if (activeTab === 'users') {
                 const data = await adminService.getAdminUsers();
                 setUsersList(data);
@@ -217,10 +223,64 @@ export default function AdminModerationScreen({ onBack }) {
         );
     }, [usersList, userSearch]);
 
+    const filteredApprovedLocations = useMemo(() => {
+        const keyword = locationSearch.trim().toLowerCase();
+        if (!keyword) return approvedLocations;
+        return approvedLocations.filter((item) =>
+            [item.location_name, item.address].some((value) =>
+                String(value || '').toLowerCase().includes(keyword)
+            )
+        );
+    }, [approvedLocations, locationSearch]);
+
+    const renderApprovedLocations = () => {
+        return (
+            <section className="admin-stack">
+                <div className="admin-toolbar">
+                    <div className="admin-search">
+                        <Search size={16} />
+                        <input
+                            value={locationSearch}
+                            onChange={(event) => setLocationSearch(event.target.value)}
+                            placeholder="Tìm kiếm địa điểm, địa chỉ..."
+                        />
+                    </div>
+                </div>
+
+                {filteredApprovedLocations.length === 0 ? (
+                    <EmptyState icon={MapPin} text="Không tìm thấy địa điểm đã duyệt nào." />
+                ) : (
+                    <div className="admin-list approved-locations-list">
+                        {filteredApprovedLocations.map((loc) => (
+                            <div className="admin-list-item approved-location-item" key={loc.location_id} style={{ pointerEvents: 'none', cursor: 'default' }}>
+                                <span className="admin-item-icon approved-icon" style={{ background: '#dbeafe', color: '#2563eb' }}><MapPin size={18} /></span>
+                                <span className="admin-list-copy">
+                                    <strong style={{ fontSize: '1rem', color: '#1e293b' }}>{loc.location_name}</strong>
+                                    <small style={{ marginTop: '4px', color: '#64748b', display: 'block' }}>
+                                        <span className="location-coord-badge" style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', fontSize: '0.8rem', fontWeight: '500', color: '#475569' }}>
+                                            GPS: {loc.latitude?.toFixed(6)}, {loc.longitude?.toFixed(6)}
+                                        </span>
+                                    </small>
+                                    <small style={{ marginTop: '4px', color: '#475569', display: 'block', fontSize: '0.85rem' }}>
+                                        <strong>Địa chỉ:</strong> {loc.address}
+                                    </small>
+                                    <small style={{ marginTop: '2px', color: '#64748b', display: 'block', fontSize: '0.8rem' }}>
+                                        <strong>Giờ mở cửa:</strong> {loc.open_time} - {loc.close_time}
+                                    </small>
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
+        );
+    };
+
 
     const getTabCount = (tabId) => {
         if (tabId === 'enterprise') return overview.pendingEnterprises;
         if (tabId === 'location') return overview.pendingLocations;
+        if (tabId === 'approved_locations') return approvedLocations.length;
         if (tabId === 'users') return overview.totalUsers;
         if (tabId === 'reports') return overview.reports;
         return null;
@@ -556,7 +616,7 @@ export default function AdminModerationScreen({ onBack }) {
                                         className="admin-danger-btn"
                                         onClick={() => setConfirmModal({
                                             title: 'Xóa bài viết',
-                                            message: 'Xóa bài viết bị báo cáo khỏi cộng đồng?',
+                                            message: 'Xóa bài viết bị báo cáo khỏi cộng đồng? Lượt thích, bình luận và lượt lưu liên quan cũng sẽ bị xóa.',
                                             action: () => adminService.deletePost(postId),
                                             success: 'Đã xóa bài viết vi phạm.',
                                         })}
@@ -585,6 +645,7 @@ export default function AdminModerationScreen({ onBack }) {
         if (loading) return <div className="admin-loading">Đang tải dữ liệu...</div>;
         if (activeTab === 'enterprise') return renderEnterprise();
         if (activeTab === 'location') return renderLocation();
+        if (activeTab === 'approved_locations') return renderApprovedLocations();
         if (activeTab === 'users') return renderUsers();
         if (activeTab === 'stats') return renderStats();
         return renderReports();

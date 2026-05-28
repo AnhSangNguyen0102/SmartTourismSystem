@@ -302,3 +302,36 @@
     border-radius: 16px !important;
     height: auto !important;
 }
+
+.friend-last-message {
+    font-size: 11px;
+    color: #747d8c;
+    font-weight: 600;
+}
+
+.friend-last-message.unread-bold {
+    font-weight: 900;
+    color: var(--game-border-color, #2c3e50);
+}
+
+.friend-time-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    min-width: 55px;
+}
+
+.friend-time {
+    font-size: 9px;
+    color: #a4b0be;
+    font-weight: 800;
+}
+
+.unread-badge {
+    width: 8px;
+    height: 8px;
+    background-color: var(--game-sky, #70a1ff);
+    border-radius: 50%;
+    display: inline-block;
+}

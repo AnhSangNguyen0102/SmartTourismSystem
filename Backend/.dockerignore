@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+
+# C extensions
+**/*.so
+
+# Environments
+.env
+.env.*
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project files & OS files
+.git
+.gitignore
+.DS_Store
+Thumbs.db
+*.log
+docker-compose.yml
+Dockerfile
+.idea/
+.vscode/
+
+# Local tests and artifacts
+tests/
+test_*.py
+**/tests/
+**/test_*.py
+mock/
+dummy_data/
+database_seeding/
+*.txt
+!requirements.txt
+*.md

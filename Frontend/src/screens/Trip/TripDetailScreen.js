@@ -8,7 +8,8 @@ import RouteMap from '../../components/RouteMap/RouteMap';
 import Mascot from '../../components/Mascot/Mascot';
 import TreasureOverlay from '../../components/TreasureOverlay/TreasureOverlay';
 // Hidden Quest imports
-import { getActiveTasks, pingLocation, verifyQuest } from '../../services/hiddenQuestService';
+import { getActiveTasks, pingLocation, verifyQuest, getActiveCampaigns, verifyCampaign } from '../../services/hiddenQuestService';
+import { useSocialQuest } from '../../components/SocialQuest/SocialQuestProvider';
 import ChestOpeningAnimation from '../../components/HiddenQuest/ChestOpeningAnimation';
 import HiddenQuestDebug from '../../components/HiddenQuest/HiddenQuestDebug';
 import { storageGet } from '../../platform/storage';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, user }) => {
+    const { sendLocation } = useSocialQuest();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [tripDetail, setTripDetail] = useState(null);
@@ -43,6 +45,48 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [questLoading, setQuestLoading] = useState(false);
     const [questError, setQuestError] = useState('');
     const [questSuccess, setQuestSuccess] = useState(null);
+
+    // States for Public Campaigns
+    const [campaigns, setCampaigns] = useState([]);
+    const [selectedCampaign, setSelectedCampaign] = useState(null);
+    const [showCampaignModal, setShowCampaignModal] = useState(false);
+
+    // Fetch active campaigns list
+    const fetchActiveCampaigns = async (locationOverride = null) => {
+        try {
+            const activeCampaigns = await getActiveCampaigns(locationOverride || userLocationRef.current);
+            setCampaigns(activeCampaigns);
+        } catch (err) {
+            console.error('Lỗi lấy chiến dịch hoạt động:', err);
+        }
+    };
+
+    // Verify / Complete campaign endpoint trigger
+    const handleVerifyCampaign = async (extraData = {}) => {
+        if (!selectedCampaign || !userLocation) {
+            setQuestError('Không xác định được vị trí GPS hiện tại!');
+            return;
+        }
+        setQuestLoading(true);
+        setQuestError('');
+        try {
+            const res = await verifyCampaign(
+                selectedCampaign.event_id,
+                userLocation.lat,
+                userLocation.lng,
+                selectedCampaign.quest_type,
+                extraData
+            );
+            playSound('success.mp3');
+            setQuestSuccess(res);
+            fetchActiveCampaigns();
+        } catch (err) {
+            playSound('error.mp3');
+            setQuestError(err.message || 'Xác thực thất bại');
+        } finally {
+            setQuestLoading(false);
+        }
+    };
     const [selectedTaskForExecution, setSelectedTaskForExecution] = useState(null);
 
     const userId = user?.user_id || user?.id || '296be4b0-9556-42bb-9be1-fdb1277a06c2';
@@ -194,15 +238,29 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         if (itineraryId) {
             fetchDetail();
             fetchHiddenTasks();
+            fetchActiveCampaigns();
         }
+
+        // Lắng nghe sự kiện chiến dịch mới từ doanh nghiệp
+        const handleNewCampaignEvent = (event) => {
+            const data = event.detail;
+            void showAlert(`[Chiến dịch mới] "${data.title}" vừa được tạo gần bạn! Hãy khám phá trên bản đồ để check-in và nhận quà nhé!`);
+            fetchActiveCampaigns();
+        };
+
+        window.addEventListener('new_campaign', handleNewCampaignEvent);
 
         // Theo dõi vị trí hiện tại của người dùng
         const stopWatching = startWatchingPosition({
             onSuccess: (position) => {
-                setUserLocation({
+                const loc = {
                     lat: position.latitude,
                     lng: position.longitude
-                });
+                };
+                setUserLocation(loc);
+                sendLocation(loc.lat, loc.lng);
+
+                fetchActiveCampaigns(loc);
             },
             onError: (geoError) => console.warn("Không thể lấy vị trí:", geoError),
             options: {
@@ -228,6 +286,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         }, 30000);
 
         return () => {
+            window.removeEventListener('new_campaign', handleNewCampaignEvent);
             if (typeof stopWatching === 'function') {
                 stopWatching();
             }
@@ -425,6 +484,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 });
 
                 setUserLocation({ lat: position.latitude, lng: position.longitude });
+                sendLocation(position.latitude, position.longitude);
                 executeCheckinAPI(position.latitude, position.longitude);
             } catch (error) {
                 // FALLBACK: Khi lỗi vị trí (như timeout trên máy tính), cho phép check-in không cần tọa độ
@@ -498,12 +558,20 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                             <RouteMap 
                                 stops={[selectedStop]} 
                                 routes={[]} 
-                                hiddenTasks={hiddenTasks}
+                                hiddenTasks={[]}
+                                campaigns={[]}
+                                onCampaignClick={(campaign) => {
+                                    setSelectedCampaign(campaign);
+                                    setShowCampaignModal(true);
+                                }}
                                 userLocation={userLocation}
                                 user={user}
                                 nextStop={selectedStop}
                                 onStopClick={setSelectedStop}
-                                onHiddenTaskClick={handleHiddenTaskClick}
+                                onHiddenTaskClick={(task) => {
+                                    setSelectedHiddenTask(task);
+                                    setShowChestAnimation(true);
+                                }}
                             />
                         </div>
                         
@@ -633,7 +701,10 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             <HiddenQuestDebug
                 userLocation={userLocation}
                 onSpawnSuccess={fetchHiddenTasks}
-                onTestClaim={handleHiddenTaskClick}
+                onTestClaim={(testTask) => {
+                    setSelectedHiddenTask(testTask);
+                    setShowChestAnimation(true);
+                }}
             />
 
             {/* GAMIFICATION OVERLAYS */}
@@ -674,6 +745,124 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         handleRefresh(true);
                     }}
                 />
+            )}
+
+            {/* --- Campaign Overlays --- */}
+            {showCampaignModal && selectedCampaign && (
+                <div className="quest-modal-overlay">
+                    <div className="quest-modal-content">
+                        <div className="quest-modal-header">
+                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Sparkles size={18} style={{ color: '#e67e22' }} /> {selectedCampaign.title || 'Chiến dịch Doanh nghiệp'}</h3>
+                            <button className="quest-close-btn" onClick={() => {
+                                setShowCampaignModal(false);
+                                setQuestError('');
+                                setQuestSuccess(null);
+                                setQrTokenInput('');
+                                setQuizAnswer('');
+                                setPhotoUploaded(false);
+                                setPhotoUrl('');
+                            }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+                        </div>
+                        
+                        <div className="quest-modal-body">
+                            {!questSuccess ? (
+                                <>
+                                    <p className="quest-desc">{selectedCampaign.description || 'Hoàn thành thử thách để nhận quà từ doanh nghiệp.'}</p>
+                                    
+                                    <div className="quest-meta-info">
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={14} /> Bán kính: {selectedCampaign.radius_meters}m</span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Award size={14} /> {selectedCampaign.reward_exp} EXP | <Coins size={14} /> {selectedCampaign.reward_coin} xu</span>
+                                    </div>
+
+                                    {/* CHECKIN */}
+                                    {selectedCampaign.quest_type === 'CHECKIN' && (
+                                        <div className="quest-action-area">
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={14} /> Hệ thống sẽ xác thực vị trí GPS của bạn.</p>
+                                            <button className="quest-action-btn" onClick={() => handleVerifyCampaign()} disabled={questLoading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                {questLoading ? 'Đang xác thực...' : <><MapPin size={16} /> Check-in ngay</>}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* QR */}
+                                    {selectedCampaign.quest_type === 'QR' && (
+                                        <div className="quest-action-area">
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><QrCode size={14} /> Nhập mã token hoặc quét QR:</p>
+                                            <input type="text" className="quest-input" placeholder="QR_EVENT_TOKEN_123" value={qrTokenInput} onChange={(e) => setQrTokenInput(e.target.value)} />
+                                            <button className="quest-action-btn" onClick={() => handleVerifyCampaign({ qr_token: qrTokenInput })} disabled={questLoading || !qrTokenInput.trim()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                {questLoading ? 'Đang xác thực...' : <><Check size={16} /> Xác nhận mã QR</>}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* QUIZ */}
+                                    {selectedCampaign.quest_type === 'QUIZ' && (
+                                        <div className="quest-action-area">
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><HelpCircle size={14} /> Trả lời câu hỏi:</p>
+                                            <div className="quiz-options-grid">
+                                                {[
+                                                    { code: 'A', text: 'Dịch vụ lưu trú & Tour trọn gói' },
+                                                    { code: 'B', text: 'Cho thuê phương tiện di chuyển' },
+                                                    { code: 'C', text: 'Bán quà lưu niệm thủ công' },
+                                                    { code: 'D', text: 'Ăn uống & Ẩm thực đường phố' }
+                                                ].map((opt) => (
+                                                    <button key={opt.code} className={`quiz-option-card ${quizAnswer === opt.code ? 'selected' : ''}`} onClick={() => setQuizAnswer(opt.code)}>
+                                                        <span className="option-code">{opt.code}</span>
+                                                        <span className="option-text">{opt.text}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <button className="quest-action-btn" onClick={() => handleVerifyCampaign({ answer: quizAnswer, correct_answer: 'A' })} disabled={questLoading || !quizAnswer} style={{ marginTop: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                {questLoading ? 'Đang gửi...' : <><Check size={16} /> Nộp đáp án</>}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* PHOTO */}
+                                    {selectedCampaign.quest_type === 'PHOTO' && (
+                                        <div className="quest-action-area">
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Camera size={14} /> Chụp ảnh check-in:</p>
+                                            {photoUploaded ? (
+                                                <div className="photo-preview-box">
+                                                    <img src={photoUrl} alt="Preview" />
+                                                    <button className="photo-reset" onClick={() => { setPhotoUploaded(false); setPhotoUrl(''); }} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><X size={12} /> Xóa</button>
+                                                </div>
+                                            ) : (
+                                                <div className="photo-upload-placeholder" onClick={() => { setPhotoUrl('/assets/island/map-dao.png'); setPhotoUploaded(true); }}>
+                                                    <Camera size={32} style={{ color: '#a4b0be' }} />
+                                                    <span>Chạm để tải lên / Chụp ảnh</span>
+                                                </div>
+                                            )}
+                                            <button className="quest-action-btn" onClick={() => handleVerifyCampaign({ image_url: photoUrl })} disabled={questLoading || !photoUploaded} style={{ marginTop: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                {questLoading ? 'Đang xác thực...' : <><Check size={16} /> Xác nhận ảnh</>}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {questError && <div className="quest-error-msg" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={14} /> {questError}</div>}
+                                </>
+                            ) : (
+                                <div className="quest-success-screen">
+                                    <div className="success-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={48} style={{ color: '#2ed573' }} /></div>
+                                    <h4>Chiến dịch hoàn thành!</h4>
+                                    <p>Chúc mừng bạn đã nhận được phần thưởng:</p>
+                                    <div className="success-reward-card">
+                                        <div className="success-reward-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Flame size={20} style={{ color: '#ff7f50' }} /><span><strong>+{questSuccess.reward_exp}</strong> EXP</span></div>
+                                        <div className="success-reward-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Coins size={20} style={{ color: '#fbc531' }} /><span><strong>+{questSuccess.reward_coin}</strong> xu</span></div>
+                                    </div>
+                                    <button className="quest-close-success-btn" onClick={() => {
+                                        setShowCampaignModal(false);
+                                        setQuestSuccess(null);
+                                        setQrTokenInput('');
+                                        setQuizAnswer('');
+                                        setPhotoUploaded(false);
+                                        setPhotoUrl('');
+                                    }}>Tuyệt vời! Tiếp tục hành trình</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* --- Hidden Quest Overlays --- */}

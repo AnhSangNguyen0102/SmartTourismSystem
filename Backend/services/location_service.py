@@ -41,13 +41,19 @@ def _geocode_address(address: str) -> tuple[float, float]:
     Temporary local geocoder for the current POC environment.
     Replace with Google Maps in production once GOOGLE_API_KEY is configured.
     """
+    import random
+    
     address_lower = address.lower()
+    
+    # Thêm độ lệch ngẫu nhiên nhỏ (khoảng 10-20m) để tránh trùng lặp tọa độ tuyệt đối
+    offset_lat = (random.random() - 0.5) * 0.0002
+    offset_lon = (random.random() - 0.5) * 0.0002
 
     if "hà nội" in address_lower or "hanoi" in address_lower:
-        return 21.027764, 105.834160
+        return 21.027764 + offset_lat, 105.834160 + offset_lon
     if "đà nẵng" in address_lower or "da nang" in address_lower:
-        return 16.054407, 108.202167
-    return 10.776797, 106.700981
+        return 16.054407 + offset_lat, 108.202167 + offset_lon
+    return 10.776797 + offset_lat, 106.700981 + offset_lon
 
 
 def register_location(
@@ -67,6 +73,14 @@ def register_location(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="max_price phải lớn hơn hoặc bằng min_price.",
+        )
+
+    from models import Cities
+    city = db.exec(select(Cities).where(Cities.city_id == data.city_id)).first()
+    if city is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Thành phố có ID {data.city_id} không tồn tại. Vui lòng chọn thành phố khác.",
         )
 
     existing = check_location_exists(db, data.location_name, data.city_id)

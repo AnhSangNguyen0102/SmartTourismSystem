@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from datetime import datetime, date
 from typing import Optional, List
 from sqlalchemy import or_, and_
+from sqlalchemy.exc import IntegrityError
 from fastapi.security import HTTPBearer
 from jose import jwt, JWTError
 
@@ -12,6 +13,7 @@ import models
 from core.security import verify_token
 from core.config import settings
 from core.algorithms import calculate_hybrid_score
+from services.social_post_service import delete_social_post_with_dependencies
 
 router = APIRouter(prefix="/api/social", tags=["Social & Community - Mạng xã hội & Ghép đôi"])
 
@@ -97,11 +99,11 @@ def get_posts(
     db: Session = Depends(get_session)
 ):
     """Lấy bài viết từ cộng đồng kèm thông tin tác giả và lọc theo quyền riêng tư"""
-    # Query join SocialPosts, Users, UserProfiles
-    query_stmt = select(models.SocialPosts, models.UserProfiles).join(
+    # Query join SocialPosts, Users, UserProfiles (outer join)
+    query_stmt = select(models.SocialPosts, models.Users, models.UserProfiles).join(
         models.Users, models.SocialPosts.user_id == models.Users.user_id
     ).join(
-        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id
+        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
     )
     
     if current_user:
@@ -148,11 +150,11 @@ def get_posts(
             "privacy_status": post.privacy_status,
             "created_at": post.created_at,
             "profiles": {
-                "full_name": profile.full_name,
-                "avatar_url": profile.avatar_url,
-                "total_points": profile.total_points
+                "full_name": profile.full_name if profile else (user.full_name if user else "Thám hiểm gia"),
+                "avatar_url": profile.avatar_url if profile else None,
+                "total_points": profile.total_points if profile else 0
             }
-        } for post, profile in results
+        } for post, user, profile in results
     ]
 
 
@@ -185,11 +187,11 @@ def create_post(
 @router.get("/comments/{post_id}")
 def get_comments(post_id: UUID, db: Session = Depends(get_session)):
     """Lấy danh sách bình luận kèm avatar và tên người dùng"""
-    stmt = select(models.PostComments, models.UserProfiles).join(
+    stmt = select(models.PostComments, models.Users, models.UserProfiles).join(
         models.Users, models.PostComments.user_id == models.Users.user_id
     ).join(
-        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id
-    ).where(models.PostComments.post_id == post_id).order_by(models.PostComments.created_at.asc())
+        models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
+    ).where(models.PostComments.post_id == post_id).order_by(models.PostComments.created_at.desc())
     
     results = db.exec(stmt).all()
     
@@ -200,9 +202,9 @@ def get_comments(post_id: UUID, db: Session = Depends(get_session)):
             "content": r[0].content,
             "created_at": r[0].created_at,
             "profiles": {
-                "full_name": r[1].full_name,
-                "avatar_url": r[1].avatar_url,
-                "total_points": r[1].total_points
+                "full_name": r[2].full_name if r[2] else (r[1].full_name if r[1] else "Thám hiểm gia"),
+                "avatar_url": r[2].avatar_url if r[2] else None,
+                "total_points": r[2].total_points if r[2] else 0
             }
         } for r in results
     ]
@@ -214,26 +216,86 @@ def create_comment(
     current_user: dict = Depends(verify_token),
     db: Session = Depends(get_session)
 ):
-    """Gửi bình luận mới và cập nhật số lượng bình luận bài viết"""
+    """Create comment and update post comment count."""
     user_id = get_user_uuid(current_user)
-    post_id = UUID(comment_data.get("post_id"))
-    
+    post_id_raw = comment_data.get("post_id")
+    content = (comment_data.get("content") or "").strip()
+
+    if not post_id_raw:
+        raise HTTPException(status_code=400, detail="Missing post_id")
+    if not content:
+        raise HTTPException(status_code=400, detail="Comment content cannot be empty")
+
+    try:
+        post_id = UUID(str(post_id_raw))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid post_id")
+
+    post = db.exec(select(models.SocialPosts).where(models.SocialPosts.post_id == post_id)).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
     new_comment = models.PostComments(
         user_id=user_id,
         post_id=post_id,
-        content=comment_data.get("content", "")
+        content=content
     )
     db.add(new_comment)
-    
-    # Cập nhật số lượng bình luận bài viết
-    post = db.exec(select(models.SocialPosts).where(models.SocialPosts.post_id == post_id)).first()
-    if post:
-        post.comments_count = (post.comments_count or 0) + 1
-        db.add(post)
-        
+
+    # Update denormalized comment counter on post
+    post.comments_count = (post.comments_count or 0) + 1
+    db.add(post)
+
     db.commit()
     db.refresh(new_comment)
-    return new_comment
+
+    author = db.exec(select(models.Users).where(models.Users.user_id == user_id)).first()
+    author_profile = db.exec(
+        select(models.UserProfiles).where(models.UserProfiles.user_id == user_id)
+    ).first()
+
+    return {
+        "comment_id": new_comment.comment_id,
+        "user_id": str(new_comment.user_id),
+        "content": new_comment.content,
+        "created_at": new_comment.created_at,
+        "profiles": {
+            "full_name": author_profile.full_name if author_profile else (author.full_name if author else "Traveler"),
+            "avatar_url": author_profile.avatar_url if author_profile else None,
+            "total_points": author_profile.total_points if author_profile else 0
+        }
+    }
+
+
+@router.delete("/comments/{comment_id}")
+def delete_comment(
+    comment_id: int,
+    current_user: dict = Depends(verify_token),
+    db: Session = Depends(get_session)
+):
+    """Xóa bình luận nếu là tác giả bình luận hoặc tác giả bài viết"""
+    user_id = get_user_uuid(current_user)
+    
+    comment = db.exec(select(models.PostComments).where(models.PostComments.comment_id == comment_id)).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Bình luận không tồn tại")
+        
+    post = db.exec(select(models.SocialPosts).where(models.SocialPosts.post_id == comment.post_id)).first()
+    
+    is_comment_owner = comment.user_id == user_id
+    is_post_owner = post is not None and post.user_id == user_id
+    
+    if not (is_comment_owner or is_post_owner):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bình luận này")
+        
+    if post:
+        post.comments_count = max(0, (post.comments_count or 0) - 1)
+        db.add(post)
+        
+    db.delete(comment)
+    db.commit()
+    
+    return {"message": "Đã xóa bình luận thành công"}
 
 
 @router.post("/like/{post_id}")
@@ -615,21 +677,52 @@ def get_friends(current_user: dict = Depends(verify_token), db: Session = Depend
     if not friend_ids:
         return []
         
-    profiles = db.exec(
-        select(models.UserProfiles).where(models.UserProfiles.user_id.in_(friend_ids))
+    results = db.exec(
+        select(models.Users, models.UserProfiles).join(
+            models.UserProfiles, models.Users.user_id == models.UserProfiles.user_id, isouter=True
+        ).where(models.Users.user_id.in_(friend_ids))
     ).all()
     
-    return [
-        {
-            "id": str(p.user_id),
-            "name": p.full_name,
-            "avatar": p.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={p.full_name}",
-            "bio": p.bio or "Sẵn sàng cho những hành trình mới!",
-            "location": p.base_location or "Việt Nam",
-            "points": p.points_balance,
-            "rank": p.status or "Tân binh"
-        } for p in profiles
-    ]
+    friend_list = []
+    for u, p in results:
+        # Get latest message between current_user and this friend
+        last_msg = db.exec(
+            select(models.ChatMessages).where(
+                or_(
+                    and_(models.ChatMessages.sender_id == user_id, models.ChatMessages.receiver_id == u.user_id),
+                    and_(models.ChatMessages.sender_id == u.user_id, models.ChatMessages.receiver_id == user_id)
+                )
+            ).order_by(models.ChatMessages.created_at.desc())
+        ).first()
+        
+        last_msg_data = None
+        if last_msg:
+            last_msg_data = {
+                "content": last_msg.content,
+                "created_at": last_msg.created_at.isoformat() if last_msg.created_at else None,
+                "sender_id": str(last_msg.sender_id),
+                "is_read": last_msg.is_read
+            }
+            
+        friend_list.append({
+            "id": str(u.user_id),
+            "name": p.full_name if p else u.full_name,
+            "avatar": (p.avatar_url if p else None) or f"https://api.dicebear.com/7.x/avataaars/svg?seed={u.full_name}",
+            "bio": (p.bio if p else None) or "Sẵn sàng cho những hành trình mới!",
+            "location": (p.base_location if p else None) or "Việt Nam",
+            "points": p.points_balance if p else 0,
+            "rank": p.status if p else "Tân binh",
+            "last_message": last_msg_data
+        })
+        
+    def get_sort_key(item):
+        last_msg = item.get("last_message")
+        if last_msg and last_msg.get("created_at"):
+            return (1, last_msg.get("created_at"))
+        return (0, "")
+        
+    friend_list.sort(key=get_sort_key, reverse=True)
+    return friend_list
 
 
 @router.post("/friend-request")
@@ -673,8 +766,10 @@ def get_pending_friend_requests(
     user_id = get_user_uuid(current_user)
     
     requests = db.exec(
-        select(models.Friendships, models.UserProfiles).join(
-            models.UserProfiles, models.Friendships.user_id == models.UserProfiles.user_id
+        select(models.Friendships, models.Users, models.UserProfiles).join(
+            models.Users, models.Friendships.user_id == models.Users.user_id
+        ).join(
+            models.UserProfiles, models.Friendships.user_id == models.UserProfiles.user_id, isouter=True
         ).where(
             models.Friendships.friend_id == user_id,
             models.Friendships.status == "PENDING"
@@ -685,10 +780,10 @@ def get_pending_friend_requests(
         {
             "friendship_id": str(f.friendship_id),
             "user_id": str(f.user_id),
-            "name": p.full_name,
-            "avatar": p.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={p.full_name}",
+            "name": p.full_name if p else (u.full_name if u else "Thám hiểm gia"),
+            "avatar": (p.avatar_url if p else None) or f"https://api.dicebear.com/7.x/avataaars/svg?seed={u.full_name if u else 'Traveler'}",
             "created_at": f.created_at
-        } for f, p in requests
+        } for f, u, p in requests
     ]
 
 
@@ -814,10 +909,12 @@ def get_saved_posts(current_user: dict = Depends(verify_token), db: Session = De
     user_id = get_user_uuid(current_user)
     
     results = db.exec(
-        select(models.SocialPosts, models.UserProfiles).join(
+        select(models.SocialPosts, models.Users, models.UserProfiles).join(
             models.PostSaves, models.SocialPosts.post_id == models.PostSaves.post_id
         ).join(
-            models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id
+            models.Users, models.SocialPosts.user_id == models.Users.user_id
+        ).join(
+            models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id, isouter=True
         ).where(models.PostSaves.user_id == user_id).order_by(models.PostSaves.created_at.desc())
     ).all()
     
@@ -830,10 +927,10 @@ def get_saved_posts(current_user: dict = Depends(verify_token), db: Session = De
             "location_name": post.location_name,
             "created_at": post.created_at,
             "profiles": {
-                "full_name": profile.full_name,
-                "avatar_url": profile.avatar_url
+                "full_name": profile.full_name if profile else (user.full_name if user else "Thám hiểm gia"),
+                "avatar_url": profile.avatar_url if profile else None
             }
-        } for post, profile in results
+        } for post, user, profile in results
     ]
 
 
@@ -841,19 +938,28 @@ def get_saved_posts(current_user: dict = Depends(verify_token), db: Session = De
 def delete_post(post_id: UUID, current_user: dict = Depends(verify_token), db: Session = Depends(get_session)):
     """Xóa bài đăng của chính mình"""
     user_id = get_user_uuid(current_user)
-    post = db.exec(
-        select(models.SocialPosts).where(
-            models.SocialPosts.post_id == post_id,
-            models.SocialPosts.user_id == user_id
+
+    try:
+        deleted = delete_social_post_with_dependencies(db, post_id, owner_user_id=user_id)
+        if deleted is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bài viết hoặc bạn không có quyền xóa")
+
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Không thể xóa bài viết vì còn dữ liệu liên kết chưa được xử lý.",
         )
-    ).first()
     
-    if not post:
-        raise HTTPException(status_code=404, detail="Không tìm thấy bài viết hoặc bạn không có quyền xóa")
-        
-    db.delete(post)
-    db.commit()
-    return {"message": "Đã xóa bài viết thành công"}
+    return {
+        "message": "Đã xóa bài viết thành công",
+        "deleted_counts": {
+            "likes": deleted.likes_deleted,
+            "comments": deleted.comments_deleted,
+            "saves": deleted.saves_deleted,
+        },
+    }
 
 
 @router.patch("/posts/{post_id}/privacy")

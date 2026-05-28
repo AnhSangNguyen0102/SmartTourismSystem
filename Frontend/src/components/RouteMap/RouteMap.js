@@ -56,7 +56,7 @@ function decodePolyline(encoded) {
     return points;
 }
 
-const RouteMap = ({ stops = [], routes = [], hiddenTasks = [], userLocation = null, user = null, onHiddenTaskClick = null }) => {
+const RouteMap = ({ stops = [], routes = [], hiddenTasks = [], campaigns = [], userLocation = null, user = null, onHiddenTaskClick = null, onCampaignClick = null }) => {
     const mapRef = useRef(null);
     const mapInstance = useRef(null);
     
@@ -169,7 +169,7 @@ const RouteMap = ({ stops = [], routes = [], hiddenTasks = [], userLocation = nu
     }, []);
 
     // =========================================================================
-    // 2. VẼ RƯƠNG BÁU KHỔNG LỒ (Tích hợp logic của mình vào đây)
+    // 2. VẼ RƯƠNG BÁU KHỔNG LỒ & CHIẾN DỊCH
     // =========================================================================
     useEffect(() => {
         if (!mapInstance.current || !hiddenTasksLayerRef.current) return;
@@ -194,7 +194,7 @@ const RouteMap = ({ stops = [], routes = [], hiddenTasks = [], userLocation = nu
                     case 'RARE': glowColor = '#3498db'; rarityText = 'Hiếm'; break;
                     default: glowColor = '#95a5a6'; rarityText = 'Phổ Biến';
                 }
-                svgHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="54" height="54" viewBox="0 0 24 24" fill="${glowColor}33" stroke="${glowColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C12 3 12 8 12 8s0-5 4.5-5a2.5 2.5 0 0 1 0 5z"/></svg>`;
+                svgHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="54" height="54" viewBox="0 0 24 24" fill="${glowColor}33" stroke="${glowColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C12 3 12 8 12 8s0-5 4.5-5a2.5 2.5 0 0 1 0 5z"/></svg>`;
             } else {
                 glowColor = '#e74c3c'; rarityText = 'Sự Kiện';
                 svgHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="54" height="54" viewBox="0 0 24 24" fill="${glowColor}33" stroke="${glowColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`;
@@ -226,8 +226,45 @@ const RouteMap = ({ stops = [], routes = [], hiddenTasks = [], userLocation = nu
             taskMarker.addTo(tasksLayer);
         });
 
+        // Vẽ các chiến dịch doanh nghiệp (Campaigns) công khai
+        if (campaigns && campaigns.length > 0) {
+            campaigns.forEach((campaign) => {
+                const lat = parseFloat(campaign.latitude);
+                const lng = parseFloat(campaign.longitude);
+                if (isNaN(lat) || isNaN(lng)) return;
+
+                const color = '#e67e22'; // Màu cam
+                const svgHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="54" height="54" viewBox="0 0 24 24" fill="${color}33" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7M16 5l-4 4v6l4 4M21 9c.6.8.6 2.2 0 3M19 6c1.7 1.8 1.7 4.2 0 6"/></svg>`;
+
+                const campaignMarker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'hidden-task-large-marker-leaflet-fix',
+                        html: `
+                            <div class="large-chest-marker-container">
+                                <div class="large-chest-glow" style="background: ${color}; border-radius: 12px; transform: scale(1.1);"></div>
+                                <span class="large-chest-icon" style="display: flex; align-items: center; justify-content: center; width: 90px; height: 90px;">${svgHtml}</span>
+                            </div>
+                        `,
+                        iconSize: [90, 90],
+                        iconAnchor: [45, 90]
+                    })
+                });
+
+                campaignMarker.bindPopup(`
+                    <div style="text-align:center; font-family:'Inter', sans-serif;">
+                        <strong style="color:${color}; font-size:14px;">${campaign.title || 'Chiến dịch Doanh nghiệp'}</strong><br/>
+                        <small>Hình thức: ${campaign.quest_type}</small><br/>
+                        <p style="margin:8px 0 0; font-size:11px; color:#aaa; font-style:italic;">Nhấn để tham gia!</p>
+                    </div>
+                `);
+
+                campaignMarker.on('click', () => { if (onCampaignClick) onCampaignClick(campaign); });
+                campaignMarker.addTo(tasksLayer);
+            });
+        }
+
         mapInstance.current.invalidateSize();
-    }, [hiddenTasks, onHiddenTaskClick]);
+    }, [hiddenTasks, onHiddenTaskClick, campaigns, onCampaignClick]);
 
     // =========================================================================
     // 3. VẼ AVATAR NGƯỜI DÙNG (Giữ nguyên logic createPlayerAvatarIcon của bạn)

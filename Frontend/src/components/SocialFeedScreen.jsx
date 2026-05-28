@@ -6,6 +6,34 @@ import { getCurrentPosition } from '../platform/location';
 import { showAlert, showConfirm } from '../platform/dialog';
 import './SocialFeedScreen.css';
 
+const parseBackendDate = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+    if (typeof value === 'string') {
+        const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/.test(value);
+        const normalized = hasTimezone ? value : `${value}Z`;
+        const parsed = new Date(normalized);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+    const fallback = new Date(value);
+    return Number.isNaN(fallback.getTime()) ? null : fallback;
+};
+
+const formatCommentDateTime = (value) => {
+    const parsed = parseBackendDate(value);
+    if (!parsed) return 'Khong ro thoi gian';
+    return parsed.toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+};
+
 export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }) {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -37,6 +65,13 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
         fetchPosts();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const currentUserId = String(user?.user_id || user?.id || '');
+    const currentUserProfile = {
+        full_name: user?.profile?.full_name || user?.full_name || user?.name || 'Traveler',
+        avatar_url: user?.profile?.avatar_url || user?.avatar_url || null,
+        total_points: user?.profile?.total_points || user?.total_points || 0
+    };
 
     const fetchPosts = async () => {
         setLoading(true);
@@ -228,7 +263,12 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
             const res = await fetch(`${API_BASE}/api/social/comments/${postId}`);
             if (res.ok) {
                 const data = await res.json();
-                setComments(data);
+                const sorted = [...data].sort((a, b) => {
+                    const timeA = parseBackendDate(a.created_at)?.getTime() || 0;
+                    const timeB = parseBackendDate(b.created_at)?.getTime() || 0;
+                    return timeB - timeA;
+                });
+                setComments(sorted);
             }
         } catch (error) {
             console.error('Error fetching comments:', error);
@@ -237,12 +277,32 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
 
     const handleAddComment = async (e) => {
         e.preventDefault();
-        if (!commentText.trim() || !activeCommentsPostId) return;
+        const content = commentText.trim();
+        if (!content || !activeCommentsPostId) return;
 
         if (!user) {
             onRequireLogin();
             return;
         }
+
+        const postId = activeCommentsPostId;
+        const optimisticCommentId = `temp-${Date.now()}`;
+        const optimisticComment = {
+            comment_id: optimisticCommentId,
+            user_id: currentUserId,
+            content,
+            created_at: new Date().toISOString(),
+            profiles: currentUserProfile,
+            is_pending: true
+        };
+
+        setCommentText('');
+        setComments(prev => [optimisticComment, ...prev]);
+        setPosts(prev => prev.map(p => (
+            p.post_id === postId
+                ? { ...p, comments_count: (p.comments_count || 0) + 1 }
+                : p
+        )));
 
         setSubmittingComment(true);
         try {
@@ -254,32 +314,76 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    post_id: activeCommentsPostId,
-                    content: commentText
+                    post_id: postId,
+                    content
                 })
             });
 
             if (res.ok) {
-                setCommentText('');
-                // Refresh comments
-                handleOpenComments(activeCommentsPostId);
-                // Update local comment count
-                setPosts(prev => prev.map(p => {
-                    if (p.post_id === activeCommentsPostId) {
-                        return { ...p, comments_count: (p.comments_count || 0) + 1 };
-                    }
-                    return p;
+                const createdComment = await res.json();
+                setComments(prev => prev.map(comment => {
+                    if (comment.comment_id !== optimisticCommentId) return comment;
+                    return {
+                        ...comment,
+                        ...createdComment,
+                        profiles: createdComment.profiles || comment.profiles,
+                        is_pending: false
+                    };
                 }));
+            } else {
+                setComments(prev => prev.filter(comment => comment.comment_id !== optimisticCommentId));
+                setPosts(prev => prev.map(p => (
+                    p.post_id === postId
+                        ? { ...p, comments_count: Math.max(0, (p.comments_count || 0) - 1) }
+                        : p
+                )));
+                const errorData = await res.json().catch(() => ({}));
+                await showAlert(errorData.detail || 'Không thể gửi bình luận.');
             }
         } catch (error) {
             console.error('Error adding comment:', error);
+            setComments(prev => prev.filter(comment => comment.comment_id !== optimisticCommentId));
+            setPosts(prev => prev.map(p => (
+                p.post_id === postId
+                    ? { ...p, comments_count: Math.max(0, (p.comments_count || 0) - 1) }
+                    : p
+            )));
+            await showAlert('Không thể gửi bình luận. Vui lòng thử lại.');
         } finally {
             setSubmittingComment(false);
         }
     };
 
+    const handleDeleteComment = async (commentId) => {
+        const confirmed = await showConfirm('Bạn có muốn xóa bình luận này không?');
+        if (!confirmed) return;
+        try {
+            const token = await storageGet('access_token');
+            const res = await fetch(`${API_BASE}/api/social/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                // Refresh comments list
+                handleOpenComments(activeCommentsPostId);
+                // Decrement local comments count
+                setPosts(prev => prev.map(p => {
+                    if (p.post_id === activeCommentsPostId) {
+                        return { ...p, comments_count: Math.max(0, (p.comments_count || 0) - 1) };
+                    }
+                    return p;
+                }));
+            } else {
+                const data = await res.json();
+                await showAlert(data.detail || 'Không thể xóa bình luận.');
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+        }
+    };
+
     const handleDeletePost = async (postId) => {
-        const confirmed = await showConfirm('Bạn có muốn xóa bài đăng này không?');
+        const confirmed = await showConfirm('Xóa bài đăng này? Lượt thích, bình luận và lượt lưu liên quan cũng sẽ bị xóa. Thao tác này không thể hoàn tác.');
         if (!confirmed) return;
         try {
             const token = await storageGet('access_token');
@@ -290,9 +394,13 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
             if (res.ok) {
                 setPosts(prev => prev.filter(p => p.post_id !== postId));
                 setPostMenuId(null);
+            } else {
+                const data = await res.json().catch(() => ({}));
+                await showAlert(data.detail || 'Không thể xóa bài đăng.');
             }
         } catch (error) {
             console.error('Error deleting post:', error);
+            await showAlert('Không thể xóa bài đăng. Vui lòng thử lại sau.');
         }
     };
 
@@ -518,22 +626,39 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                             {comments.length === 0 ? (
                                 <p className="comments-empty">Chưa có bình luận nào. Hãy bình luận đầu tiên!</p>
                             ) : (
-                                comments.map(comment => (
-                                    <div key={comment.comment_id} className="comment-item">
-                                        <img 
-                                            src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.profiles?.full_name || 'Visitor'}`} 
-                                            alt="avatar" 
-                                            className="comment-avatar"
-                                        />
-                                        <div className="comment-bubble cartoon-card">
-                                            <div className="comment-bubble-header">
-                                                <span className="commenter-name">{comment.profiles?.full_name || 'Traveler'}</span>
-                                                <span className="comment-time">{new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                comments.map(comment => {
+                                    const activePost = posts.find(p => p.post_id === activeCommentsPostId);
+                                    const isPostOwner = activePost && user && (activePost.user_id === (user.user_id || user.id));
+                                    const isCommentOwner = user && (comment.user_id === (user.user_id || user.id));
+                                    const canDelete = !comment.is_pending && (isPostOwner || isCommentOwner);
+                                    return (
+                                        <div key={comment.comment_id} className="comment-item">
+                                            <img 
+                                                src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.profiles?.full_name || 'Visitor'}`} 
+                                                alt="avatar" 
+                                                className="comment-avatar"
+                                            />
+                                            <div className="comment-bubble cartoon-card">
+                                                <div className="comment-bubble-header">
+                                                    <span className="commenter-name">{comment.profiles?.full_name || 'Traveler'}</span>
+                                                    <div className="comment-meta-right">
+                                                        <span className="comment-time">{formatCommentDateTime(comment.created_at)}</span>
+                                                        {canDelete && (
+                                                            <button 
+                                                                className="btn-delete-comment" 
+                                                                onClick={() => handleDeleteComment(comment.comment_id)}
+                                                                title="Xóa bình luận"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <p className="comment-text-content">{comment.content}</p>
                                             </div>
-                                            <p className="comment-text-content">{comment.content}</p>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                         {user && (
@@ -546,7 +671,11 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                                     required
                                 />
                                 <button type="submit" className="squishy-btn blue send-comment-btn" disabled={submittingComment}>
-                                    <Send size={14} />
+                                    {submittingComment ? (
+                                        <span className="comment-send-spinner" aria-hidden="true" />
+                                    ) : (
+                                        <Send size={14} />
+                                    )}
                                 </button>
                             </form>
                         )}
@@ -572,8 +701,8 @@ export default function SocialFeedScreen({ user, onRequireLogin, onOpenProfile }
                                 required
                             />
                             <div className="modal-actions-row">
-                                <button type="button" className="squishy-btn red cancel-btn" onClick={() => setReportPostId(null)}>Hủy</button>
-                                <button type="submit" className="squishy-btn green submit-btn" disabled={isSubmittingReport}>
+                                <button type="button" className="squishy-btn red report-cancel-btn" onClick={() => setReportPostId(null)}>Hủy</button>
+                                <button type="submit" className="squishy-btn green report-submit-btn" disabled={isSubmittingReport}>
                                     {isSubmittingReport ? 'Đang gửi...' : 'Báo Cáo'}
                                 </button>
                             </div>

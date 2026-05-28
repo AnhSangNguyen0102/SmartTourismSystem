@@ -34,7 +34,7 @@ const TILE_STYLES = {
 const getTileStyleConfig = (mapStyle) => TILE_STYLES[mapStyle] || TILE_STYLES.voyager;
 const USER_LOCATION_ZOOM = 18;
 
-const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks = [], onHiddenTaskClick = null, fullScreen = false, mapStyle = 'voyager', showHiddenTasks = true, user = null }, ref) => {
+const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks = [], onHiddenTaskClick = null, campaigns = [], onCampaignClick = null, fullScreen = false, mapStyle = 'voyager', showHiddenTasks = true, user = null }, ref) => {
     const mapRef = useRef(null);
     const mapInstance = useRef(null);
     const markersLayer = useRef(null);
@@ -212,7 +212,7 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
                 };
                 const color = rarityColors[task.rarity] || '#7f8c8d';
 
-                let iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C12 3 12 8 12 8s0-5 4.5-5a2.5 2.5 0 0 1 0 5z"/></svg>';
+                let iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C12 3 12 8 12 8s0-5 4.5-5a2.5 2.5 0 0 1 0 5z"/></svg>';
                 let label = 'Rương kho báu';
                 if (task.task_type === 'DYNAMIC_QUEST') {
                     iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>';
@@ -237,7 +237,41 @@ const MapComponent = forwardRef(({ stops = [], userLocation = null, hiddenTasks 
                 marker.addTo(markersLayer.current);
             });
         }
-    }, [stops, userLocation, hiddenTasks, onHiddenTaskClick, showHiddenTasks, user]);
+
+        // Vẽ các chiến dịch doanh nghiệp (Campaigns) công khai hoạt động
+        if (campaigns && campaigns.length > 0) {
+            campaigns.forEach((campaign) => {
+                if (!campaign.latitude || !campaign.longitude) return;
+
+                const lat = parseFloat(campaign.latitude);
+                const lng = parseFloat(campaign.longitude);
+                if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+                const color = '#e67e22'; // Màu cam ấm áp cho chiến dịch tiếp thị
+
+                // Icon Loa phát thanh / Megaphone
+                const iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7M16 5l-4 4v6l4 4M21 9c.6.8.6 2.2 0 3M19 6c1.7 1.8 1.7 4.2 0 6"/></svg>';
+                const label = 'Chiến dịch Doanh nghiệp';
+
+                const marker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'campaign-icon game-campaign-icon',
+                        html: `<div class="game-hidden-task-marker" style="--task-color:${color}; border-radius: 8px;">${iconHtml}<div class="game-hidden-task-orbit" style="border: 2.5px dashed ${color};"></div></div>`,
+                        iconSize: [58, 58],
+                        iconAnchor: [29, 29],
+                    }),
+                });
+
+                marker.bindPopup(`<b>${campaign.title || label}</b><br/><small>${campaign.quest_type} - Nhấn để tham gia!</small>`, {
+                    className: 'game-map-popup',
+                });
+                marker.on('click', () => {
+                    if (onCampaignClick) onCampaignClick(campaign);
+                });
+                marker.addTo(markersLayer.current);
+            });
+        }
+    }, [stops, userLocation, hiddenTasks, onHiddenTaskClick, showHiddenTasks, user, campaigns, onCampaignClick]);
 
     return (
         <div className={`game-map-shell ${fullScreen ? 'full' : 'card'} map-style-${mapStyle}`}>

@@ -37,6 +37,7 @@ export const adminService = {
         method: 'POST',
         body: JSON.stringify({ reason }),
     }),
+    getApprovedLocations: () => request('/api/admin/locations'),
     getAdminStats: () => request('/api/admin/stats'),
     getAdminUsers: () => request('/api/admin/users'),
     grantPoints: (userId, amount) => request('/api/admin/grant-points', {

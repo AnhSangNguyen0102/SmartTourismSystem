@@ -3,6 +3,7 @@ import {
     BarChart2,
     CalendarClock,
     Camera,
+    Clock3,
     Copy,
     HelpCircle,
     LayoutDashboard,
@@ -32,10 +33,15 @@ const defaultCampaignForm = () => {
         radius_meters: 100,
         reward_exp: 100,
         reward_coin: 50,
-        start_time: start.toISOString().slice(0, 16),
-        end_time: end.toISOString().slice(0, 16),
+        start_time: formatDateTimeLocal(start),
+        end_time: formatDateTimeLocal(end),
         max_scans: 100,
     };
+};
+
+const formatDateTimeLocal = (date) => {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
 };
 
 const navItems = [
@@ -58,6 +64,8 @@ const getQuestTypeMeta = (questType) => questTypeMeta[questType] || { label: que
 const getQrImageUrl = (value) => (
     `https://api.qrserver.com/v1/create-qr-code/?size=128x128&margin=10&data=${encodeURIComponent(value)}`
 );
+
+const formatEventDateTime = (value) => new Date(value).toLocaleString('vi-VN');
 
 const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -164,6 +172,15 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
         setError('');
         setMessage('');
         try {
+            const startDate = new Date(campaignForm.start_time);
+            const endDate = new Date(campaignForm.end_time);
+            if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+                throw new Error('Thời gian bắt đầu/kết thúc không hợp lệ.');
+            }
+            if (startDate >= endDate) {
+                throw new Error('Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.');
+            }
+
             const payload = {
                 ...campaignForm,
                 latitude: parseFloat(campaignForm.latitude),
@@ -172,8 +189,8 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
                 reward_exp: parseInt(campaignForm.reward_exp, 10),
                 reward_coin: parseInt(campaignForm.reward_coin, 10),
                 max_scans: parseInt(campaignForm.max_scans, 10),
-                start_time: new Date(campaignForm.start_time).toISOString(),
-                end_time: new Date(campaignForm.end_time).toISOString(),
+                start_time: startDate.toISOString(),
+                end_time: endDate.toISOString(),
             };
             await enterpriseService.createEnterpriseEvent(payload);
             setCampaignForm(defaultCampaignForm());
@@ -324,7 +341,8 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
                                     <span><QuestIcon size={14} /> {questMeta.label}</span>
                                     <span><MapPin size={14} /> {event.radius_meters}m</span>
                                     <span><BarChart2 size={14} /> {event.scanned_count || 0} lượt</span>
-                                    <span><CalendarClock size={14} /> {new Date(event.end_time).toLocaleDateString('vi-VN')}</span>
+                                    <span className="enterprise-meta-time"><CalendarClock size={14} /> Bắt đầu: {formatEventDateTime(event.start_time)}</span>
+                                    <span className="enterprise-meta-time"><Clock3 size={14} /> Kết thúc: {formatEventDateTime(event.end_time)}</span>
                                 </div>
                                 {event.quest_type === 'QR' && event.qr_token && (
                                     <div className="enterprise-qr-row">
