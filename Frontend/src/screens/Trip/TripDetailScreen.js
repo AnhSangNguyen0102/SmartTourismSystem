@@ -556,8 +556,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                             <RouteMap 
                                 stops={[selectedStop]} 
                                 routes={[]} 
-                                hiddenTasks={hiddenTasks}
-                                campaigns={campaigns}
+                                hiddenTasks={[]}
+                                campaigns={[]}
                                 onCampaignClick={(campaign) => {
                                     setSelectedCampaign(campaign);
                                     setShowCampaignModal(true);
