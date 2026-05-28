@@ -41,13 +41,19 @@ def _geocode_address(address: str) -> tuple[float, float]:
     Temporary local geocoder for the current POC environment.
     Replace with Google Maps in production once GOOGLE_API_KEY is configured.
     """
+    import random
+    
     address_lower = address.lower()
+    
+    # Thêm độ lệch ngẫu nhiên nhỏ (khoảng 10-20m) để tránh trùng lặp tọa độ tuyệt đối
+    offset_lat = (random.random() - 0.5) * 0.0002
+    offset_lon = (random.random() - 0.5) * 0.0002
 
     if "hà nội" in address_lower or "hanoi" in address_lower:
-        return 21.027764, 105.834160
+        return 21.027764 + offset_lat, 105.834160 + offset_lon
     if "đà nẵng" in address_lower or "da nang" in address_lower:
-        return 16.054407, 108.202167
-    return 10.776797, 106.700981
+        return 16.054407 + offset_lat, 108.202167 + offset_lon
+    return 10.776797 + offset_lat, 106.700981 + offset_lon
 
 
 def register_location(
