@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import os
+import re
 
 import httpx
 from PIL import Image
@@ -10,6 +11,43 @@ from PIL import Image
 from services.photo_service import GeminiError, get_photo_service
 
 logger = logging.getLogger(__name__)
+
+
+def repair_json_reason(json_str: str) -> str:
+    """
+    Tìm trường "reason" cuối cùng và thay thế các dấu ngoặc kép không hợp lệ
+    bên trong chuỗi giá trị của nó cũng như các ký tự xuống dòng để trở thành JSON hợp lệ.
+    """
+    # Tìm đoạn bắt đầu của "reason": "
+    match = re.search(r'("reason"\s*:\s*")', json_str)
+    if not match:
+        return json_str
+    
+    start_pos = match.end()
+    
+    # Tìm dấu ngoặc nhọn kết thúc } cuối cùng
+    end_bracket_pos = json_str.rfind('}')
+    
+    if end_bracket_pos == -1:
+        # Trường hợp JSON bị cắt cụt ngang chừng
+        reason_content = json_str[start_pos:]
+        reason_content = reason_content.replace('"', "'").replace('\n', ' ').replace('\r', '')
+        return json_str[:start_pos] + reason_content + '"}'
+        
+    # Tìm dấu ngoặc kép cuối cùng trước dấu ngoặc nhọn kết thúc }
+    end_quote_pos = json_str.rfind('"', start_pos, end_bracket_pos)
+    if end_quote_pos == -1:
+        return json_str
+        
+    # Trích xuất nội dung của reason
+    reason_content = json_str[start_pos:end_quote_pos]
+    
+    # Thay thế ngoặc kép lồng và xuống dòng
+    repaired_reason = reason_content.replace('"', "'").replace('\n', ' ').replace('\r', '')
+        
+    # Ghép lại chuỗi JSON hoàn chỉnh
+    repaired_json = json_str[:start_pos] + repaired_reason + json_str[end_quote_pos:]
+    return repaired_json
 
 # Optional imports for local CLIP similarity
 try:
@@ -107,7 +145,7 @@ async def verify_image_with_gemini(user_image_bytes: bytes, reference_image_url:
         is_matched = true CHỈ KHI confidence_score >= 60 VÀ anti_cheat_passed = true.
         TUYỆT ĐỐI không đặt is_matched = true nếu ảnh rõ ràng là cảnh quan khác nhau.
 
-        Trả về MỘT chuỗi JSON duy nhất, KHÔNG có markdown:
+        Trả về MỘT chuỗi JSON duy nhất, KHÔNG có markdown, TUYỆT ĐỐI KHÔNG dùng dấu ngoặc kép " bên trong giá trị của trường 'reason' (nếu cần hãy dùng dấu ngoặc đơn '):
         {"is_matched": true/false, "confidence_score": <số thực 0.0-100.0>, "anti_cheat_passed": true/false, "reason": "<Giải thích 1-2 câu bằng tiếng Việt nêu rõ điểm khớp hoặc lý do thất bại>"}
         """
 
@@ -130,10 +168,11 @@ async def verify_image_with_gemini(user_image_bytes: bytes, reference_image_url:
             
         # --- LỚP 2: BẮT LỖI PARSE ĐỂ KHÔNG SẬP APP ---
         try:
+            clean_text = repair_json_reason(clean_text)
             result = json.loads(clean_text)
         except json.JSONDecodeError as e:
-            logger.warning("[Verification] Lỗi parse JSON từ Gemini: %s", e)
-            logger.debug("Raw text từ Gemini: %s", raw_text)
+            logger.error("[Verification] Lỗi parse JSON từ Gemini: %s", e)
+            logger.error(">>> RAW TEXT TỪ GEMINI:\n%s\n<<<", raw_text)
             
             # --- LỚP 3: DỮ LIỆU BẢO HIỂM ---
             # Trả về kết quả an toàn thay vì crash màn hình đỏ

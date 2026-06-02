@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { CapacitorBarcodeScanner } from '@capacitor/barcode-scanner';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { API_BASE } from '../../config/api';
@@ -8,7 +9,7 @@ import { storageGet } from '../../platform/storage';
 import { 
   ArrowLeft, Gamepad2, Award, Radio, AlertTriangle, 
   Camera, RefreshCw, Info, Send, HelpCircle, 
-  QrCode, Lock, Trophy, Flame, Flag 
+  QrCode, Lock, Trophy, Flame, Flag, Scan
 } from 'lucide-react';
 import './TaskDetail.css';
 
@@ -35,7 +36,6 @@ const QRCameraScanner = ({ onScanSuccess, onScannerError }) => {
           onScanSuccess(decodedText);
         },
         (errorMessage) => {
-          // Only surface meaningful camera errors, ignore frame-noise.
           if (!isMounted) return;
           if (
             typeof errorMessage === 'string' &&
@@ -59,10 +59,30 @@ const QRCameraScanner = ({ onScanSuccess, onScannerError }) => {
     };
   }, [isNative, onScanSuccess, onScannerError]);
 
+  const startNativeScan = async () => {
+    try {
+      const result = await CapacitorBarcodeScanner.scanBarcode({
+        hint: 17, // CapacitorBarcodeScannerTypeHintALLOption.ALL
+        scanInstructions: 'Hướng camera về phía mã QR để quét',
+        cameraDirection: 1, // BACK
+      });
+      
+      if (result && result.ScanResult) {
+        onScanSuccess(result.ScanResult);
+      }
+    } catch (error) {
+      if (error && error.message && !error.message.includes('canceled')) {
+        onScannerError('Lỗi khởi động Native Scanner: ' + error.message);
+      }
+    }
+  };
+
   if (isNative) {
     return (
-      <div className="submit-error-banner" style={{ width: '100%', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <AlertTriangle size={14} /> QR scanner web không ổn định trên WebView. Vui lòng dùng ô nhập mã thủ công bên dưới.
+      <div className="native-qr-wrapper" style={{ width: '100%', marginTop: '10px' }}>
+        <button className="btn-submit-verification" onClick={startNativeScan} style={{ width: '100%', padding: '12px', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+          <Scan size={18} /> Mở Camera Quét Mã (Native)
+        </button>
       </div>
     );
   }
@@ -112,9 +132,17 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
       if (task.task_type !== 'PHOTO') return;
       try {
         setStarting(true);
+        const token = await storageGet('access_token');
+        if (!token) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+
         const response = await fetch(
           `${API_BASE}/api/gamification/tasks/${task.task_id}/start?user_id=${userId}&itinerary_id=${itineraryId}`,
-          { method: 'POST' }
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
         );
         if (!response.ok) throw new Error('Không thể đăng ký thực hiện thử thách.');
         const data = await response.json();
@@ -176,6 +204,9 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
         if (!imageFile || latitude === null || longitude === null || !progressId) {
           throw new Error('Vui lòng chụp ảnh và đợi GPS ổn định trước khi gửi.');
         }
+        const token = await storageGet('access_token');
+        if (!token) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+
         const formData = new FormData();
         formData.append('progress_id', progressId);
         formData.append('latitude', latitude.toString());
@@ -184,6 +215,9 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
 
         const response = await fetch(`${API_BASE}/api/gamification/submissions/submit-photo`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           body: formData,
         });
         const data = await response.json();

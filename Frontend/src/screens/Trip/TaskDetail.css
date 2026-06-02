@@ -598,3 +598,19 @@
   border-color: #ef4444;
   color: #fff;
 }
+
+/* Native Scanner Transparent Mode */
+body.scanner-active {
+  background: transparent !important;
+}
+
+body.scanner-active #root,
+body.scanner-active .App,
+body.scanner-active .task-detail-screen-gami {
+  background: transparent !important;
+}
+
+body.scanner-active .task-detail-header-gami,
+body.scanner-active .task-detail-body-gami {
+  display: none !important;
+}
