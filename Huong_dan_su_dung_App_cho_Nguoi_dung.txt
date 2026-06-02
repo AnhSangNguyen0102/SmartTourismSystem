@@ -1,0 +1,58 @@
+HƯỚNG DẪN CÀI ĐẶT VÀ SỬ DỤNG ỨNG DỤNG SMART TOURISM (DÀNH CHO NGƯỜI DÙNG/TESTER)
+
+Chào mừng bạn đến với ứng dụng Smart Tourism! Dưới đây là hướng dẫn chi tiết để bạn cài đặt file ứng dụng (.apk) lên điện thoại Android và trải nghiệm các tính năng.
+
+---
+
+PHẦN 1: HƯỚNG DẪN CÀI ĐẶT ỨNG DỤNG TỪ FILE APK
+
+Do ứng dụng đang trong giai đoạn thử nghiệm và chưa được đưa lên Google Play Store, bạn cần cấp quyền để điện thoại cho phép cài đặt từ nguồn bên ngoài.
+
+Bước 1: Tải file APK
+1. Nhận file cài đặt (thường có tên dạng `app-debug.apk` hoặc `SmartTourism.apk`) từ nhóm phát triển qua Zalo, Telegram, Google Drive,...
+2. Bấm vào file để tải về điện thoại.
+
+Bước 2: Cho phép cài đặt ứng dụng từ nguồn không xác định
+1. Bấm mở file APK vừa tải về.
+2. Nếu điện thoại hiện thông báo "Điện thoại của bạn không được phép cài đặt ứng dụng không xác định từ nguồn này" -> Bấm vào nút "Cài đặt" (Settings) trên thông báo đó.
+3. Bật công tắc "Cho phép từ nguồn này" (Allow from this source).
+4. Quay lại màn hình trước đó và bấm "Cài đặt" (Install).
+
+Bước 3: Xử lý cảnh báo Play Protect (Nếu có)
+Vì đây là ứng dụng thử nghiệm nội bộ, Google Play Protect có thể hiện cảnh báo đỏ "Ứng dụng không an toàn" hoặc "Nhà phát triển không xác định".
+- Đừng lo lắng! Hãy bấm vào dòng chữ "Chi tiết khác" (More details) có mũi tên trỏ xuống.
+- Chọn "Vẫn cài đặt" (Install anyway).
+- Chờ vài giây để quá trình cài đặt hoàn tất, sau đó bấm "Mở" (Open).
+
+LƯU Ý QUAN TRỌNG VỀ KẾT NỐI MẠNG: 
+Nếu hệ thống chưa được đưa lên máy chủ online (Internet) mà chỉ đang chạy thử nghiệm nội bộ (Local/LAN), điện thoại của bạn BẮT BUỘC phải kết nối CÙNG MỘT MẠNG WI-FI với máy tính của lập trình viên đang mở server thì app mới có thể tải được dữ liệu.
+
+---
+
+PHẦN 2: HƯỚNG DẪN SỬ DỤNG CÁC TÍNH NĂNG CƠ BẢN
+
+1. Đăng ký & Đăng nhập
+- Lần đầu tiên mở app, bạn sẽ thấy màn hình chào mừng.
+- Nếu chưa có tài khoản: Chọn "Đăng ký" (Register), điền các thông tin cá nhân cơ bản và tạo mật khẩu.
+- Nếu đã có tài khoản: Chọn "Đăng nhập" (Login) bằng email và mật khẩu.
+
+2. Khám phá địa điểm du lịch
+- Sau khi đăng nhập, màn hình chính sẽ hiển thị các địa điểm du lịch, danh lam thắng cảnh xung quanh hoặc các địa điểm nổi bật.
+- Bấm vào một địa điểm bất kỳ để xem thông tin chi tiết: mô tả, hình ảnh, đánh giá và vị trí bản đồ.
+
+3. Tính năng Chỉ đường & GPS
+- Ứng dụng sẽ yêu cầu quyền truy cập Vị trí (Location). Hãy chọn "Cho phép khi dùng ứng dụng" để hệ thống theo dõi GPS và tính toán khoảng cách đến các địa điểm du lịch.
+- (Tùy chọn) Sử dụng bản đồ tích hợp để lên kế hoạch lộ trình tham quan thuận tiện nhất.
+
+4. Tính năng Gamification (Trò chơi hoá & Nhiệm vụ)
+- Để chuyến đi thêm phần thú vị, ứng dụng có hệ thống nhiệm vụ (Quest) và rương báu (Chest) ảo ẩn tại các địa điểm thực tế.
+- Khi bạn di chuyển thực tế đến đúng tọa độ của một địa điểm (check-in), bạn có thể hoàn thành nhiệm vụ và nhận điểm thưởng hoặc mở rương để nhận voucher/quà tặng.
+
+5. Tương tác cộng đồng
+- Theo dõi các bảng xếp hạng (Leaderboard) để xem điểm số của những du khách khác.
+- Đóng góp đánh giá (Review) cho các địa điểm bạn đã trải nghiệm.
+
+---
+
+CẦN HỖ TRỢ?
+Nếu gặp lỗi "Không thể kết nối đến máy chủ", "Màn hình trắng" hoặc app bị văng (crash), hãy báo lại ngay cho đội ngũ phát triển, kèm theo ảnh chụp màn hình lỗi và thông tin về dòng điện thoại bạn đang sử dụng!

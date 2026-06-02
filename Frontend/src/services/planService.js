@@ -21,14 +21,17 @@ export const createPlanningSession = async (payload, token) => {
     }
 };
 
-export const getRecommendations = async (payload) => {
+export const getRecommendations = async (payload, token = null) => {
     try {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
         const response = await fetch(`${API_BASE}/api/suggestions/recommend`, {
             method: 'POST',
-            headers: {
-                // Not requiring auth by backend currently, but good to add if needed
-                'Content-Type': 'application/json'
-            },
+            headers: headers,
             body: JSON.stringify(payload)
         });
         if (!response.ok) {

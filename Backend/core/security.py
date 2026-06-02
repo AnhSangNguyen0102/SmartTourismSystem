@@ -212,3 +212,15 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security_s
             headers={"WWW-Authenticate": "Bearer"}
         )
 
+def verify_token_optional(credentials: HTTPAuthorizationCredentials = Security(security_scheme)):
+    """
+    Dependency của FastAPI tương tự verify_token nhưng không bắt buộc đăng nhập.
+    Trả về dictionary thông tin user nếu token hợp lệ, ngược lại trả về None.
+    """
+    if not credentials:
+        return None
+    try:
+        return verify_token(credentials)
+    except Exception:
+        return None
+

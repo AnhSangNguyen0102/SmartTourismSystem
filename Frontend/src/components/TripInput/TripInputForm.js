@@ -44,7 +44,8 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
         pax_adult: 1,
         pax_children: 0,
         budget: 0,
-        tag_ids: []
+        tag_ids: [],
+        accommodation_type: 'STANDARD'
     });
 
     const handleChange = (field, value) => {
@@ -77,7 +78,8 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
             currency: "VND",
             pax_adult: tripData.pax_adult,
             pax_children: tripData.pax_children,
-            tag_ids: tripData.tag_ids
+            tag_ids: tripData.tag_ids,
+            accommodation_type: tripData.accommodation_type
         };
 
         onSubmitPlan(payload);
@@ -90,6 +92,20 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
         }
         onCancel();
     };
+
+    // Tính toán kinh phí tối thiểu
+    // Tính toán kinh phí tối thiểu dựa vào hình thức lưu trú
+    let minBudgetPerAdultDay = 300000;
+    let minBudgetPerChildDay = 150000;
+    if (tripData.accommodation_type === 'RELATIVE') {
+        minBudgetPerAdultDay = 150000; // Chỉ tính tiền ăn uống cơ bản
+        minBudgetPerChildDay = 75000;
+    } else {
+        // Lưu trú dịch vụ
+        minBudgetPerAdultDay = 350000; 
+        minBudgetPerChildDay = 200000;
+    }
+    const minTotalBudget = (tripData.pax_adult * minBudgetPerAdultDay + tripData.pax_children * minBudgetPerChildDay) * tripData.days;
 
     return (
         <div className="trip-plan-screen">
@@ -139,6 +155,7 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                             <input 
                                 type="number" 
                                 min="1" 
+                                max="7"
                                 value={tripData.days} 
                                 onChange={(e) => handleChange('days', parseInt(e.target.value))} 
                                 className="cartoon-input"
@@ -169,9 +186,47 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                         </div>
                     </div>
 
+                    <div className="input-group">
+                        <label>Hình thức lưu trú</label>
+                        <select
+                            value={tripData.accommodation_type}
+                            onChange={(e) => handleChange('accommodation_type', e.target.value)}
+                            className="cartoon-input-select"
+                        >
+                            <option value="RELATIVE">Tự túc (Ở nhà người thân, không tốn phí lưu trú)</option>
+                            <option value="STANDARD">Sử dụng dịch vụ lưu trú (Khách sạn, Resort, Homestay...)</option>
+                        </select>
+                    </div>
+
                     <div className="btn-row">
                         <div style={{ flex: 1 }}></div>
-                        <button className="btn-next squishy-btn green" onClick={() => setStep(2)}>
+                        <button className="btn-next squishy-btn green" onClick={async () => {
+                            if (!tripData.start_day) {
+                                await showAlert("Vui lòng chọn ngày cắm mốc xuất hành.");
+                                return;
+                            }
+                            if (!tripData.days || tripData.days < 1) {
+                                await showAlert("Số ngày leo ải phải từ 1 ngày trở lên.");
+                                return;
+                            }
+                            if (tripData.days > 7) {
+                                await showAlert("Số ngày leo ải tối đa là 7 ngày để đảm bảo lộ trình tốt nhất.");
+                                return;
+                            }
+                            if (!tripData.pax_adult || tripData.pax_adult < 1) {
+                                await showAlert("Cần ít nhất 1 chiến binh (người lớn) để bắt đầu hành trình.");
+                                return;
+                            }
+                            if (tripData.pax_children < 0) {
+                                await showAlert("Đồng đội nhí không được là số âm.");
+                                return;
+                            }
+                            if (tripData.pax_children > 0 && tripData.pax_adult < 1) {
+                                await showAlert("Phải có ít nhất 1 chiến binh (người lớn) đi kèm để bảo vệ đồng đội nhí.");
+                                return;
+                            }
+                            setStep(2);
+                        }}>
                             Tiếp tục <ArrowRight size={16} />
                         </button>
                     </div>
@@ -193,14 +248,14 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                             className="cartoon-input"
                         />
                         <small className="cartoon-helper-text">
-                            Đại bản doanh sẽ tối ưu hóa lộ trình ải dựa trên lượng tài nguyên này.
+                            Kinh phí tối thiểu cần nhập là {minTotalBudget.toLocaleString('vi-VN')} VNĐ (chưa bao gồm chi phí liên tỉnh).
                         </small>
                     </div>
                     <div className="btn-row">
                         <div style={{ flex: 1 }}></div>
                         <button className="btn-next squishy-btn green" onClick={async () => {
-                            if (!tripData.budget || tripData.budget <= 0) {
-                                await showAlert("Vui lòng thiết lập lượng tài nguyên viễn chinh dự kiến.");
+                            if (!tripData.budget || tripData.budget < minTotalBudget) {
+                                await showAlert(`Kinh phí tối thiểu cần nhập là ${minTotalBudget.toLocaleString('vi-VN')} VNĐ để đảm bảo đủ chi trả các nhu cầu cơ bản của chuyến đi. Vui lòng nhập lại.`);
                                 return;
                             }
                             setStep(3);

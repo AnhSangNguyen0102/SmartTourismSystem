@@ -14,7 +14,20 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
     const [sessionData, setSessionData] = useState(null);
     const [recommendations, setRecommendations] = useState([]);
     const [selectedLocations, setSelectedLocations] = useState([]);
+    const [accommodationNights, setAccommodationNights] = useState({});
     const [creatingTrip, setCreatingTrip] = useState(false);
+
+    const isAccommodation = (tags) => {
+        if (!tags) return false;
+        const lowerTags = tags.map(t => t.toLowerCase());
+        return lowerTags.some(t => 
+            t.includes('khách sạn') || 
+            t.includes('resort') || 
+            t.includes('homestay') || 
+            t.includes('lưu trú') || 
+            t.includes('hotel')
+        );
+    };
 
     useEffect(() => {
         const fetchPlanAndRecommendations = async () => {
@@ -38,13 +51,20 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
                     console.warn('Không thể tải danh sách tags, bỏ qua preferred_tags.');
                 }
 
+                let days = 1;
+                if (planPayload.start_day && planPayload.end_day) {
+                    const start = new Date(planPayload.start_day);
+                    const end = new Date(planPayload.end_day);
+                    days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+                }
+
                 const suggestPayload = {
                     city_id: planPayload.city_id,
                     budget: planPayload.budget,
                     preferred_tags: preferredTags,
-                    max_results: 15,
+                    max_results: Math.max(15, days * 5),
                 };
-                const suggestRes = await getRecommendations(suggestPayload);
+                const suggestRes = await getRecommendations(suggestPayload, token);
 
                 setRecommendations(suggestRes.locations || []);
                 const top5 = (suggestRes.locations || []).slice(0, 5).map((loc) => loc.location_id);
@@ -61,12 +81,41 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
         }
     }, [planPayload]);
 
-    const toggleSelection = (locationId) => {
+    const toggleSelection = (locationId, locTags) => {
         if (selectedLocations.includes(locationId)) {
             setSelectedLocations(selectedLocations.filter((id) => id !== locationId));
+            if (isAccommodation(locTags)) {
+                const newNights = { ...accommodationNights };
+                delete newNights[locationId];
+                setAccommodationNights(newNights);
+            }
         } else {
             setSelectedLocations([...selectedLocations, locationId]);
+            if (isAccommodation(locTags) && planPayload.accommodation_type !== 'RELATIVE') {
+                const totalNights = Object.values(accommodationNights).reduce((a, b) => a + b, 0);
+                const maxNights = planPayload.days || 1;
+                const nightsToAdd = (totalNights < maxNights) ? 1 : 0;
+                setAccommodationNights({ ...accommodationNights, [locationId]: nightsToAdd });
+            }
         }
+    };
+
+    const updateNights = (locationId, delta, e) => {
+        e.stopPropagation();
+        const currentNights = accommodationNights[locationId] || 0;
+        let newNightsValue = currentNights + delta;
+        if (newNightsValue < 0) newNightsValue = 0;
+        
+        if (delta > 0) {
+            const totalNights = Object.values(accommodationNights).reduce((a, b) => a + b, 0);
+            const maxNights = planPayload.days || 1;
+            if (totalNights >= maxNights) {
+                showAlert(`Tổng số đêm lưu trú không được vượt quá số ngày leo ải (${maxNights} ngày).`);
+                return;
+            }
+        }
+
+        setAccommodationNights({ ...accommodationNights, [locationId]: newNightsValue });
     };
 
     const handleCreateTrip = async () => {
@@ -165,9 +214,18 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
         );
     }
 
+    const TRANSIT_COST_ESTIMATE = 20000;
     const totalBudgetUsed = recommendations
         .filter((loc) => selectedLocations.includes(loc.location_id))
-        .reduce((sum, loc) => sum + parseFloat(loc.min_price || 0), 0);
+        .reduce((sum, loc) => {
+            const isAcc = isAccommodation(loc.tags);
+            let locCost = parseFloat(loc.min_price || 0);
+            if (isAcc && planPayload.accommodation_type !== 'RELATIVE') {
+                const nights = accommodationNights[loc.location_id] || 0;
+                locCost = locCost * nights;
+            }
+            return sum + locCost + TRANSIT_COST_ESTIMATE;
+        }, 0);
 
     const budgetLimit = Number(planPayload.budget) || 0;
     const isOverBudget = totalBudgetUsed > budgetLimit;
@@ -187,20 +245,41 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
             </p>
 
             <div className="locations-list">
-                {recommendations.map((loc) => (
+                {recommendations.map((loc) => {
+                    const isSelected = selectedLocations.includes(loc.location_id);
+                    const isAcc = isAccommodation(loc.tags);
+                    const showNightsInput = isAcc && isSelected && planPayload.accommodation_type !== 'RELATIVE';
+                    
+                    return (
                     <div
                         key={loc.location_id}
-                        className={`location-card ${selectedLocations.includes(loc.location_id) ? 'selected' : ''}`}
-                        onClick={() => toggleSelection(loc.location_id)}
+                        className={`location-card ${isSelected ? 'selected' : ''}`}
+                        onClick={() => toggleSelection(loc.location_id, loc.tags)}
                     >
                         <div className="loc-info">
                             <h4>{loc.location_name}</h4>
                             <p className="loc-tags">{(loc.tags || []).join(', ')}</p>
-                            <p className="loc-price">{new Intl.NumberFormat('vi-VN').format(loc.min_price)}đ - {new Intl.NumberFormat('vi-VN').format(loc.max_price)}đ</p>
+                            <p className="loc-price">{new Intl.NumberFormat('vi-VN').format(loc.min_price)}đ - {new Intl.NumberFormat('vi-VN').format(loc.max_price)}đ {isAcc && ' / đêm'}</p>
                             {loc.score && <div className="loc-score">Điểm phù hợp: {Number(loc.score).toFixed(1)}</div>}
+                            
+                            {showNightsInput && (
+                                <div className="loc-nights-control" style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={e => e.stopPropagation()}>
+                                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#2d3436' }}>Số đêm:</span>
+                                    <button 
+                                        onClick={(e) => updateNights(loc.location_id, -1, e)}
+                                        style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid #ccc', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >-</button>
+                                    <span style={{ fontWeight: 'bold' }}>{accommodationNights[loc.location_id] || 0}</span>
+                                    <button 
+                                        onClick={(e) => updateNights(loc.location_id, 1, e)}
+                                        style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid #ccc', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >+</button>
+                                </div>
+                            )}
+
                             <div
                                 className="loc-view-detail"
-                                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px' }}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onOpenLocationDetail(loc);
@@ -210,20 +289,20 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
                             </div>
                         </div>
                         <div className="loc-checkbox" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {selectedLocations.includes(loc.location_id) ? (
+                            {isSelected ? (
                                 <CheckCircle size={20} style={{ color: '#2ed573' }} />
                             ) : (
                                 <Circle size={20} style={{ color: '#a4b0be' }} />
                             )}
                         </div>
                     </div>
-                ))}
+                )})}
             </div>
 
             <div className="recommend-footer">
                 <div className="budget-tracker">
                     <div className="budget-info">
-                        <span>Ngân sách sử dụng: <strong>{new Intl.NumberFormat('vi-VN').format(totalBudgetUsed)}đ</strong> / {new Intl.NumberFormat('vi-VN').format(budgetLimit)}đ</span>
+                        <span style={{ fontSize: '12px' }}>Dự kiến (kèm di chuyển): <strong>{new Intl.NumberFormat('vi-VN').format(totalBudgetUsed)}đ</strong> / {new Intl.NumberFormat('vi-VN').format(budgetLimit)}đ</span>
                         <span className={`budget-status ${isOverBudget ? 'status-over' : 'status-ok'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                             {isOverBudget ? (
                                 <><AlertCircle size={14} /> Vượt ngân sách</>

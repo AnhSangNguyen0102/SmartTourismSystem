@@ -1,0 +1,100 @@
+HƯỚNG DẪN CÀI ĐẶT VÀ SỬ DỤNG SMART TOURISM SYSTEM
+
+Dự án Smart Tourism System bao gồm 2 thành phần chính:
+- Frontend: Ứng dụng web React (Single Page Application).
+- Backend: API Server xây dựng bằng FastAPI (Python).
+
+---
+
+A. YÊU CẦU HỆ THỐNG
+Trước khi bắt đầu, hãy đảm bảo máy tính của bạn đã cài đặt các phần mềm sau:
+1. Node.js (phiên bản 18.x trở lên) và npm.
+2. Python (phiên bản 3.9 trở lên).
+3. Docker và Docker Desktop (nếu muốn chạy Database và Redis qua container).
+4. Windows Terminal (Khuyến nghị cài đặt để trải nghiệm tự động chạy song song 2 server tốt hơn).
+
+---
+
+B. HƯỚNG DẪN CÀI ĐẶT (LẦN ĐẦU)
+
+1. Cài đặt Backend (FastAPI)
+- Mở Terminal/PowerShell và di chuyển vào thư mục Backend:
+  cd d:\Tu_duy_tinh_toan\SmartTourismSystem\Backend
+
+- Tạo môi trường ảo (Virtual Environment):
+  python -m venv venv
+
+- Kích hoạt môi trường ảo:
+  .\venv\Scripts\activate
+
+- Cài đặt các thư viện cần thiết:
+  pip install -r requirements.txt
+
+- Cấu hình biến môi trường:
+  Tạo (hoặc copy từ .env.example sang) file `.env` trong thư mục Backend và cấu hình các thông số kết nối Database (ví dụ URL Supabase hoặc Database nội bộ qua port 6543) và Redis.
+
+2. Cài đặt Frontend (React)
+- Mở Terminal/PowerShell và di chuyển vào thư mục Frontend:
+  cd d:\Tu_duy_tinh_toan\SmartTourismSystem\Frontend
+
+- Cài đặt các gói phụ thuộc (node_modules):
+  npm install
+
+- (Tuỳ chọn) Thiết lập biến môi trường:
+  Copy file `.env.example` thành `.env` nếu cần tinh chỉnh cấu hình cho môi trường local.
+
+3. Thiết lập Database & Redis (Nếu chạy bằng Docker)
+Từ thư mục gốc dự án, bạn có thể khởi chạy cơ sở dữ liệu và cache qua Docker Compose:
+  docker-compose up -d db redis
+
+---
+
+C. HƯỚNG DẪN CHẠY ỨNG DỤNG (SỬ DỤNG HÀNG NGÀY)
+
+Hệ thống có cung cấp sẵn script tự động (run.ps1) giúp bạn khởi chạy cả Backend và Frontend cùng lúc cực kỳ tiện lợi trên Windows.
+
+CÁCH 1: CHẠY TỰ ĐỘNG (Khuyên dùng)
+- Mở PowerShell.
+- Di chuyển đến thư mục gốc của dự án:
+  cd d:\Tu_duy_tinh_toan\SmartTourismSystem
+- Chạy file script tự động:
+  .\run.ps1
+- Script này sẽ tự động:
+  + Kiểm tra và cài đặt node_modules cho Frontend nếu chưa có.
+  + Kiểm tra và giải phóng các cổng 3000 và 8000 nếu đang bị chiếm dụng.
+  + Chạy đồng thời Backend (FastAPI) tại port 8000 và Frontend (React) tại port 3000 trong 2 cửa sổ/tab riêng biệt.
+  + Chờ cho đến khi cả 2 server sẵn sàng và tự động mở trình duyệt truy cập vào http://localhost:3000.
+
+Lưu ý: Để Backend chạy thành công bằng run.ps1, hãy đảm bảo bạn đã cài đặt các thư viện Python ở môi trường global hoặc đã cấu hình script chạy nhận diện đúng môi trường ảo (venv). Nếu gặp lỗi thiếu thư viện Backend khi dùng run.ps1, hãy kích hoạt môi trường ảo trước khi chạy file script.
+
+CÁCH 2: CHẠY THỦ CÔNG TỪNG BƯỚC
+
+Bước 1: Chạy Backend
+- Mở Terminal/PowerShell 1, vào thư mục Backend:
+  cd Backend
+- Kích hoạt môi trường ảo:
+  .\venv\Scripts\activate
+- Chạy server:
+  uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+- Backend sẽ chạy tại: http://127.0.0.1:8000 (Bạn có thể truy cập http://127.0.0.1:8000/docs để xem tài liệu API Swagger).
+
+Bước 2: Chạy Frontend
+- Mở Terminal/PowerShell 2, vào thư mục Frontend:
+  cd Frontend
+- Khởi động ứng dụng React:
+  npm start
+- Frontend sẽ chạy tại: http://localhost:3000
+
+---
+
+D. SỬ DỤNG ỨNG DỤNG VÀ KIỂM TRA
+- Truy cập vào giao diện người dùng (Frontend): http://localhost:3000
+- Xem và test các API (Backend): Truy cập http://127.0.0.1:8000/docs
+- Luồng chức năng chính: Có thể test luồng đăng ký người dùng từ API Docs để kiểm tra kết nối CSDL thành công.
+
+---
+
+E. XỬ LÝ LỖI THƯỜNG GẶP
+- Lỗi cổng bị chiếm dụng (Port 3000 hoặc 8000 is occupied): Nếu bạn chạy script run.ps1, script sẽ tự động tìm và kill tiến trình đang chiếm dụng. Nếu chạy thủ công, hãy tìm tiến trình và tắt nó đi.
+- Không nhận diện dạng lệnh uvicorn: Do chưa kích hoạt môi trường ảo của Python. Hãy chạy `.\venv\Scripts\activate`.
+- Lỗi không kết nối được Database: Kiểm tra lại thông số trong file `.env` ở Backend và đảm bảo PostgreSQL server / Docker container đang hoạt động bình thường.

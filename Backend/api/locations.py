@@ -7,11 +7,29 @@ from database import get_session
 from schemas import SuggestionRequest, SuggestionResponse, LocationOut
 from crud.crud_location import get_locations_by_city, get_location_tags
 from core.algorithms import score_location
+from typing import Optional
+from core.security import verify_token_optional
+from models import Itineraries, ItineraryDays, ItineraryStops, StopStatus
 
 router = APIRouter(prefix="/api/suggestions", tags=["Suggestion - Gợi ý địa điểm"])
 
 @router.post("/recommend", response_model=SuggestionResponse, summary="Gợi ý địa điểm phù hợp")
-def recommend_locations(request: SuggestionRequest, db: Session = Depends(get_session)):
+def recommend_locations(request: SuggestionRequest, db: Session = Depends(get_session), current_user: Optional[dict] = Depends(verify_token_optional)):
+    # 0. Lấy danh sách địa điểm đã đi nếu có token
+    visited_location_ids = set()
+    if current_user:
+        user_id = current_user.get("user_id")
+        if user_id:
+            completed_stops = db.query(ItineraryStops.location_id).join(
+                ItineraryDays, ItineraryStops.day_id == ItineraryDays.day_id
+            ).join(
+                Itineraries, ItineraryDays.itinerary_id == Itineraries.itinerary_id
+            ).filter(
+                Itineraries.user_id == user_id,
+                ItineraryStops.status == StopStatus.COMPLETED
+            ).all()
+            visited_location_ids = {str(stop.location_id) for stop in completed_stops}
+
     # 1. Lấy tất cả địa điểm của thành phố
     locations = get_locations_by_city(db, request.city_id)
 
@@ -35,6 +53,10 @@ def recommend_locations(request: SuggestionRequest, db: Session = Depends(get_se
 
         # None = bị loại bởi ràng buộc cứng
         if score is not None:
+            # 3.5. Hạ độ ưu tiên nếu địa điểm đã đi qua
+            if str(loc.location_id) in visited_location_ids:
+                score -= 0.5
+                
             # Pydantic sẽ tự động map các field nhờ từ khóa from_attributes=True
             loc_out = LocationOut.model_validate(loc)
             loc_out.tags = loc_tags

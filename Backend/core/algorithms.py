@@ -44,24 +44,27 @@ def score_location(
     location_max_price: float,
     location_tags: List[str],
     user_budget: float,
-    user_preferred_tags: List[str]
+    user_preferred_tags: List[str],
+    transit_cost: float = 20000.0
 ) -> Optional[float]:
     """
     Tính điểm cho một địa điểm để gợi ý.
-    - Ràng buộc cứng: giá tối thiểu của địa điểm không được vượt quá ngân sách.
+    - Ràng buộc cứng: giá tối thiểu của địa điểm + chi phí di chuyển không được vượt quá ngân sách.
     - Ràng buộc mềm: Độ khớp tag Jaccard.
     """
     # 1. Ràng buộc cứng (Hard constraint)
-    # Nếu giá rẻ nhất để chơi ở đây còn đắt hơn ngân sách của user -> Bỏ qua
-    if location_min_price > user_budget:
+    total_min_required = location_min_price + transit_cost
+    
+    # Nếu giá rẻ nhất để chơi ở đây cộng phí di chuyển còn đắt hơn ngân sách của user -> Bỏ qua
+    if total_min_required > user_budget:
         return None
         
     # 2. Tính Jaccard similarity
     tag_score = compute_tag_similarity(user_preferred_tags, location_tags)
     
     # 3. Tổng hợp điểm (Trong thực tế có thể thêm trọng số cho rating, khoảng cách...)
-    # Ở đây dùng tag_score làm chủ đạo. Nếu giá location_max_price nằm trong budget thì cộng điểm thưởng
-    bonus = 0.2 if location_max_price <= user_budget else 0.0
+    # Ở đây dùng tag_score làm chủ đạo. Nếu giá location_max_price + di chuyển nằm trong budget thì cộng điểm thưởng
+    bonus = 0.2 if (location_max_price + transit_cost) <= user_budget else 0.0
     
     final_score = tag_score + bonus
     return final_score
