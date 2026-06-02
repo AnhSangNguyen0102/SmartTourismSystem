@@ -21,6 +21,7 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
     const [registerNotice, setRegisterNotice] = useState(null);
     const [isPrivacyAccepted, setIsPrivacyAccepted] = useState(false);
     const [showPolicyModal, setShowPolicyModal] = useState(null); // 'privacy' | 'terms' | null
+    const [isLoading, setIsLoading] = useState(false);
     const isEnterprise = formData.role === 'ENTERPRISE';
 
     const translateError = (msg) => {
@@ -92,6 +93,7 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
         }
 
         try {
+            setIsLoading(true);
             // 2. Kiểm tra email đã tồn tại trong Backend chưa
             try {
                 const checkRes = await axios.get(`${API_BASE}/api/auth/check-email?email=${emailTrimmed}`);
@@ -164,6 +166,8 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
         } catch (error) {
             const errMsg = translateError(error.message || 'Đăng ký thất bại');
             void showAlert(errMsg, { title: 'Lỗi đăng ký' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -262,8 +266,26 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
                     </label>
                 </div>
                 
-                <button className="login-button register-submit-btn" type="submit" disabled={!isPrivacyAccepted} style={{ opacity: isPrivacyAccepted ? 1 : 0.5, cursor: isPrivacyAccepted ? 'pointer' : 'not-allowed' }}>
-                    {isEnterprise ? 'Đăng ký tài khoản doanh nghiệp' : 'Đăng ký'}
+                <button 
+                    className="login-button register-submit-btn" 
+                    type="submit" 
+                    disabled={!isPrivacyAccepted || isLoading} 
+                    style={{ 
+                        opacity: (isPrivacyAccepted && !isLoading) ? 1 : 0.5, 
+                        cursor: (isPrivacyAccepted && !isLoading) ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    {isLoading ? (
+                        <>
+                            <span className="auth-spinner"></span> Đang đăng ký...
+                        </>
+                    ) : (
+                        isEnterprise ? 'Đăng ký tài khoản doanh nghiệp' : 'Đăng ký'
+                    )}
                 </button>
                 
                 {!isEnterprise && (

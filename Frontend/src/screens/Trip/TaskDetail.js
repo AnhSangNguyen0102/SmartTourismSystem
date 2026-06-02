@@ -390,8 +390,14 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
               {photoHint && <div className="submit-error-banner" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Info size={14} /> {photoHint}</div>}
               {submitError && <div className="submit-error-banner" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={14} /> {submitError}</div>}
               {previewUrl && (
-                <button className={`btn-submit-verification ${submitting ? 'loading' : ''}`} onClick={() => handleSubmit()} disabled={submitting} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                  {submitting ? 'AI đang quét kiểm định...' : <><Send size={16} /> Gửi phân tích ảnh</>}
+                <button className={`btn-submit-verification ${submitting ? 'loading' : ''}`} onClick={() => handleSubmit()} disabled={submitting} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  {submitting ? (
+                    <>
+                      <span className="auth-spinner"></span> AI đang quét kiểm định...
+                    </>
+                  ) : (
+                    <><Send size={16} /> Gửi phân tích ảnh</>
+                  )}
                 </button>
               )}
             </div>
