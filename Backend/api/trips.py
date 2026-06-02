@@ -198,23 +198,7 @@ def get_deviation_status(
     Kiểm tra xem lộ trình có bản ghi lệch hướng gần đây (trong 5 phút) không.
     Frontend gọi endpoint này khi nhấn Refresh.
     """
-    from datetime import timezone
-    five_min_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=5)
-    
-    statement = (
-        select(DeviationLogs)
-        .where(DeviationLogs.itinerary_id == itinerary_id)
-        .where(DeviationLogs.alert_time >= five_min_ago)
-        .order_by(DeviationLogs.alert_time.desc())
-    )
-    recent = db.exec(statement).first()
-    
-    if recent:
-        return DeviationAlert(
-            is_deviated=True,
-            distance_to_target=0,
-            message="Cảnh báo: Bạn đang đi lệch khỏi lộ trình!"
-        )
+    # Tính năng cảnh báo lệch hướng đã được tắt theo yêu cầu, luôn trả về is_deviated=False
     return DeviationAlert(
         is_deviated=False,
         distance_to_target=0,
@@ -699,19 +683,11 @@ def track_user_location(
         latitude=request.latitude, longitude=request.longitude
     )
 
-    # Logic cảnh báo: Nếu cách trạm > 5km (tùy chỉnh) khi đang trong hành trình
-    is_deviated = dist_km > 5.0
-    # Ghi log lịch sử nếu bị lệch để sau này admin/hệ thống phân tích
-    if is_deviated:
-        create_deviation_log(
-            db, 
-            itinerary_id=request.itinerary_id, 
-            latitude=request.latitude, 
-            longitude=request.longitude
-        ) 
+    # Logic cảnh báo: Đã tắt theo yêu cầu (luôn trả về is_deviated=False và không ghi log deviation)
+    is_deviated = False
     
     return DeviationAlert(
         is_deviated=is_deviated,
         distance_to_target=round(dist_km * 1000, 2),
-        message="Bạn đang đi đúng hướng" if not is_deviated else "Cảnh báo: Bạn đang đi lệch khỏi lộ trình!"
+        message="Bạn đang đi đúng hướng"
     )
