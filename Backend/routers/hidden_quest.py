@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from database import get_session
 from core.config import settings
 from core.security import verify_token
+from routers.gamification import auto_complete_daily_quest
 from models import (
     Users,
     UserProfiles,
@@ -561,8 +562,18 @@ def verify_quest(
         latitude=task.latitude,
         longitude=task.longitude
     )
-    db.add(log)
-    
+    # Tự động hoàn thành nhiệm vụ hằng ngày tương ứng (nếu có)
+    daily_quest_type = None
+    if event.quest_type == QuestTypeEnum.CHECKIN or getattr(event.quest_type, "value", None) == "CHECKIN":
+        daily_quest_type = "GPS"
+    elif event.quest_type == QuestTypeEnum.QUIZ or getattr(event.quest_type, "value", None) == "QUIZ":
+        daily_quest_type = "QUIZ"
+    elif event.quest_type == QuestTypeEnum.PHOTO or getattr(event.quest_type, "value", None) == "PHOTO":
+        daily_quest_type = "AI_PHOTO"
+        
+    if daily_quest_type:
+        auto_complete_daily_quest(db, target_user_id, daily_quest_type)
+
     db.commit()
     db.refresh(profile)
     

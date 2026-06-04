@@ -28,7 +28,7 @@ import SocialQuestOverlay from './components/SocialQuest/SocialQuestOverlay';
 import AudioControl from './components/AudioControl/AudioControl';
 import { playBGM, pauseBGM, playSound } from './utils/soundUtils';
 // Bỏ comment nếu muốn test giả lập tương tác
-//import LocationSimulator from './components/SocialQuest/LocationSimulator';
+import LocationSimulator from './components/SocialQuest/LocationSimulator';
 
 const NativeApp = registerPlugin('App');
 const EXIT_GUARD_SCREENS = new Set([
@@ -221,7 +221,14 @@ function App() {
                         const userData = await res.json();
                         setIsGuest(false);
                         setCurrentUser(userData);
-                        navigateTo('main', { resetHistory: true });
+                        // Nếu đăng ký/đăng nhập bằng Google mà chưa có mật khẩu,
+                        // chuyển thẳng vào trang cá nhân để hiển thị tạo mật khẩu dễ dàng.
+                        const hasPassword = userData?.user?.has_password;
+                        if (hasPassword === false) {
+                            navigateTo('profile_edit', { resetHistory: true });
+                        } else {
+                            navigateTo('main', { resetHistory: true });
+                        }
                     } else {
                         console.error('Lỗi khi lấy thông tin user sau Google OAuth:', res.status);
                     }
@@ -305,7 +312,7 @@ function App() {
                     )}
                     {!isWorkMode && <SocialQuestOverlay />}
                     {/* ❌ XÓA HOẶC COMMENT DÒNG NÀY ĐỂ ẨN BẢNG GIẢ LẬP: */}
-                    {/* <LocationSimulator /> */}
+                    <LocationSimulator />
 
                     {currentScreen === 'splash' && (
                         <SplashScreen onFinish={() => navigateTo('welcome', { resetHistory: true })} />
@@ -379,6 +386,7 @@ function App() {
                                         setCurrentItineraryId(id);
                                         navigateTo('trip_detail');
                                     }}
+                                    refreshUser={refreshUser}
                                 />
                             )}
                         </div>
