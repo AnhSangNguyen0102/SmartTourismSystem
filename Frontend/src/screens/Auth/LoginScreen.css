@@ -358,3 +358,124 @@
 @keyframes auth-spin {
     to { transform: rotate(360deg); }
 }
+
+/* Modern & Fancy Error Alert Box */
+.login-error-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe3e3 100%);
+    border: 2.5px solid #2c3e50;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    box-shadow: 0 3px 0 #2c3e50;
+    animation: errorSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.login-error-alert .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.login-error-alert .alert-icon {
+    color: #e74c3c;
+    flex-shrink: 0;
+}
+
+.login-error-alert .alert-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: #c0392b;
+    line-height: 1.4;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-align: left;
+}
+
+.login-error-alert .alert-close-btn {
+    background: transparent;
+    border: none;
+    color: #7f8c8d;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 2px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.login-error-alert .alert-close-btn:hover {
+    color: #2c3e50;
+    transform: scale(1.15);
+}
+
+.login-error-alert .alert-close-btn:active {
+    transform: scale(0.9);
+}
+
+/* Animations */
+@keyframes errorSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Shaking animation when error occurs */
+.animate-shake {
+    animation: errorShake 0.4s ease-in-out;
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+
+/* Password Visibility Toggle */
+.password-input-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.password-input-container .login-input {
+    margin-bottom: 0;
+    padding-right: 44px; /* Chừa khoảng trống cho nút hiển thị mật khẩu */
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #2c3e50;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.password-toggle-btn:hover {
+    color: #1e90ff;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.password-toggle-btn:active {
+    transform: translateY(-50%) scale(0.9);
+}

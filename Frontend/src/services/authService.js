@@ -37,9 +37,9 @@ export const authService = {
             }),
         });
 
-        if (!response.ok) throw new Error('Sai email hoặc mật khẩu');
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.detail || 'Sai email hoặc mật khẩu');
 
-        const data = await response.json();
         await Promise.all([
             storageSet('access_token', data.access_token),
             storageSet('refresh_token', data.refresh_token),

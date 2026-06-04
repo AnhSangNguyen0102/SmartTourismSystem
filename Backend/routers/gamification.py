@@ -1,9 +1,10 @@
 import uuid
+import random
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlmodel import Session, select
-from datetime import datetime, time as dtime
+from datetime import datetime, date, time as dtime
 from decimal import Decimal
 
 from database import get_session
@@ -19,7 +20,8 @@ from models import (
     SubmissionStatusEnum,
     QATasks,
     QRTasks,
-    UserTaskHistory
+    UserTaskHistory,
+    UserDailyQuests
 )
 from core.gps import calculate_haversine_distance
 from core.security import verify_token
@@ -73,6 +75,192 @@ def api_daily_attendance(
         raise HTTPException(status_code=400, detail=result["error"])
     
     return {"status": "success", "data": result}
+
+DAILY_QUEST_POOL = [
+    {"quest_type": "GPS", "text": "Check-in GPS tại 1 địa điểm", "reward_exp": 150, "reward_coin": 100},
+    {"quest_type": "AI_PHOTO", "text": "Gửi ảnh kiểm định AI thành công", "reward_exp": 250, "reward_coin": 150},
+    {"quest_type": "QUIZ", "text": "Hoàn thành 1 câu đố ở trạm dừng", "reward_exp": 100, "reward_coin": 50},
+    {"quest_type": "DISTANCE", "text": "Di chuyển quãng đường 2km trên bản đồ", "reward_exp": 200, "reward_coin": 100},
+    {"quest_type": "EXPLORE", "text": "Khám phá 1 địa điểm mới lạ", "reward_exp": 150, "reward_coin": 75},
+    {"quest_type": "SOCIAL", "text": "Tương tác đăng bài viết cộng đồng", "reward_exp": 120, "reward_coin": 60},
+    {"quest_type": "FRIEND", "text": "Kết bạn thêm 1 người bạn đồng hành", "reward_exp": 100, "reward_coin": 50},
+]
+
+@router.get("/daily-quests/{user_id}")
+def api_get_daily_quests(
+    user_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    token_user_id: uuid.UUID = Depends(get_authenticated_user_id),
+):
+    ensure_same_user(user_id, token_user_id)
+    today = datetime.utcnow().date()
+    
+    # Lấy danh sách nhiệm vụ đã gán hôm nay
+    quests = session.exec(
+        select(UserDailyQuests).where(
+            UserDailyQuests.user_id == user_id,
+            UserDailyQuests.assigned_date == today
+        )
+    ).all()
+    
+    if not quests:
+        # Phân loại nhiệm vụ: 
+        # Nhóm Online (Tương tác): QUIZ, SOCIAL, FRIEND
+        # Nhóm Offline (Thám hiểm): GPS, AI_PHOTO, DISTANCE, EXPLORE
+        online_pool = [t for t in DAILY_QUEST_POOL if t["quest_type"] in ["QUIZ", "SOCIAL", "FRIEND"]]
+        offline_pool = [t for t in DAILY_QUEST_POOL if t["quest_type"] in ["GPS", "AI_PHOTO", "DISTANCE", "EXPLORE"]]
+        
+        # Bốc ngẫu nhiên 2 nhiệm vụ Online/Tương tác và 1 nhiệm vụ Offline/Thám hiểm
+        selected_templates = random.sample(online_pool, 2) + random.sample(offline_pool, 1)
+        quests = []
+        for t in selected_templates:
+            q = UserDailyQuests(
+                user_id=user_id,
+                quest_type=t["quest_type"],
+                text=t["text"],
+                reward_exp=t["reward_exp"],
+                reward_coin=t["reward_coin"],
+                is_completed=False,
+                assigned_date=today
+            )
+            session.add(q)
+            quests.append(q)
+        session.commit()
+        # Refresh objects
+        for q in quests:
+            session.refresh(q)
+            
+    # Lấy thông tin xem hôm nay đã nhận rương chưa
+    profile = session.exec(
+        select(UserProfiles).where(UserProfiles.user_id == user_id)
+    ).first()
+    chest_claimed = False
+    if profile and profile.last_daily_chest_date == today:
+        chest_claimed = True
+        
+    return {
+        "status": "success",
+        "data": quests,
+        "chest_claimed": chest_claimed
+    }
+
+@router.post("/daily-quests/{user_id}/complete/{quest_id}")
+def api_complete_daily_quest(
+    user_id: uuid.UUID,
+    quest_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    token_user_id: uuid.UUID = Depends(get_authenticated_user_id),
+):
+    ensure_same_user(user_id, token_user_id)
+    raise HTTPException(
+        status_code=400,
+        detail="Hệ thống đã tắt cơ chế tự xác nhận nhiệm vụ hằng ngày. Vui lòng hoàn thành thông qua các hoạt động thực tế trên bản đồ."
+    )
+
+def auto_complete_daily_quest(session: Session, user_id: uuid.UUID, quest_type: str) -> Optional[UserDailyQuests]:
+    """Tự động hoàn thành nhiệm vụ hằng ngày của hôm nay theo quest_type và cộng thưởng"""
+    today = datetime.utcnow().date()
+    quest = session.exec(
+        select(UserDailyQuests).where(
+            UserDailyQuests.user_id == user_id,
+            UserDailyQuests.quest_type == quest_type,
+            UserDailyQuests.is_completed == False,
+            UserDailyQuests.assigned_date == today
+        )
+    ).first()
+    
+    if quest:
+        quest.is_completed = True
+        session.add(quest)
+        
+        # Cộng EXP và Coin vào profile
+        profile = session.exec(
+            select(UserProfiles).where(UserProfiles.user_id == user_id)
+        ).first()
+        if profile:
+            profile.total_points = (profile.total_points or 0) + quest.reward_exp
+            profile.points_balance = (profile.points_balance or 0) + quest.reward_coin
+            session.add(profile)
+            
+        session.commit()
+        session.refresh(quest)
+        return quest
+    return None
+
+@router.post("/daily-quests/{user_id}/claim-chest")
+def api_claim_daily_chest(
+    user_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    token_user_id: uuid.UUID = Depends(get_authenticated_user_id),
+):
+    ensure_same_user(user_id, token_user_id)
+    today = datetime.utcnow().date()
+    
+    # 1. Kiểm tra 3 nhiệm vụ đã hoàn thành hết chưa
+    quests = session.exec(
+        select(UserDailyQuests).where(
+            UserDailyQuests.user_id == user_id,
+            UserDailyQuests.assigned_date == today
+        )
+    ).all()
+    
+    if len(quests) < 3:
+        raise HTTPException(status_code=400, detail="Bạn chưa có đủ nhiệm vụ cho ngày hôm nay")
+        
+    if not all(q.is_completed for q in quests):
+        raise HTTPException(status_code=400, detail="Bạn phải hoàn thành toàn bộ 3 nhiệm vụ để nhận rương thưởng")
+        
+    # 2. Kiểm tra xem hôm nay đã nhận rương chưa
+    profile = session.exec(
+        select(UserProfiles).where(UserProfiles.user_id == user_id)
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ người dùng")
+        
+    if profile.last_daily_chest_date == today:
+        raise HTTPException(status_code=400, detail="Hôm nay bạn đã mở rương thưởng rồi!")
+        
+    # 3. Cộng quà mở rương
+    exp_reward = 300
+    coin_reward = 200
+    profile.total_points += exp_reward
+    profile.points_balance += coin_reward
+    profile.last_daily_chest_date = today
+    
+    session.add(profile)
+    session.commit()
+    
+    return {
+        "status": "success",
+        "message": "Mở rương thưởng thành công!",
+        "exp_reward": exp_reward,
+        "coin_reward": coin_reward
+    }
+
+@router.get("/daily-attendance-info/{user_id}")
+def api_get_daily_attendance_info(
+    user_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    token_user_id: uuid.UUID = Depends(get_authenticated_user_id),
+):
+    ensure_same_user(user_id, token_user_id)
+    profile = session.exec(
+        select(UserProfiles).where(UserProfiles.user_id == user_id)
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ người dùng")
+        
+    today = datetime.utcnow().date()
+    can_check_in = profile.last_attendance_date != today
+    
+    return {
+        "status": "success",
+        "data": {
+            "last_attendance_date": str(profile.last_attendance_date) if profile.last_attendance_date else None,
+            "attendance_streak": profile.attendance_streak,
+            "can_check_in": can_check_in
+        }
+    }
 
 @router.get("/nearby-treasures/{user_id}")
 def api_get_nearby_treasures(
@@ -290,5 +478,9 @@ async def submit_photo_task(
         profile.total_points += task.reward_exp
         profile.points_balance += task.reward_exp
         session.add(profile)
+    
+    # Tự động hoàn thành nhiệm vụ hằng ngày loại AI_PHOTO (nếu có)
+    auto_complete_daily_quest(session, progress.user_id, "AI_PHOTO")
+    
     session.commit()
     return {"status": "SUCCESS", "message": "Hoàn thành nhiệm vụ!", "exp_rewarded": task.reward_exp, "new_itinerary_exp": iti_exp.total_exp, "new_level": iti_exp.current_level, "confidence_score": ai_result["confidence_score"]}

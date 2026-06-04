@@ -62,7 +62,7 @@ const getTierMeta = (level) => {
     return { label: 'Bạch Kim', shortLabel: 'Bạch Kim', icon: Trophy };
 };
 
-const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenLocationRegister, onOpenProfileEdit, onOpenHistory, onOpenTripDetail, onOpenAdminModeration }) => {
+const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenLocationRegister, onOpenProfileEdit, onOpenHistory, onOpenTripDetail, onOpenAdminModeration, refreshUser }) => {
     const { sendLocation } = useSocialQuest();
     // State quản lý tab đang hiển thị
     const [activeTab, setActiveTab] = useState('home');
@@ -386,6 +386,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                     onOpenProfileEdit={onOpenProfileEdit}
                     onOpenHistory={onOpenHistory}
                     onOpenTripDetail={onOpenTripDetail}
+                    refreshUser={refreshUser}
                 />;
             case 'location':
                 return isGuest ? <GuestPlaceholder title="Bản đồ & Lịch trình" icon={<MapPin size={48} />} onRequireLogin={onRequireLogin} /> : (

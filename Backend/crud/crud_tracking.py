@@ -377,6 +377,15 @@ def complete_itinerary_stop(db: Session, user_id: UUID, stop_id: int) -> bool:
     if stop and stop.status != StopStatus.COMPLETED:
         stop.status = StopStatus.COMPLETED
         db.add(stop)
+        
+        # Tự động hoàn thành các nhiệm vụ hằng ngày loại EXPLORE và DISTANCE
+        from routers.gamification import auto_complete_daily_quest
+        try:
+            auto_complete_daily_quest(db, user_id, "EXPLORE")
+            auto_complete_daily_quest(db, user_id, "DISTANCE")
+        except Exception as e:
+            print(f"[Daily Quest] Lỗi tự động hoàn thành: {e}")
+            
         db.commit()
         return True
     return False

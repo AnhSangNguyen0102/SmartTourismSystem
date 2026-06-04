@@ -6,9 +6,6 @@ import { Wrench, X, Package, Sparkles, AlertTriangle, CheckCircle2 } from 'lucid
 import './HiddenQuestDebug.css';
 
 const HiddenQuestDebug = ({ userLocation, onSpawnSuccess, onTestClaim }) => {
-    // Tạm ẩn nút Debug hình cờ lê trên giao diện
-    return null;
-
     const [isOpen, setIsOpen] = useState(false);
     const [rarity, setRarity] = useState('COMMON');
     const [statusMsg, setStatusMsg] = useState('');

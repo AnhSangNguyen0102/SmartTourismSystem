@@ -163,6 +163,9 @@ class UserProfiles(SQLModel, table=True):
     kyc_status: KycStatus = Field(default=KycStatus.UNVERIFIED)
     total_points: int = Field(default=0, ge=0)
     points_balance: int = Field(default=0, ge=0)
+    last_attendance_date: Optional[date] = Field(default=None)
+    attendance_streak: int = Field(default=0, ge=0)
+    last_daily_chest_date: Optional[date] = Field(default=None)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     @property
@@ -1042,5 +1045,18 @@ class LocalAmbassadors(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="users.user_id", index=True)
     month: date
     checkin_count: int = Field(default=0)
+
+
+class UserDailyQuests(SQLModel, table=True):
+    __tablename__ = "user_daily_quests"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.user_id", index=True)
+    quest_type: str = Field(max_length=50) # 'GPS', 'AI_PHOTO', 'QUIZ', 'DISTANCE'
+    text: str = Field(max_length=255)
+    reward_exp: int = Field(default=100)
+    reward_coin: int = Field(default=50)
+    is_completed: bool = Field(default=False)
+    assigned_date: date = Field(default_factory=datetime.utcnow().date)
 
 

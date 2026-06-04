@@ -46,6 +46,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     SUPABASE_URL: str = "https://huyalfizralenyrzkpbv.supabase.co"
 
+    # --- SMTP / Email settings -----------------------------------------------
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_SENDER: str = "noreply@smarttourism.com"
+
     # --- External APIs & Logics ---------------------------------------------
     OSRM_BASE_URL: str = "https://router.project-osrm.org"
     AVG_CITY_SPEED_KMH: float = 40.0

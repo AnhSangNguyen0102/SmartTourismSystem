@@ -17,6 +17,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  transform: translate(0, 0);
 }
 
 .app-main-screen {
