@@ -8,7 +8,7 @@ import { storageGet } from '../../platform/storage';
 import { ArrowLeft, ArrowRight, CheckCircle, Circle, AlertCircle } from 'lucide-react';
 import './PlanRecommendScreen.css';
 
-const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocationDetail, onSessionExpired }) => {
+const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocationDetail, onSessionExpired, planCache, onCacheUpdate }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [sessionData, setSessionData] = useState(null);
@@ -30,6 +30,19 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
     };
 
     useEffect(() => {
+        // Nếu đã có cache từ lần gọi trước → dùng lại, không gọi API
+        if (
+            planCache &&
+            planCache.planPayload === planPayload &&
+            planCache.recommendations?.length > 0
+        ) {
+            setSessionData(planCache.sessionData);
+            setRecommendations(planCache.recommendations);
+            setSelectedLocations(planCache.selectedLocations);
+            setLoading(false);
+            return;
+        }
+
         const fetchPlanAndRecommendations = async () => {
             try {
                 setLoading(true);
@@ -66,9 +79,21 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
                 };
                 const suggestRes = await getRecommendations(suggestPayload, token);
 
-                setRecommendations(suggestRes.locations || []);
-                const top5 = (suggestRes.locations || []).slice(0, 5).map((loc) => loc.location_id);
+                const locs = suggestRes.locations || [];
+                const top5 = locs.slice(0, 5).map((loc) => loc.location_id);
+
+                setRecommendations(locs);
                 setSelectedLocations(top5);
+
+                // Lưu cache để lần sau không cần gọi lại
+                if (onCacheUpdate) {
+                    onCacheUpdate({
+                        planPayload,
+                        sessionData: sessionRes,
+                        recommendations: locs,
+                        selectedLocations: top5,
+                    });
+                }
             } catch (err) {
                 setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu.');
             } finally {
@@ -79,25 +104,40 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
         if (planPayload) {
             fetchPlanAndRecommendations();
         }
-    }, [planPayload]);
+    }, [planPayload]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const toggleSelection = (locationId, locTags) => {
-        if (selectedLocations.includes(locationId)) {
-            setSelectedLocations(selectedLocations.filter((id) => id !== locationId));
-            if (isAccommodation(locTags)) {
-                const newNights = { ...accommodationNights };
-                delete newNights[locationId];
-                setAccommodationNights(newNights);
+        setSelectedLocations(prev => {
+            const next = prev.includes(locationId)
+                ? prev.filter((id) => id !== locationId)
+                : [...prev, locationId];
+
+            // Cập nhật cache selection
+            if (onCacheUpdate && sessionData) {
+                onCacheUpdate({
+                    planPayload,
+                    sessionData,
+                    recommendations,
+                    selectedLocations: next,
+                });
             }
-        } else {
-            setSelectedLocations([...selectedLocations, locationId]);
-            if (isAccommodation(locTags) && planPayload.accommodation_type !== 'RELATIVE') {
-                const totalNights = Object.values(accommodationNights).reduce((a, b) => a + b, 0);
-                const maxNights = planPayload.days || 1;
-                const nightsToAdd = (totalNights < maxNights) ? 1 : 0;
-                setAccommodationNights({ ...accommodationNights, [locationId]: nightsToAdd });
+
+            if (prev.includes(locationId) && isAccommodation(locTags)) {
+                setAccommodationNights(n => {
+                    const copy = { ...n };
+                    delete copy[locationId];
+                    return copy;
+                });
+            } else if (!prev.includes(locationId) && isAccommodation(locTags) && planPayload.accommodation_type !== 'RELATIVE') {
+                setAccommodationNights(n => {
+                    const totalNights = Object.values(n).reduce((a, b) => a + b, 0);
+                    const maxNights = planPayload.days || 1;
+                    const nightsToAdd = totalNights < maxNights ? 1 : 0;
+                    return { ...n, [locationId]: nightsToAdd };
+                });
             }
-        }
+            return next;
+        });
     };
 
     const updateNights = (locationId, delta, e) => {

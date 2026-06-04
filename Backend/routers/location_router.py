@@ -1,11 +1,16 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
-from sqlmodel import Session
+from typing import Optional
+from datetime import datetime
+from fastapi import APIRouter, Depends, status, HTTPException
+from sqlmodel import Session, select
+from pydantic import BaseModel, Field as PydanticField
 
 from database import get_session
-from core.dependencies import require_enterprise_active # IMPORT TỪ ĐÂY
+from core.dependencies import require_enterprise_active
+from core.security import verify_token
 from schemas import LocationCreate, LocationRegisterResponse
 from services.location_service import register_location
+from models import LocationReviews, Users, UserProfiles, LocationsImage
 
 router = APIRouter()
 
@@ -18,18 +23,133 @@ router = APIRouter()
     response_model=LocationRegisterResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Đăng ký địa điểm kinh doanh",
-    description=(
-        "Doanh nghiệp đã được duyệt (ENTERPRISE + ACTIVE) đăng ký một địa điểm "
-        "kinh doanh mới. Địa chỉ sẽ được Geocode tự động qua Google Maps API. "
-        "Địa điểm sau khi tạo ở trạng thái PENDING — chờ Admin xét duyệt."
-    ),
     tags=["Locations"],
 )
 def register_location_endpoint(
     data: LocationCreate,
-    payload: dict = Depends(require_enterprise_active), # Gài chốt bảo vệ
+    payload: dict = Depends(require_enterprise_active),
     db: Session = Depends(get_session),
 ) -> LocationRegisterResponse:
-    
     user_id = UUID(str(payload.get("sub")))
     return register_location(db=db, user_id=user_id, data=data)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/locations/{location_id}/images
+# ---------------------------------------------------------------------------
+
+@router.get("/locations/{location_id}/images", tags=["Locations"])
+def get_location_images(location_id: UUID, db: Session = Depends(get_session)):
+    """Lấy danh sách ảnh của địa điểm theo thứ tự display_order."""
+    images = db.exec(
+        select(LocationsImage)
+        .where(LocationsImage.location_id == location_id)
+        .order_by(LocationsImage.display_order)
+    ).all()
+    return [{"image_id": img.image_id, "url": img.url, "display_order": img.display_order} for img in images]
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/locations/{location_id}/rating-summary
+# ---------------------------------------------------------------------------
+
+@router.get("/locations/{location_id}/rating-summary", tags=["Locations"])
+def get_rating_summary(location_id: UUID, db: Session = Depends(get_session)):
+    """Tóm tắt điểm trung bình và phân phối rating."""
+    reviews = db.exec(
+        select(LocationReviews).where(LocationReviews.location_id == location_id)
+    ).all()
+    if not reviews:
+        return {
+            "average_rating": None,
+            "total_reviews": 0,
+            "distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        }
+    total = len(reviews)
+    avg = sum(r.rating for r in reviews) / total
+    dist = {i: sum(1 for r in reviews if r.rating == i) for i in range(1, 6)}
+    return {"average_rating": round(avg, 1), "total_reviews": total, "distribution": dist}
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/locations/{location_id}/reviews
+# ---------------------------------------------------------------------------
+
+@router.get("/locations/{location_id}/reviews", tags=["Locations"])
+def get_location_reviews(
+    location_id: UUID,
+    limit: int = 20,
+    db: Session = Depends(get_session)
+):
+    """Danh sách review kèm thông tin user, sắp xếp mới nhất trước."""
+    reviews = db.exec(
+        select(LocationReviews)
+        .where(LocationReviews.location_id == location_id)
+        .order_by(LocationReviews.created_at.desc())
+        .limit(limit)
+    ).all()
+
+    result = []
+    for rev in reviews:
+        user = db.get(Users, rev.user_id)
+        profile = db.exec(
+            select(UserProfiles).where(UserProfiles.user_id == rev.user_id)
+        ).first()
+        result.append({
+            "review_id": str(rev.review_id),
+            "rating": rev.rating,
+            "comment": rev.comment,
+            "created_at": rev.created_at.isoformat(),
+            "user": {
+                "user_id": str(rev.user_id),
+                "full_name": (
+                    profile.full_name if profile
+                    else (user.full_name if user else "Ẩn danh")
+                ),
+                "avatar_url": profile.avatar_url if profile else None,
+            }
+        })
+    return result
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/locations/{location_id}/reviews  –  Upsert review
+# ---------------------------------------------------------------------------
+
+class ReviewCreate(BaseModel):
+    rating: int = PydanticField(..., ge=1, le=5, description="Đánh giá 1–5 sao")
+    comment: Optional[str] = PydanticField(default=None, max_length=1000)
+
+
+@router.post("/locations/{location_id}/reviews", tags=["Locations"])
+def upsert_review(
+    location_id: UUID,
+    data: ReviewCreate,
+    payload: dict = Depends(verify_token),
+    db: Session = Depends(get_session)
+):
+    """Tạo hoặc cập nhật review của user cho địa điểm (mỗi user 1 review)."""
+    user_id = UUID(str(payload.get("sub")))
+
+    existing = db.exec(
+        select(LocationReviews)
+        .where(LocationReviews.location_id == location_id)
+        .where(LocationReviews.user_id == user_id)
+    ).first()
+
+    if existing:
+        existing.rating = data.rating
+        existing.comment = data.comment
+        existing.updated_at = datetime.utcnow()
+        db.add(existing)
+    else:
+        review = LocationReviews(
+            location_id=location_id,
+            user_id=user_id,
+            rating=data.rating,
+            comment=data.comment,
+        )
+        db.add(review)
+
+    db.commit()
+    return {"success": True, "message": "Đã lưu đánh giá thành công"}

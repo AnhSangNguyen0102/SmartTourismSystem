@@ -22,7 +22,7 @@ import { SHOW_MASCOT } from '../config/uiFlags';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import './Travel_trip.css';
 
-const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, onOpenTripDetail }) => {
+const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, onOpenTripDetail, onOpenLocationDetail }) => {
     const [ongoingTrips, setOngoingTrips] = useState([]);
     const [loadingTrips, setLoadingTrips] = useState(false);
     const [topPlayers, setTopPlayers] = useState([]);
@@ -331,7 +331,24 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                                 <div className="tour-rating">
                                     <Star size={11} className="inline-icon" /> {zone.rating}
                                 </div>
-                                <button onClick={isGuest ? onRequireLogin : onOpenPlan} className="explore-zone-btn squishy-btn yellow">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isGuest) {
+                                            onRequireLogin();
+                                        } else if (onOpenLocationDetail) {
+                                            // Chuyển sang màn hình chi tiết địa điểm
+                                            onOpenLocationDetail({
+                                                location_id: zone.location_id || null,
+                                                location_name: zone.title,
+                                                image_url: zone.image,
+                                                address: zone.address || null,
+                                                description: zone.description || null,
+                                            });
+                                        }
+                                    }}
+                                    className="explore-zone-btn squishy-btn yellow"
+                                >
                                     Đi <ArrowRight size={12} />
                                 </button>
                             </div>

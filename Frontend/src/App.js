@@ -56,6 +56,7 @@ function App() {
     const [isGuest, setIsGuest] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [planPayload, setPlanPayload] = useState(null);
+    const [planCache, setPlanCache] = useState(null);  // Cache kết quả gợi ý để tránh reload khi back
     const [currentItineraryId, setCurrentItineraryId] = useState(null);
     const [currentLocationDetail, setCurrentLocationDetail] = useState(null);
     const userRole = currentUser?.user?.role || currentUser?.role;
@@ -379,6 +380,10 @@ function App() {
                                         setCurrentItineraryId(id);
                                         navigateTo('trip_detail');
                                     }}
+                                    onOpenLocationDetail={(loc) => {
+                                        setCurrentLocationDetail(loc);
+                                        navigateTo('location_detail');
+                                    }}
                                 />
                             )}
                         </div>
@@ -431,6 +436,7 @@ function App() {
                             <TripInputForm
                                 onSubmitPlan={(collectedData) => {
                                     setPlanPayload(collectedData);
+                                    setPlanCache(null); // Xóa cache khi tạo plan mới
                                     navigateTo('plan_recommend');
                                 }}
                                 onCancel={() => goBackFromHistory('main')}
@@ -441,9 +447,12 @@ function App() {
                     {currentScreen === 'plan_recommend' && (
                         <PlanRecommendScreen
                             planPayload={planPayload}
+                            planCache={planCache}
+                            onCacheUpdate={setPlanCache}
                             onBack={() => goBackFromHistory('plan')}
                             onTripCreated={(itineraryId) => {
                                 setCurrentItineraryId(itineraryId);
+                                setPlanCache(null); // Xóa cache sau khi tạo trip
                                 navigateTo('trip_detail');
                             }}
                             onOpenLocationDetail={(loc) => {
