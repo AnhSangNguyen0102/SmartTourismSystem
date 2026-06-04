@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { API_BASE } from '../../config/api';
 import axios from 'axios';
-import { ArrowLeft, User, Building2, CheckCircle, Clock, LogIn, X } from 'lucide-react';
-import { showAlert } from '../../platform/dialog';
+import { ArrowLeft, User, Building2, CheckCircle, Clock, X, Eye, EyeOff } from 'lucide-react';
+import { showAlert, showConfirm } from '../../platform/dialog';
 import './LoginScreen.css';
 
 const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
@@ -21,9 +21,24 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
     const [registerNotice, setRegisterNotice] = useState(null);
     const [isPrivacyAccepted, setIsPrivacyAccepted] = useState(false);
     const [showPolicyModal, setShowPolicyModal] = useState(null); // 'privacy' | 'terms' | null
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [countdown, setCountdown] = useState(0);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const isEnterprise = formData.role === 'ENTERPRISE';
 
+    useEffect(() => {
+        let timer;
+        if (countdown > 0) {
+            timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+        }
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
     const translateError = (msg) => {
+        if (!msg) return '';
         const m = msg.toLowerCase();
         if (m.includes('invalid login credentials')) return 'Email hoặc mật khẩu không chính xác.';
         if (m.includes('user already registered') || m.includes('already been registered') || m.includes('đã được đăng ký')) return 'Email này đã được đăng ký bởi người khác.';
@@ -35,6 +50,12 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
         if (m.includes('network error') || m.includes('failed to fetch') || m.includes('err_connection_refused')) return 'Không thể kết nối đến máy chủ Backend (Port 8000). Vui lòng kiểm tra lại.';
         if (m.includes('user not found')) return 'Không tìm thấy người dùng với email này.';
         if ((m.includes('invalid') && m.includes('email')) || m.includes('không tồn tại hoặc không thể nhận thư')) return 'Địa chỉ email không tồn tại hoặc định dạng không hợp lệ.';
+        
+        // OTP translations
+        if (m.includes('không tìm thấy yêu cầu xác thực') || m.includes('phiên đã hết hạn')) return 'Phiên xác thực đã hết hạn hoặc không tồn tại. Vui lòng đăng ký lại.';
+        if (m.includes('mã otp không chính xác')) return 'Mã OTP không chính xác. Vui lòng nhập lại.';
+        if (m.includes('mã otp đã hết hạn')) return 'Mã OTP đã hết hạn. Vui lòng nhấn "Gửi lại mã OTP".';
+        if (m.includes('đã được xác thực hoạt động')) return 'Tài khoản này đã được kích hoạt thành công từ trước.';
         return msg;
     };
 
@@ -96,12 +117,30 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
             try {
                 const checkRes = await axios.get(`${API_BASE}/api/auth/check-email?email=${emailTrimmed}`);
                 if (checkRes.data.exists) {
+                    if (checkRes.data.is_pending) {
+                        const confirmVerify = await showConfirm(
+                            "Tài khoản của bạn đã được đăng ký nhưng chưa xác thực email. Bạn có muốn nhận mã OTP mới để kích hoạt ngay bây giờ không?",
+                            { title: 'Tài khoản chưa xác thực' }
+                        );
+                        if (confirmVerify) {
+                            // Gửi lại OTP và mở màn hình xác thực
+                            await axios.post(`${API_BASE}/api/auth/resend-register-otp`, { email: emailTrimmed });
+                            setFormData({
+                                ...formData,
+                                email: emailTrimmed
+                            });
+                            setIsVerifyingOtp(true);
+                            setCountdown(60);
+                            return;
+                        }
+                        return;
+                    }
                     throw new Error('Email này đã được đăng ký bởi người khác.');
                 }
             } catch (err) {
                 if (err.response?.data?.detail) {
                     throw new Error(err.response.data.detail);
-                } else if (err.message.includes('đăng ký bởi người khác')) {
+                } else if (err.message.includes('đăng ký bởi người khác') || err.message.includes('xác thực email')) {
                     throw err;
                 } else {
                     throw new Error("Không thể kết nối đến máy chủ Backend (Port 8000). Vui lòng kiểm tra lại.");
@@ -152,20 +191,165 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
                 throw new Error(responseData.detail || "Không thể đồng bộ thông tin đăng ký với máy chủ Backend.");
             }
 
-            setRegisterNotice(isEnterprise ? {
-                type: 'enterprise',
-                title: 'Đã gửi yêu cầu phê duyệt',
-                body: 'Hồ sơ doanh nghiệp của bạn đã được gửi tới Admin. Vui lòng đợi vài ngày để hệ thống kiểm tra và phê duyệt.',
-            } : {
-                type: 'user',
-                title: 'Đăng ký thành công',
-                body: 'Tài khoản cá nhân của bạn đã sẵn sàng. Vui lòng kiểm tra email để kích hoạt tài khoản.',
-            });
+            if (responseData.status === 'verification_pending') {
+                setIsVerifyingOtp(true);
+                setCountdown(60);
+            } else {
+                setRegisterNotice(isEnterprise ? {
+                    type: 'enterprise',
+                    title: 'Đã gửi yêu cầu phê duyệt',
+                    body: 'Hồ sơ doanh nghiệp của bạn đã được gửi tới Admin. Vui lòng đợi vài ngày để hệ thống kiểm tra và phê duyệt.',
+                } : {
+                    type: 'user',
+                    title: 'Đăng ký thành công',
+                    body: 'Tài khoản cá nhân của bạn đã sẵn sàng. Vui lòng kiểm tra email để kích hoạt tài khoản.',
+                });
+            }
         } catch (error) {
             const errMsg = translateError(error.message || 'Đăng ký thất bại');
             void showAlert(errMsg, { title: 'Lỗi đăng ký' });
         }
     };
+
+    const handleVerifyOtp = async (e) => {
+        e.preventDefault();
+        const otpTrimmed = otpCode.trim();
+        if (otpTrimmed.length !== 6) {
+            void showAlert("Mã OTP phải có đúng 6 chữ số.", { title: 'Thông báo' });
+            return;
+        }
+
+        setOtpLoading(true);
+        try {
+            const res = await axios.post(`${API_BASE}/api/auth/verify-registration`, {
+                email: formData.email.trim(),
+                otp: otpTrimmed
+            });
+
+            if (res.data.status === 'success') {
+                setRegisterNotice(isEnterprise ? {
+                    type: 'enterprise',
+                    title: 'Đã xác thực thành công',
+                    body: 'Email doanh nghiệp đã được xác thực thành công. Hồ sơ của bạn hiện đang chờ Admin kiểm tra và phê duyệt trước khi có thể đăng nhập.',
+                } : {
+                    type: 'user',
+                    title: 'Đăng ký thành công',
+                    body: 'Tài khoản cá nhân của bạn đã được kích hoạt thành công. Bạn hiện có thể đăng nhập ngay bây giờ.',
+                });
+            } else {
+                throw new Error(res.data.message || "Xác thực thất bại");
+            }
+        } catch (err) {
+            const errMsg = translateError(err.response?.data?.detail || err.message || 'Xác thực OTP thất bại');
+            void showAlert(errMsg, { title: 'Lỗi xác thực' });
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        try {
+            const res = await axios.post(`${API_BASE}/api/auth/resend-register-otp`, {
+                email: formData.email.trim()
+            });
+            void showAlert(res.data.message || "Đã gửi lại mã OTP vào email của bạn.", { title: 'Thông báo' });
+            setCountdown(60);
+        } catch (err) {
+            const errMsg = translateError(err.response?.data?.detail || err.message || 'Gửi lại OTP thất bại');
+            void showAlert(errMsg, { title: 'Lỗi' });
+        }
+    };
+
+    if (isVerifyingOtp) {
+        return (
+            <div className="login-container">
+                <div 
+                    className="auth-back"
+                    onClick={() => setIsVerifyingOtp(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                    <ArrowLeft size={16} /> Quay lại
+                </div>
+
+                <h2 className="login-title">Xác thực OTP</h2>
+                <p style={{ fontSize: '14px', color: '#555', marginBottom: '20px', lineHeight: '1.6', textAlign: 'center' }}>
+                    Một mã OTP gồm 6 chữ số đã được gửi đến email <strong>{formData.email}</strong>. Vui lòng nhập mã để kích hoạt tài khoản của bạn.
+                </p>
+                <p style={{ fontSize: '12px', color: '#e74c3c', marginTop: '-15px', marginBottom: '20px', textAlign: 'center', fontStyle: 'italic' }}>
+                    * Lưu ý: Nếu không nhận được mã, vui lòng kiểm tra kỹ cả trong hộp thư rác (Spam).
+                </p>
+
+                <form onSubmit={handleVerifyOtp}>
+                    <input 
+                        className="login-input" 
+                        placeholder="Nhập 6 chữ số" 
+                        type="text" 
+                        inputMode="numeric"
+                        pattern="[0-9]{6}"
+                        maxLength={6}
+                        required
+                        value={otpCode}
+                        onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '4px', fontWeight: 'bold' }}
+                    />
+                    
+                    <button 
+                        className="login-button" 
+                        type="submit" 
+                        disabled={otpLoading || otpCode.length !== 6}
+                        style={{ opacity: otpCode.length === 6 ? 1 : 0.5, cursor: otpCode.length === 6 ? 'pointer' : 'not-allowed', marginTop: '10px' }}
+                    >
+                        {otpLoading ? 'Đang xác thực...' : 'Xác nhận kích hoạt'}
+                    </button>
+                </form>
+
+                <div className="auth-center-link-row" style={{ marginTop: '20px', fontSize: '14px' }}>
+                    {countdown > 0 ? (
+                        <span style={{ color: '#7f8c8d' }}>Gửi lại mã sau {countdown} giây</span>
+                    ) : (
+                        <span 
+                            className="auth-link"
+                            onClick={handleResendOtp}
+                            style={{ fontWeight: 'bold' }}
+                        >
+                            Gửi lại mã OTP
+                        </span>
+                    )}
+                </div>
+                
+                {registerNotice && (
+                    <div className="auth-success-overlay" role="dialog" aria-modal="true" aria-labelledby="register-success-title">
+                        <div className={`auth-success-dialog ${registerNotice.type}`}>
+                            <button
+                                type="button"
+                                className="auth-success-close"
+                                onClick={() => setRegisterNotice(null)}
+                                aria-label="Đóng thông báo"
+                            >
+                                <X size={18} />
+                            </button>
+                            <div className="auth-success-icon">
+                                {registerNotice.type === 'enterprise' ? <Clock size={34} /> : <CheckCircle size={34} />}
+                            </div>
+                            <h3 id="register-success-title">{registerNotice.title}</h3>
+                            <p>{registerNotice.body}</p>
+                            <div className="auth-success-actions">
+                                {registerNotice.type === 'user' ? (
+                                    <button type="button" className="auth-success-primary" onClick={onRegisterSuccess}>
+                                        <CheckCircle size={16} /> Xem hướng dẫn sử dụng
+                                    </button>
+                                ) : (
+                                    <button type="button" className="auth-success-primary enterprise" onClick={() => setRegisterNotice(null)}>
+                                        Đã hiểu
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="login-container">
@@ -205,12 +389,46 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
                     onChange={e => setFormData({...formData, fullName: e.target.value})} />
                 <input className="login-input" placeholder="Email" type="email" required
                     onChange={e => setFormData({...formData, email: e.target.value})} />
-                <input className="login-input" placeholder="Mật khẩu" type="password" required
-                    value={formData.password}
-                    onChange={e => setFormData({...formData, password: e.target.value})} />
-                <input className="login-input" placeholder="Xác nhận mật khẩu" type="password" required
-                    value={formData.confirmPassword}
-                    onChange={e => setFormData({...formData, confirmPassword: e.target.value})} />
+                
+                <div className="password-input-container">
+                    <input 
+                        className="login-input" 
+                        placeholder="Mật khẩu" 
+                        type={showPassword ? 'text' : 'password'} 
+                        required
+                        value={formData.password}
+                        onChange={e => setFormData({...formData, password: e.target.value})} 
+                    />
+                    <button 
+                        type="button" 
+                        className="password-toggle-btn"
+                        onClick={() => setShowPassword(!showPassword)}
+                        tabIndex="-1"
+                        aria-label={showPassword ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}
+                    >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                </div>
+
+                <div className="password-input-container">
+                    <input 
+                        className="login-input" 
+                        placeholder="Xác nhận mật khẩu" 
+                        type={showConfirmPassword ? 'text' : 'password'} 
+                        required
+                        value={formData.confirmPassword}
+                        onChange={e => setFormData({...formData, confirmPassword: e.target.value})} 
+                    />
+                    <button 
+                        type="button" 
+                        className="password-toggle-btn"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        tabIndex="-1"
+                        aria-label={showConfirmPassword ? "Ẩn xác nhận mật khẩu" : "Hiển thị xác nhận mật khẩu"}
+                    >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                </div>
                 {isEnterprise && (
                     <div className="enterprise-profile-fields">
                         <h3>Hồ sơ doanh nghiệp</h3>
@@ -257,8 +475,12 @@ const RegisterScreen = ({ onBack, onSwitchToLogin, onRegisterSuccess }) => {
                         style={{ cursor: 'pointer', width: '16px', height: '16px', marginTop: '3px', flexShrink: 0 }}
                     />
                     <label htmlFor="privacyPolicy" style={{ cursor: 'pointer', lineHeight: '1.5' }}>
-                        <div style={{ marginBottom: '4px' }}>Tôi đồng ý với <a href="#" onClick={(e) => { e.preventDefault(); setShowPolicyModal('privacy'); }} style={{ color: '#4facfe', textDecoration: 'underline' }}>Chính sách quyền riêng tư</a></div>
-                        <div>và <a href="#" onClick={(e) => { e.preventDefault(); setShowPolicyModal('terms'); }} style={{ color: '#4facfe', textDecoration: 'underline' }}>Điều khoản sử dụng</a></div>
+                        <div style={{ marginBottom: '4px' }}>
+                            Tôi đồng ý với <button type="button" onClick={() => setShowPolicyModal('privacy')} style={{ background: 'none', border: 'none', padding: 0, color: '#4facfe', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}>Chính sách quyền riêng tư</button>
+                        </div>
+                        <div>
+                            và <button type="button" onClick={() => setShowPolicyModal('terms')} style={{ background: 'none', border: 'none', padding: 0, color: '#4facfe', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}>Điều khoản sử dụng</button>
+                        </div>
                     </label>
                 </div>
                 
