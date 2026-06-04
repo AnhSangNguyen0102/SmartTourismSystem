@@ -1,47 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
 import { API_BASE } from '../../config/api';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import './LoginScreen.css';
 
 const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
-    const [step, setStep] = useState(() => {
-        const hash = window.location.hash;
-        if (hash && hash.includes('type=recovery')) {
-            return 3; // Màn hình nhập mật khẩu mới trực tiếp từ link email
-        }
-        return 1; // Nhập email gửi yêu cầu
-    });
-
+    const [step, setStep] = useState(1); // 1: Nhập email, 2: Nhập OTP, 3: Nhập mật khẩu mới
     const [email, setEmail] = useState('');
+    const [otp, setOtp] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [resendCountdown, setResendCountdown] = useState(0);
 
     useEffect(() => {
-        const hash = window.location.hash;
-        if (hash && hash.includes('type=recovery')) {
-            setStep(3);
+        // Nếu URL chứa type=recovery (từ bản cũ, ta chuyển về trang mặc định)
+        if (window.location.hash.includes('type=recovery')) {
+            window.location.hash = '';
+            setStep(1);
         }
     }, []);
 
+    useEffect(() => {
+        let timer;
+        if (step === 2 && resendCountdown > 0) {
+            timer = setInterval(() => {
+                setResendCountdown(prev => prev - 1);
+            }, 1000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [step, resendCountdown]);
+
     const translateError = (msg) => {
+        if (!msg) return '';
         const m = msg.toLowerCase();
         if (m.includes('invalid login credentials')) return 'Email hoặc mật khẩu không chính xác.';
-        if (m.includes('password should be at least 6 characters')) return 'Mật khẩu phải có ít nhất 6 ký tự.';
+        if (m.includes('password should be at least 6 characters') || m.includes('tối thiểu 8 ký tự') || m.includes('ít nhất 8 ký tự')) return 'Mật khẩu phải có ít nhất 8 ký tự.';
         if (m.includes('too many requests') || m.includes('rate limit')) return 'Yêu cầu quá nhanh, vui lòng thử lại sau ít phút.';
-        if (m.includes('access_denied') || m.includes('otp_expired') || m.includes('expired')) return 'Link khôi phục đã hết hạn hoặc không còn hiệu lực. Vui lòng gửi lại yêu cầu mới.';
+        if (m.includes('access_denied') || m.includes('otp_expired') || m.includes('expired') || m.includes('hết hạn')) return 'Mã OTP đã hết hạn hoặc không còn hiệu lực. Vui lòng gửi lại yêu cầu mới.';
         if (m.includes('network error') || m.includes('failed to fetch') || m.includes('err_connection_refused')) return 'Không thể kết nối đến máy chủ Backend (Port 8000). Vui lòng kiểm tra lại.';
-        if (m.includes('user not found')) return 'Không tìm thấy người dùng với email này.';
+        if (m.includes('user not found') || m.includes('chưa có trong hệ thống')) return 'Email này chưa có trong hệ thống. Vui lòng đăng ký tài khoản mới.';
         if (m.includes('invalid email')) return 'Địa chỉ email không hợp lệ.';
+        if (m.includes('chưa gửi yêu cầu') || m.includes('không tìm thấy')) return 'Phiên khôi phục không hợp lệ. Vui lòng gửi lại OTP.';
+        if (m.includes('mã otp không chính xác')) return 'Mã OTP không chính xác. Vui lòng nhập lại.';
         return msg;
     };
 
-    const handleSendResetEmail = async (e) => {
-        e.preventDefault();
+    const handleSendResetOtp = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
         setError('');
         setSuccess('');
         setLoading(true);
@@ -70,22 +82,58 @@ const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
                 }
             }
 
-            // 2. Gửi email khôi phục mật khẩu thông qua Supabase Auth
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(emailTrimmed, {
-                redirectTo: `${window.location.origin}/#type=recovery`,
-            });
-            if (resetError) throw resetError;
-
-            setSuccess('Đã gửi email khôi phục! Vui lòng kiểm tra hộp thư của bạn.');
-            setStep(2); // Chuyển sang bước chờ
+            // 2. Gửi yêu cầu quên mật khẩu lên Backend để nhận OTP
+            await axios.post(`${API_BASE}/api/auth/forgot-password`, { email: emailTrimmed });
+            
+            setSuccess('Đã gửi mã OTP khôi phục! Vui lòng kiểm tra hộp thư của bạn.');
+            setResendCountdown(60); // Đặt lại bộ đếm ngược 60 giây
+            if (step !== 2) {
+                setTimeout(() => {
+                    setError('');
+                    setSuccess('');
+                    setStep(2); // Chuyển sang nhập OTP
+                }, 1000);
+            }
         } catch (err) {
-            setError(translateError(err.message || 'Lỗi gửi yêu cầu khôi phục.'));
+            setError(translateError(err.response?.data?.detail || err.message || 'Lỗi gửi yêu cầu khôi phục.'));
         } finally {
             setLoading(false);
         }
     };
 
-    const handleUpdatePassword = async (e) => {
+    const handleVerifyOtp = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        const otpTrimmed = otp.trim();
+        if (!otpTrimmed || otpTrimmed.length !== 6) {
+            setError('Vui lòng nhập mã OTP 6 chữ số.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            await axios.post(`${API_BASE}/api/auth/verify-reset-otp`, {
+                email: email.trim(),
+                otp: otpTrimmed
+            });
+            
+            setSuccess('Xác thực mã OTP thành công! Vui lòng thiết lập mật khẩu mới.');
+            setTimeout(() => {
+                setError('');
+                setSuccess('');
+                setStep(3); // Chuyển sang nhập mật khẩu mới
+            }, 1000);
+        } catch (err) {
+            setError(translateError(err.response?.data?.detail || err.message || 'Mã OTP không chính xác hoặc đã hết hạn.'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
@@ -93,14 +141,20 @@ const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
 
         const newPass = newPassword.trim();
         const confPass = confirmPassword.trim();
+        const otpTrimmed = otp.trim();
 
+        if (!otpTrimmed || otpTrimmed.length !== 6) {
+            setError('Mã OTP không còn tồn tại trong phiên. Vui lòng quay lại từ đầu.');
+            setLoading(false);
+            return;
+        }
         if (!newPass) {
             setError('Vui lòng nhập mật khẩu mới.');
             setLoading(false);
             return;
         }
-        if (newPass.length < 6) {
-            setError('Mật khẩu phải có ít nhất 6 ký tự.');
+        if (newPass.length < 8) {
+            setError('Mật khẩu mới phải có ít nhất 8 ký tự.');
             setLoading(false);
             return;
         }
@@ -111,10 +165,11 @@ const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
         }
 
         try {
-            const { error: updateError } = await supabase.auth.updateUser({
-                password: newPass
+            await axios.post(`${API_BASE}/api/auth/reset-password`, {
+                email: email.trim(),
+                otp: otpTrimmed,
+                new_password: newPass
             });
-            if (updateError) throw updateError;
 
             setSuccess('Đổi mật khẩu thành công! Đang quay lại trang đăng nhập...');
             setTimeout(() => {
@@ -122,7 +177,7 @@ const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
                 onSwitchToLogin();
             }, 3000);
         } catch (err) {
-            setError(translateError(err.message || 'Lỗi cập nhật mật khẩu.'));
+            setError(translateError(err.response?.data?.detail || err.message || 'Lỗi đặt lại mật khẩu.'));
         } finally {
             setLoading(false);
         }
@@ -144,9 +199,9 @@ const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
             <h2 className="login-title">Khôi phục mật khẩu</h2>
 
             {step === 1 && (
-                <form onSubmit={handleSendResetEmail} className="auth-form-stack">
+                <form onSubmit={handleSendResetOtp} className="auth-form-stack">
                     <p className="auth-helper-text" style={{ fontSize: '11px', color: '#7f8c8d', marginBottom: '14px', textAlign: 'center' }}>
-                        Nhập email bạn đã đăng ký, chúng tôi sẽ gửi liên kết khôi phục mật khẩu đến email của bạn.
+                        Nhập email bạn đã đăng ký để nhận mã OTP khôi phục mật khẩu.
                     </p>
                     <input 
                         type="email" 
@@ -158,57 +213,139 @@ const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
                         disabled={loading}
                     />
                     <button type="submit" className="login-button forgot-submit-btn" disabled={loading}>
-                        {loading ? 'Đang gửi yêu cầu...' : 'Gửi liên kết khôi phục'}
+                        {loading ? 'Đang gửi mã OTP...' : 'Gửi mã OTP'}
                     </button>
                     {error && <p className="error-msg" style={{ marginTop: '12px', color: '#e74c3c', fontSize: '12px', textAlign: 'center' }}>{error}</p>}
+                    {success && <p className="auth-success-msg" style={{ color: '#2ecc71', fontSize: '12px', fontWeight: 'bold', marginTop: '12px', textAlign: 'center' }}>{success}</p>}
                 </form>
             )}
 
             {step === 2 && (
-                <div className="auth-form-stack" style={{ textAlign: 'center' }}>
-                    <p className="auth-success-msg" style={{ color: '#2ecc71', fontSize: '12px', fontWeight: 'bold', marginBottom: '12px' }}>
-                        {success}
+                <form onSubmit={handleVerifyOtp} className="auth-form-stack">
+                    <p className="auth-helper-text" style={{ fontSize: '11px', color: '#7f8c8d', marginBottom: '14px', textAlign: 'center' }}>
+                        Mã OTP đã được gửi đến <strong>{email}</strong>. Vui lòng nhập mã bên dưới để tiếp tục.
                     </p>
-                    <p className="auth-helper-text" style={{ fontSize: '11px', color: '#7f8c8d' }}>
-                        Vui lòng click vào đường dẫn trong hộp thư email để tiến hành tạo mật khẩu mới. Sau khi click, ứng dụng sẽ tự động chuyển hướng bạn đến biểu mẫu cập nhật mật khẩu.
+                    <p style={{ fontSize: '12px', color: '#e74c3c', marginTop: '-8px', marginBottom: '14px', textAlign: 'center', fontStyle: 'italic' }}>
+                        * Lưu ý: Nếu không nhận được mã, vui lòng kiểm tra kỹ cả trong hộp thư rác (Spam).
                     </p>
-                    <button 
-                        type="button" 
-                        className="login-button" 
-                        onClick={onSwitchToLogin}
-                        style={{ marginTop: '16px' }}
-                    >
-                        Quay lại đăng nhập
+                    <input 
+                        type="text" 
+                        inputMode="numeric"
+                        pattern="[0-9]{6}"
+                        maxLength={6}
+                        placeholder="Nhập 6 chữ số OTP" 
+                        required
+                        value={otp} 
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="login-input"
+                        disabled={loading}
+                        style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '2px', fontWeight: 'bold' }}
+                    />
+                    
+                    <button type="submit" className="login-button verify-otp-submit-btn" disabled={loading || otp.length !== 6}>
+                        {loading ? 'Đang xác thực...' : 'Xác nhận mã OTP'}
                     </button>
-                </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', fontSize: '14px' }}>
+                        {resendCountdown > 0 ? (
+                            <span 
+                                style={{ color: '#95a5a6', cursor: 'not-allowed', opacity: 0.8 }}
+                            >
+                                Gửi lại mã OTP ({resendCountdown}s)
+                            </span>
+                        ) : (
+                            <span 
+                                className="auth-link"
+                                onClick={handleSendResetOtp}
+                                style={{ cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}
+                            >
+                                Gửi lại mã OTP
+                            </span>
+                        )}
+                        <span 
+                            className="auth-link"
+                            onClick={() => {
+                                setError('');
+                                setSuccess('');
+                                setStep(1);
+                            }}
+                            style={{ cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}
+                        >
+                            Đổi email khác
+                        </span>
+                    </div>
+
+                    {success && <p className="auth-success-msg" style={{ color: '#2ecc71', fontSize: '12px', fontWeight: 'bold', marginTop: '12px', textAlign: 'center' }}>{success}</p>}
+                    {error && <p className="error-msg" style={{ marginTop: '12px', color: '#e74c3c', fontSize: '12px', textAlign: 'center' }}>{error}</p>}
+                </form>
             )}
 
             {step === 3 && (
-                <form onSubmit={handleUpdatePassword} className="auth-form-stack">
+                <form onSubmit={handleResetPassword} className="auth-form-stack">
                     <p className="auth-helper-text" style={{ fontSize: '11px', color: '#7f8c8d', marginBottom: '14px', textAlign: 'center' }}>
-                        Nhập mật khẩu mới cho tài khoản của bạn.
+                        Đặt lại mật khẩu mới cho tài khoản của bạn.
                     </p>
-                    <input 
-                        type="password" 
-                        placeholder="Mật khẩu mới" 
-                        required
-                        value={newPassword} 
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="login-input"
-                        disabled={loading}
-                    />
-                    <input 
-                        type="password" 
-                        placeholder="Xác nhận mật khẩu mới" 
-                        required
-                        value={confirmPassword} 
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="login-input"
-                        disabled={loading}
-                    />
+                    
+                    <div className="password-input-container">
+                        <input 
+                            type={showNewPassword ? 'text' : 'password'} 
+                            placeholder="Mật khẩu mới (tối thiểu 8 ký tự)" 
+                            required
+                            value={newPassword} 
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="login-input"
+                            disabled={loading}
+                        />
+                        <button 
+                            type="button" 
+                            className="password-toggle-btn"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            tabIndex="-1"
+                            aria-label={showNewPassword ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}
+                        >
+                            {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
+
+                    <div className="password-input-container">
+                        <input 
+                            type={showConfirmPassword ? 'text' : 'password'} 
+                            placeholder="Xác nhận mật khẩu mới" 
+                            required
+                            value={confirmPassword} 
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="login-input"
+                            disabled={loading}
+                        />
+                        <button 
+                            type="button" 
+                            className="password-toggle-btn"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            tabIndex="-1"
+                            aria-label={showConfirmPassword ? "Ẩn xác nhận mật khẩu" : "Hiển thị xác nhận mật khẩu"}
+                        >
+                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
+                    
                     <button type="submit" className="login-button reset-submit-btn" disabled={loading}>
-                        {loading ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
+                        {loading ? 'Đang cập nhật...' : 'Xác nhận khôi phục'}
                     </button>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px', fontSize: '14px' }}>
+                        <span 
+                            className="auth-link"
+                            onClick={() => {
+                                setError('');
+                                setSuccess('');
+                                setStep(1);
+                            }}
+                            style={{ cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}
+                        >
+                            Quay lại từ đầu
+                        </span>
+                    </div>
+
                     {success && <p className="auth-success-msg" style={{ color: '#2ecc71', fontSize: '12px', fontWeight: 'bold', marginTop: '12px', textAlign: 'center' }}>{success}</p>}
                     {error && <p className="error-msg" style={{ marginTop: '12px', color: '#e74c3c', fontSize: '12px', textAlign: 'center' }}>{error}</p>}
                 </form>
@@ -218,4 +355,3 @@ const ForgotPasswordScreen = ({ onBack, onSwitchToLogin }) => {
 };
 
 export default ForgotPasswordScreen;
-
