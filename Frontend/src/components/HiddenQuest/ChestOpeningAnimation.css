@@ -302,18 +302,18 @@
     font-size: 24px;
 }
 
-.reward-text {
+.chest-reward-text {
     display: flex;
     flex-direction: column;
     text-align: left;
 }
 
-.reward-val {
+.chest-reward-val {
     font-weight: 800;
     font-size: 20px;
 }
 
-.reward-label {
+.chest-reward-label {
     font-size: 11px;
     color: rgba(255,255,255,0.6);
 }
