@@ -11,7 +11,6 @@ import TreasureOverlay from '../../components/TreasureOverlay/TreasureOverlay';
 import { getActiveTasks, pingLocation, verifyQuest, getActiveCampaigns, verifyCampaign } from '../../services/hiddenQuestService';
 import { useSocialQuest } from '../../components/SocialQuest/SocialQuestProvider';
 import ChestOpeningAnimation from '../../components/HiddenQuest/ChestOpeningAnimation';
-import HiddenQuestDebug from '../../components/HiddenQuest/HiddenQuestDebug';
 import { storageGet } from '../../platform/storage';
 import { showAlert, showConfirm } from '../../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../../platform/location';
@@ -698,14 +697,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             {/* Treasure Overlay */}
             <TreasureOverlay data={rewardData} />
 
-            <HiddenQuestDebug
-                userLocation={userLocation}
-                onSpawnSuccess={fetchHiddenTasks}
-                onTestClaim={(testTask) => {
-                    setSelectedHiddenTask(testTask);
-                    setShowChestAnimation(true);
-                }}
-            />
+
 
             {/* GAMIFICATION OVERLAYS */}
             {selectedLocationForTasks && (
@@ -857,6 +849,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                                         setQuizAnswer('');
                                         setPhotoUploaded(false);
                                         setPhotoUrl('');
+                                        syncUserPoints();
                                     }}>Tuyệt vời! Tiếp tục hành trình</button>
                                 </div>
                             )}
@@ -877,6 +870,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     onClaim={(rewards) => {
                         void showAlert(`Chúc mừng! Bạn nhận được +${rewards.reward_exp} EXP và +${rewards.reward_coin} xu!`);
                         fetchHiddenTasks();
+                        syncUserPoints();
                     }}
                 />
             )}
@@ -983,7 +977,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                                         <div className="success-reward-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Flame size={20} style={{ color: '#ff7f50' }} /><span><strong>+{questSuccess.reward_exp}</strong> EXP</span></div>
                                         <div className="success-reward-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Coins size={20} style={{ color: '#fbc531' }} /><span><strong>+{questSuccess.reward_coin}</strong> Coin</span></div>
                                     </div>
-                                    <button className="quest-close-success-btn" onClick={() => { setShowQuestModal(false); setQuestSuccess(null); setQrTokenInput(''); setQuizAnswer(''); setPhotoUploaded(false); setPhotoUrl(''); }}>
+                                    <button className="quest-close-success-btn" onClick={() => { setShowQuestModal(false); setQuestSuccess(null); setQrTokenInput(''); setQuizAnswer(''); setPhotoUploaded(false); setPhotoUrl(''); syncUserPoints(); }}>
                                         Tuyệt vời! Tiếp tục hành trình
                                     </button>
                                 </div>
