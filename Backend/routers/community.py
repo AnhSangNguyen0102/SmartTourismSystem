@@ -15,6 +15,7 @@ from core.security import verify_token
 from core.config import settings
 from core.algorithms import calculate_hybrid_score
 from services.social_post_service import delete_social_post_with_dependencies
+from routers.gamification import auto_complete_daily_quest
 
 router = APIRouter(prefix="/api/social", tags=["Social & Community - Mạng xã hội & Ghép đôi"])
 
@@ -207,6 +208,13 @@ def create_post(
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
+
+    # Tự động hoàn thành nhiệm vụ hằng ngày loại SOCIAL
+    try:
+        auto_complete_daily_quest(db, user_id, "SOCIAL")
+    except Exception as e:
+        print(f"[Daily Quest] Lỗi tự động hoàn thành: {e}")
+
     return new_post
 
 
@@ -822,6 +830,14 @@ def send_friend_request(data: dict, current_user: dict = Depends(verify_token), 
             # Đối phương đã gửi lời mời trước đó, mình thích lại -> Tự động chấp nhận (Mutual Match)
             existing.status = "ACCEPTED"
             db.add(existing)
+            
+            # Tự động hoàn thành nhiệm vụ hằng ngày loại FRIEND cho cả 2
+            try:
+                auto_complete_daily_quest(db, user_id, "FRIEND")
+                auto_complete_daily_quest(db, existing.user_id, "FRIEND")
+            except Exception as e:
+                print(f"[Daily Quest] Lỗi tự động hoàn thành: {e}")
+                
             db.commit()
             return {"message": "Đã ghép đôi thành công!", "status": "ACCEPTED"}
         elif existing.status == "ACCEPTED":
@@ -894,6 +910,13 @@ def respond_friend_request(
     if action == "ACCEPT":
         friendship.status = "ACCEPTED"
         db.add(friendship)
+        
+        # Tự động hoàn thành nhiệm vụ hằng ngày loại FRIEND cho cả 2
+        try:
+            auto_complete_daily_quest(db, user_id, "FRIEND")
+            auto_complete_daily_quest(db, friendship.user_id, "FRIEND")
+        except Exception as e:
+            print(f"[Daily Quest] Lỗi tự động hoàn thành: {e}")
     else:
         db.delete(friendship)
         
