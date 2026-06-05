@@ -44,6 +44,9 @@ const LocationDetailScreen = ({ location, onBack }) => {
     const [submitting, setSubmitting] = useState(false);
     const [submitMsg, setSubmitMsg] = useState('');
 
+    // Map overlay
+    const [showMap, setShowMap] = useState(false);
+
     // ── Fetch helpers ──────────────────────────────────────────────────────
     const fetchReviews = useCallback(async () => {
         if (!location?.location_id) return;
@@ -235,7 +238,7 @@ const LocationDetailScreen = ({ location, onBack }) => {
                     </div>
                 )}
 
-                <button className="btn-directions">
+                <button className="btn-directions" onClick={() => setShowMap(true)}>
                     <i className="fas fa-directions" style={{ marginRight: 8 }}></i> Directions
                 </button>
 
@@ -442,6 +445,56 @@ const LocationDetailScreen = ({ location, onBack }) => {
                     Write Review
                 </button>
             </div>
+
+            {/* ── Map Overlay ── */}
+            {showMap && (() => {
+                const lat = location.latitude || location.lat;
+                const lng = location.longitude || location.lng;
+                const name = encodeURIComponent(location.location_name || 'Địa điểm');
+                // Dùng tọa độ nếu có, fallback về tên địa điểm
+                const mapSrc = (lat && lng)
+                    ? `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`
+                    : `https://maps.google.com/maps?q=${name}&output=embed`;
+                const mapsLink = (lat && lng)
+                    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+                    : `https://www.google.com/maps/search/?api=1&query=${name}`;
+
+                return (
+                    <div className="map-overlay-backdrop" onClick={() => setShowMap(false)}>
+                        <div className="map-overlay-sheet" onClick={e => e.stopPropagation()}>
+                            {/* Header */}
+                            <div className="map-overlay-header">
+                                <div className="map-overlay-title">
+                                    <i className="fas fa-map-marker-alt" style={{ color: '#0abde3' }}></i>
+                                    {location.location_name}
+                                </div>
+                                <button className="map-overlay-close" onClick={() => setShowMap(false)}>✕</button>
+                            </div>
+
+                            {/* Map iframe */}
+                            <iframe
+                                className="map-overlay-iframe"
+                                title="map"
+                                src={mapSrc}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                            />
+
+                            {/* Footer */}
+                            <div className="map-overlay-footer">
+                                <button
+                                    className="map-open-btn"
+                                    onClick={() => window.open(mapsLink, '_blank')}
+                                >
+                                    <i className="fas fa-external-link-alt"></i>
+                                    Mở Google Maps
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 };

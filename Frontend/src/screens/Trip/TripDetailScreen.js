@@ -13,7 +13,7 @@ import { useSocialQuest } from '../../components/SocialQuest/SocialQuestProvider
 import ChestOpeningAnimation from '../../components/HiddenQuest/ChestOpeningAnimation';
 import QuestQrScanner from '../../components/QuestQrScanner';
 import { storageGet } from '../../platform/storage';
-import { showAlert, showConfirm } from '../../platform/dialog';
+import { showAlert, showConfirm, showToast } from '../../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../../platform/location';
 import { SHOW_MASCOT } from '../../config/uiFlags';
 import { playSound } from '../../utils/soundUtils';
@@ -96,12 +96,10 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     const [selectedStop, setSelectedStop] = useState(null);
     const [checkinLoading, setCheckinLoading] = useState(false);
-    const [checkinMsg, setCheckinMsg] = useState('');
     const checkinInProgress = useRef(false);
 
     // Trip action states
     const [actionLoading, setActionLoading] = useState(false);
-    const [actionMsg, setActionMsg] = useState('');
 
     const [cloudState, setCloudState] = useState('idle');
     const [mascotMessage, setMascotMessage] = useState('');
@@ -235,8 +233,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         // Reset trạng thái check-in khi chuyển trip (tránh khóa nút từ trip cũ)
         checkinInProgress.current = false;
         setCheckinLoading(false);
-        setCheckinMsg('');
-        setActionMsg('');
 
         if (itineraryId) {
             fetchDetail();
@@ -311,14 +307,13 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     const handleCompleteTrip = async () => {
         const confirmed = await showConfirm('Bạn có chắc chắn muốn hoàn thành chuyến đi này không?', {
-            title: 'Hoàn thành lịch trình',
+            title: 'Hoàn thành chuyến đi',
             okButtonTitle: 'Xác nhận',
-            cancelButtonTitle: 'Huỷ'
+            cancelButtonTitle: 'Hủy'
         });
         if (!confirmed) return;
 
         setActionLoading(true);
-        setActionMsg('');
         try {
             const token = await storageGet('access_token');
             const result = await completeTrip(itineraryId, token);
@@ -330,11 +325,10 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 score_earned: completionScore ?? prev.score_earned
             } : prev);
             playSound('victory.mp3');
-            setActionMsg(result.detail || 'Chuyến đi đã được hoàn thành. Điểm thưởng đã được cộng vào tài khoản.');
+            showToast(result.detail || 'Chuyến đi đã được hoàn thành. Điểm thưởng đã được cộng vào tài khoản.', 'success');
             await Promise.all([fetchDetail(true), syncUserPoints()]);
         } catch (err) {
-            setActionMsg(err.message || 'Lỗi khi hoàn thành chuyến đi');
-            setTimeout(() => setActionMsg(''), 5000);
+            showToast(err.message || 'Lỗi khi hoàn thành chuyến đi', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -349,16 +343,14 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         if (!confirmed) return;
 
         setActionLoading(true);
-        setActionMsg('');
         try {
             const token = await storageGet('access_token');
             const result = await cancelTrip(itineraryId, token);
-            setActionMsg(result.detail || 'Chuyến đi đã được hủy.');
+            showToast(result.detail || 'Chuyến đi đã được hủy.', 'success');
             // Refresh trip detail to get updated status
             await Promise.all([fetchDetail(true), syncUserPoints()]);
         } catch (err) {
-            setActionMsg(err.message || 'Lỗi khi hủy chuyến đi');
-            setTimeout(() => setActionMsg(''), 5000);
+            showToast(err.message || 'Lỗi khi hủy chuyến đi', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -392,14 +384,13 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         if (!targetStop || checkinInProgress.current) return;
         checkinInProgress.current = true;
         setCheckinLoading(true);
-        setCheckinMsg('');
 
         // Safety timeout: tự reset sau 12 giây nếu mọi thứ bị treo
         const safetyTimer = setTimeout(() => {
             if (checkinInProgress.current) {
                 checkinInProgress.current = false;
                 setCheckinLoading(false);
-                setCheckinMsg('Hết thời gian chờ. Vui lòng thử lại.');
+                showToast('Hết thời gian chờ. Vui lòng thử lại.', 'warning');
             }
         }, 12000);
 
@@ -427,11 +418,9 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     stage: 'shaking' 
                 });
 
-// Mở rương sau 1.5 giây
+                // Mở rương sau 1.5 giây
                 checkinInProgress.current = false;
                 setCheckinLoading(false);
-
-                setTimeout(() => setCheckinMsg(''), 2000);
 
                 setTimeout(() => {
                     playSound('chest_open.mp3');
@@ -441,7 +430,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 // Đóng hiệu ứng sau 4.5 giây và trở về bản đồ
                 setTimeout(() => {
                     setRewardData(null);
-                    setCheckinMsg(''); // Xóa tin nhắn toast (nếu có)
                     
                     setSelectedStop(null); // Trở về map
 
@@ -471,7 +459,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
             } catch (err) {
                 clearTimeout(safetyTimer);
-                setCheckinMsg(err.message);
+                showToast(err.message || 'Có lỗi xảy ra khi check-in.', 'error');
                 checkinInProgress.current = false;
                 setCheckinLoading(false);
             }
@@ -507,7 +495,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     clearTimeout(safetyTimer);
                     checkinInProgress.current = false;
                     setCheckinLoading(false);
-                    setCheckinMsg('Đã hủy check-in');
                 }
             }
         })();
@@ -656,9 +643,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                                     <img src="/assets/island/btn_mission.png" alt="Nhiệm vụ địa điểm" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
                                 </button>
                             </div>
-                            {checkinMsg && (
-                                <div className="checkin-toast">{checkinMsg}</div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -694,22 +678,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         {actionLoading ? 'Đang xử lý...' : <><XCircle size={16} /> Hủy chuyến đi</>}
                     </button>
                 </div>
-            )}
-
-            {actionMsg && (
-                <div className="action-toast">{actionMsg}</div>
-            )}
-
-            {!actionMsg && isTripCompleted && (
-                <div className="action-toast">
-                    {tripDetail.score_earned
-                        ? `Chuyến đi đã hoàn thành. Bạn nhận được ${tripDetail.score_earned} điểm thưởng lộ trình.`
-                        : 'Chuyến đi đã hoàn thành. Điểm thưởng đã được cộng vào tài khoản.'}
-                </div>
-            )}
-            
-            {checkinMsg && (
-                <div className="checkin-toast">{checkinMsg}</div>
             )}
 
             {/* Bản đồ Đảo (Island Map) thay thế RouteMap */}

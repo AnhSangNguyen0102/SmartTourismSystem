@@ -33,7 +33,7 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
         // Nếu đã có cache từ lần gọi trước → dùng lại, không gọi API
         if (
             planCache &&
-            planCache.planPayload === planPayload &&
+            JSON.stringify(planCache.planPayload) === JSON.stringify(planPayload) &&
             planCache.recommendations?.length > 0
         ) {
             setSessionData(planCache.sessionData);

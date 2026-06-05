@@ -58,6 +58,7 @@ function App() {
     const [planPayload, setPlanPayload] = useState(null);
     const [currentItineraryId, setCurrentItineraryId] = useState(null);
     const [currentLocationDetail, setCurrentLocationDetail] = useState(null);
+    const [planCache, setPlanCache] = useState(null);
     const userRole = currentUser?.user?.role || currentUser?.role;
     const isAdminMode = currentScreen === 'admin_moderation';
     const isWorkMode = isAdminMode || (currentScreen === 'main' && userRole === 'ENTERPRISE');
@@ -386,6 +387,10 @@ function App() {
                                         setCurrentItineraryId(id);
                                         navigateTo('trip_detail');
                                     }}
+                                    onOpenLocationDetail={(loc) => {
+                                        setCurrentLocationDetail(loc);
+                                        navigateTo('location_detail');
+                                    }}
                                     refreshUser={refreshUser}
                                 />
                             )}
@@ -446,31 +451,37 @@ function App() {
                         )
                     )}
 
-                    {currentScreen === 'plan_recommend' && (
-                        <PlanRecommendScreen
-                            planPayload={planPayload}
-                            onBack={() => goBackFromHistory('plan')}
-                            onTripCreated={(itineraryId) => {
-                                setCurrentItineraryId(itineraryId);
-                                navigateTo('trip_detail');
-                            }}
-                            onOpenLocationDetail={(loc) => {
-                                setCurrentLocationDetail(loc);
-                                navigateTo('location_detail');
-                            }}
-                            onSessionExpired={async () => {
-                                await clearAuthSession();
-                                navigateTo('login', { resetHistory: true });
-                            }}
-                            refreshUser={refreshUser}
-                        />
-                    )}
-
-                    {currentScreen === 'location_detail' && (
-                        <LocationDetailScreen
-                            location={currentLocationDetail}
-                            onBack={() => goBackFromHistory('plan_recommend')}
-                        />
+                    {/* Giữ plan_recommend + location_detail luôn mounted khi cần, dùng display:none để tránh reload */}
+                    {(currentScreen === 'plan_recommend' || currentScreen === 'location_detail') && (
+                        <>
+                            <div style={{ display: currentScreen === 'plan_recommend' ? 'contents' : 'none' }}>
+                                <PlanRecommendScreen
+                                    planPayload={planPayload}
+                                    onBack={() => goBackFromHistory('plan')}
+                                    onTripCreated={(itineraryId) => {
+                                        setCurrentItineraryId(itineraryId);
+                                        navigateTo('trip_detail');
+                                    }}
+                                    onOpenLocationDetail={(loc) => {
+                                        setCurrentLocationDetail(loc);
+                                        navigateTo('location_detail');
+                                    }}
+                                    onSessionExpired={async () => {
+                                        await clearAuthSession();
+                                        navigateTo('login', { resetHistory: true });
+                                    }}
+                                    planCache={planCache}
+                                    onCacheUpdate={setPlanCache}
+                                    refreshUser={refreshUser}
+                                />
+                            </div>
+                            <div style={{ display: currentScreen === 'location_detail' ? 'contents' : 'none' }}>
+                                <LocationDetailScreen
+                                    location={currentLocationDetail}
+                                    onBack={() => goBackFromHistory('plan_recommend')}
+                                />
+                            </div>
+                        </>
                     )}
 
                     {currentScreen === 'trip_detail' && (

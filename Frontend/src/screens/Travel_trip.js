@@ -592,7 +592,24 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                     onMouseUp={stopScrollerDrag}
                 >
                     {adventureZones.map((zone) => (
-                        <div className="tour-card cartoon-card" key={zone.id}>
+                        <div 
+                            className="tour-card cartoon-card" 
+                            key={zone.id}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                                if (isGuest) {
+                                    onRequireLogin();
+                                } else if (onOpenLocationDetail) {
+                                    onOpenLocationDetail({
+                                        location_id: zone.location_id || null,
+                                        location_name: zone.title,
+                                        image_url: zone.image,
+                                        address: zone.address || null,
+                                        description: zone.description || null,
+                                    });
+                                }
+                            }}
+                        >
                             <div className={`zone-difficulty-badge ${zone.difficultyTone}`}>
                                 <span className={`difficulty-dot ${zone.difficultyTone}`}></span>
                                 {zone.difficultyText}
