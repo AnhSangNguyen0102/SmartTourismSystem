@@ -28,7 +28,10 @@ from models import (
     UserRole,
     UserStatus,
     VerificationAction,
-
+    DiscountTypeEnum,
+    UserVoucherStatusEnum,
+    VoucherStatusEnum,
+    VoucherTypeEnum,
 )
 
 
@@ -622,3 +625,71 @@ class CompleteStopResponse(BaseModel):
     success: bool
     message: str
     stop_id: int
+
+
+# ============================================================
+# VOUCHER SCHEMAS
+# ============================================================
+
+class VoucherCreate(BaseModel):
+    """Payload to create a new voucher"""
+    voucher_type: VoucherTypeEnum
+    code: str = Field(max_length=50)
+    title: str = Field(max_length=255)
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    brand_name: Optional[str] = Field(default="Hệ thống", max_length=255)
+    discount_type: DiscountTypeEnum
+    discount_value: Decimal = Field(ge=0)
+    start_date: date
+    end_date: date
+    quantity: int = Field(ge=1)
+    
+    max_per_user: int = Field(default=1, ge=1)
+    point_cost: int = Field(default=0, ge=0)
+    
+    location_ids: list[UUID] = Field(default_factory=list, description="Danh sách địa điểm áp dụng voucher")
+
+class VoucherResponse(BaseModel):
+    """Voucher response for clients"""
+    voucher_id: UUID
+    business_id: Optional[UUID] = None
+    voucher_type: VoucherTypeEnum
+    code: str
+    title: str
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    brand_name: Optional[str] = None
+    discount_type: DiscountTypeEnum
+    discount_value: Decimal
+    start_date: date
+    end_date: date
+    quantity: int
+    remaining_quantity: int
+    max_per_user: int
+    point_cost: int
+    status: VoucherStatusEnum
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class UserVoucherResponse(BaseModel):
+    """Voucher in user's inventory"""
+    user_voucher_id: UUID
+    user_id: UUID
+    voucher_id: UUID
+    collected_at: datetime
+    used_at: Optional[datetime] = None
+    status: UserVoucherStatusEnum
+    
+    # Kèm thông tin voucher để hiển thị
+    voucher: Optional[VoucherResponse] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ClaimVoucherResponse(BaseModel):
+    """Result after claiming a voucher"""
+    success: bool
+    message: str
+    user_voucher_id: UUID
+    new_point_balance: int

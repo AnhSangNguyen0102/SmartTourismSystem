@@ -65,6 +65,7 @@ import Leaderboard from './Leaderboard';
 import SocialFeedScreen from './SocialFeedScreen';
 import FindCompanionsScreen from './FindCompanionsScreen';
 import ChatScreen from './ChatScreen';
+import VouchersList from '../components/Voucher/VouchersList';
 
 // Import services and components for Hidden Quests
 import { getActiveTasks, pingLocation, verifyQuest, getActiveCampaigns, verifyCampaign } from '../services/hiddenQuestService';
@@ -82,7 +83,7 @@ const getTierMeta = (level) => {
         return { label: 'Hạng Đồng', shortLabel: 'Đồng', icon: Medal };
     }
     
-if (level <= 15) {
+    if (level <= 15) {
 
         return { label: 'Hạng Bạc', shortLabel: 'Bạc', icon: Award };
 
@@ -843,6 +844,8 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                         onOpenProfileEdit={onOpenProfileEdit}
 
                         onLogout={onLogout}
+
+                        setLocalPointsBalance={setLocalPointsBalance}
 
                     />
 
@@ -2819,7 +2822,9 @@ const ProfileScreen = ({
 
     onOpenProfileEdit,
 
-    onLogout
+    onLogout,
+
+    setLocalPointsBalance
 
 }) => {
 
@@ -3349,133 +3354,12 @@ const ProfileScreen = ({
 
                         </h4>
 
-                        {loadingRewards ? (
-
-                            <div className="profile-loading" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-
-                                <Sparkles size={16} /> Đang tải cửa hàng...
-
-                            </div>
-
-                        ) : rewardsData.vouchers.length === 0 ? (
-
-                            <div className="profile-empty">Cửa hàng hiện đang bảo trì, vui lòng quay lại sau!</div>
-
-                        ) : (
-
-                            rewardsData.vouchers.map((voucher) => {
-
-                                const canAfford = pointsBalance >= voucher.cost;
-
-                                return (
-
-                                    <div 
-
-                                        key={voucher.id}
-
-                                        style={{
-
-                                            border: '2.5px solid #2c3e50',
-
-                                            borderRadius: '16px',
-
-                                            padding: '12px',
-
-                                            backgroundColor: '#ffffff',
-
-                                            boxShadow: '0 4px 0 #2c3e50',
-
-                                            display: 'flex',
-
-                                            gap: '12px',
-
-                                            alignItems: 'center'
-
-                                        }}
-
-                                    >
-
-                                        <img 
-
-                                            src={voucher.image || 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=100'} 
-
-                                            alt={voucher.brand} 
-
-                                            style={{
-
-                                                width: '60px',
-
-                                                height: '60px',
-
-                                                borderRadius: '12px',
-
-                                                border: '2px solid #2c3e50',
-
-                                                objectFit: 'cover'
-
-                                            }}
-
-                                        />
-
-                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-
-                                            <span style={{ fontSize: '10px', fontWeight: '800', color: '#747d8c', textTransform: 'uppercase' }}>{voucher.brand}</span>
-
-                                            <strong style={{ fontSize: '13px', color: '#2c3e50' }}>{voucher.discount}</strong>
-
-                                            <span style={{ fontSize: '11px', color: '#747d8c', marginBottom: '4px' }}>Giá trị quy đổi: <b style={{ color: '#e67e22' }}>{voucher.cost} xu</b></span>
-
-                                            
-
-                                            <button
-
-                                                onClick={() => handleRedeemVoucher(voucher)}
-
-                                                disabled={!canAfford}
-
-                                                style={{
-
-                                                    alignSelf: 'flex-start',
-
-                                                    background: canAfford ? '#ffd32d' : '#bdc3c7',
-
-                                                    border: '2.5px solid #2c3e50',
-
-                                                    borderRadius: '8px',
-
-                                                    padding: '4px 12px',
-
-                                                    fontSize: '11px',
-
-                                                    fontWeight: 'bold',
-
-                                                    color: '#2c3e50',
-
-                                                    cursor: canAfford ? 'pointer' : 'not-allowed',
-
-                                                    boxShadow: canAfford ? '0 2px 0 #2c3e50' : 'none',
-
-                                                    transform: 'none',
-
-                                                    transition: 'all 0.1s'
-
-                                                }}
-
-                                            >
-
-                                                {canAfford ? 'Đổi Quà' : 'Không đủ xu'}
-
-                                            </button>
-
-                                        </div>
-
-                                    </div>
-
-                                );
-
-                            })
-
-                        )}
+                        {/*DANH SÁCH VOUCHER MỚI*/}
+                        <VouchersList onVoucherClaimed={(res) => {
+                            if (res && res.new_exp_balance !== undefined && setLocalPointsBalance) {
+                                setLocalPointsBalance(res.new_exp_balance);
+                            }
+                        }} />
 
                     </div>
 

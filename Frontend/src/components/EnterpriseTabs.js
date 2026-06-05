@@ -39,6 +39,26 @@ const defaultCampaignForm = () => {
     };
 };
 
+const defaultVoucherForm = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0];
+    return {
+        code: '',
+        title: '',
+        description: '',
+        brand_name: '',
+        image_url: '',
+        discount_type: 'PERCENT',
+        discount_value: 10,
+        start_date: today,
+        end_date: nextMonth,
+        quantity: 100,
+        max_per_user: 1,
+        point_cost: 0,
+        location_ids: [] // Mảng chứa các ID địa điểm được chọn
+    };
+};
+
 const formatDateTimeLocal = (date) => {
     const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
     return localDate.toISOString().slice(0, 16);
@@ -86,6 +106,9 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
         contact_email: '',
         contact_phone: '',
     });
+    const [vouchers, setVouchers] = useState([]);
+    const [showVoucherForm, setShowVoucherForm] = useState(false);
+    const [voucherForm, setVoucherForm] = useState(defaultVoucherForm());
 
     const loadProfile = useCallback(async () => {
         const data = await enterpriseService.getEnterpriseProfile();
@@ -111,6 +134,11 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
         setSubmissions(Array.isArray(submissionData) ? submissionData : []);
     }, []);
 
+    const loadVouchers = useCallback(async () => {
+        const data = await enterpriseService.getEnterpriseVouchers();
+        setVouchers(Array.isArray(data) ? data : []);
+    }, []);
+
     useEffect(() => {
         let mounted = true;
         const loadTab = async () => {
@@ -120,6 +148,7 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
             try {
                 if (activeTab === 'campaigns') await loadEvents();
                 if (activeTab === 'locations') await loadLocations();
+                if (activeTab === 'vouchers') { await loadLocations(); await loadVouchers(); }
                 if (activeTab === 'profile') await loadProfile();
             } catch (err) {
                 if (mounted) setError(err.message || 'Không thể tải dữ liệu doanh nghiệp.');
@@ -218,6 +247,56 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
             setActionLoading(false);
         }
     };
+
+    const handleCreateVoucher = async (event) => {
+        event.preventDefault();
+        setActionLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            if (voucherForm.location_ids.length === 0) {
+                throw new Error('Vui lòng chọn ít nhất 1 địa điểm áp dụng.');
+            }
+            
+            const payload = {
+                ...voucherForm,
+                voucher_type: 'BUSINESS',
+                discount_value: parseFloat(voucherForm.discount_value),
+                quantity: parseInt(voucherForm.quantity, 10),
+                max_per_user: parseInt(voucherForm.max_per_user, 10),
+                point_cost: parseInt(voucherForm.point_cost, 10),
+                brand_name: voucherForm.brand_name || profile?.business_name || 'Doanh nghiệp đối tác'
+            };
+
+            await enterpriseService.createEnterpriseVoucher(payload);
+            setVoucherForm(defaultVoucherForm());
+            setShowVoucherForm(false);
+            setMessage('Đã tạo Voucher thành công! Giao diện Cửa hàng đã được cập nhật.');
+            await loadVouchers();
+        } catch (err) {
+            setError(err.message || 'Tạo voucher thất bại.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+
+    const handleDeleteVoucher = async (voucherId) => {
+        if (!window.confirm("Bạn có chắc chắn muốn xóa voucher này không? Những người dùng đã đổi vẫn có thể sử dụng.")) return;
+        setActionLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            await enterpriseService.deleteEnterpriseVoucher(voucherId);
+            setMessage('Đã xóa voucher thành công.');
+            await loadVouchers();
+        } catch (err) {
+            setError(err.message || 'Không thể xóa voucher.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
 
     const handleProfileSave = async (event) => {
         event.preventDefault();
@@ -443,13 +522,172 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
         <section className="enterprise-section">
             <div className="enterprise-section-header">
                 <div>
-                    <p>MVP</p>
-                    <h2>Voucher</h2>
+                    <p>{vouchers.length} voucher đã tạo</p>
+                    <h2>Quản lý Voucher</h2>
                 </div>
+                <button type="button" className="enterprise-primary-btn" onClick={() => {
+                    setVoucherForm(prev => ({ ...prev, brand_name: profile?.business_name || '' }));
+                    setShowVoucherForm(true);
+                }}>
+                    <Plus size={16} /> Tạo Voucher
+                </button>
             </div>
-            <div className="enterprise-empty">
-                Module voucher cần CRUD/audit riêng nên chưa bật dữ liệu giả trong production path.
-            </div>
+
+            {showVoucherForm && (
+                <form className="enterprise-form-panel" onSubmit={handleCreateVoucher}>
+                    <div className="enterprise-form-grid">
+                        <label className="enterprise-form-wide">
+                            Địa điểm áp dụng (Chọn 1 hoặc nhiều) *
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                {locations.filter(loc => true).map(loc => ( // Lọc các địa điểm ACTIVE nếu cần
+                                    <label key={loc.location_id} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px', cursor: 'pointer', background: '#f8fafc', padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', fontWeight: 'normal' }}>
+                                        <input 
+                                            type="checkbox" 
+                                            style={{ minWidth: 'auto', minHeight: 'auto', width: 'auto' }}
+                                            checked={voucherForm.location_ids.includes(loc.location_id)}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setVoucherForm(prev => ({
+                                                    ...prev,
+                                                    location_ids: checked 
+                                                        ? [...prev.location_ids, loc.location_id]
+                                                        : prev.location_ids.filter(id => id !== loc.location_id)
+                                                }));
+                                            }}
+                                        />
+                                        {loc.location_name}
+                                    </label>
+                                ))}
+                                {locations.length === 0 && <span style={{color: 'red'}}>Bạn chưa có địa điểm nào được duyệt. Hãy thêm địa điểm trước.</span>}
+                            </div>
+                        </label>
+                        <label>
+                            Mã Voucher (Code) *
+                            <input value={voucherForm.code} placeholder="VD: SUMMER2024" onChange={(e) => setVoucherForm({ ...voucherForm, code: e.target.value.toUpperCase() })} required />
+                        </label>
+                        <label>
+                            Tên Voucher *
+                            <input value={voucherForm.title} placeholder="VD: Giảm 20% Cà phê" onChange={(e) => setVoucherForm({ ...voucherForm, title: e.target.value })} required />
+                        </label>
+                        <label>
+                            Tên Thương hiệu hiển thị
+                            <input value={voucherForm.brand_name} placeholder={profile?.business_name} onChange={(e) => setVoucherForm({ ...voucherForm, brand_name: e.target.value })} />
+                        </label>
+                        <label>
+                            Link Ảnh (URL)
+                            <input type="url" value={voucherForm.image_url} placeholder="https://..." onChange={(e) => setVoucherForm({ ...voucherForm, image_url: e.target.value })} />
+                        </label>
+                        <label className="enterprise-form-wide">
+                            Mô tả ngắn gọn
+                            <textarea value={voucherForm.description} style={{minHeight: '60px'}} onChange={(e) => setVoucherForm({ ...voucherForm, description: e.target.value })} />
+                        </label>
+                        <label>
+                            Loại giảm giá
+                            <select value={voucherForm.discount_type} onChange={(e) => {
+                                const newType = e.target.value;
+                                setVoucherForm({ 
+                                    ...voucherForm, 
+                                    discount_type: newType,
+                                    // Tự động set value về 0 nếu là Mua 1 tặng 1 hoặc Ưu đãi khác
+                                    discount_value: ['BOGO', 'CUSTOM'].includes(newType) ? 0 : voucherForm.discount_value
+                                });
+                            }}>
+                                <option value="PERCENT">Giảm theo Phần trăm (%)</option>
+                                <option value="FIXED">Giảm theo Số tiền (VNĐ)</option>
+                                <option value="BOGO">Mua 1 Tặng 1</option>
+                                <option value="CUSTOM">Ưu đãi đặc biệt khác</option>
+                            </select>
+                        </label>
+                        
+                        {/* Ẩn ô nhập mức giảm nếu là loại BOGO hoặc CUSTOM */}
+                        {!['BOGO', 'CUSTOM'].includes(voucherForm.discount_type) && (
+                            <label>
+                                Mức giảm giá *
+                                <input type="number" min="1" step="any" value={voucherForm.discount_value} onChange={(e) => setVoucherForm({ ...voucherForm, discount_value: e.target.value })} required />
+                            </label>
+                        )}
+                        <label>
+                            Ngày bắt đầu
+                            <input type="date" value={voucherForm.start_date} onChange={(e) => setVoucherForm({ ...voucherForm, start_date: e.target.value })} required />
+                        </label>
+                        <label>
+                            Ngày kết thúc
+                            <input type="date" value={voucherForm.end_date} onChange={(e) => setVoucherForm({ ...voucherForm, end_date: e.target.value })} required />
+                        </label>
+                        <label>
+                            Số lượng phát hành
+                            <input type="number" min="1" value={voucherForm.quantity} onChange={(e) => setVoucherForm({ ...voucherForm, quantity: e.target.value })} required />
+                        </label>
+                        <label>
+                            Giới hạn / người
+                            <input type="number" min="1" value={voucherForm.max_per_user} onChange={(e) => setVoucherForm({ ...voucherForm, max_per_user: e.target.value })} required />
+                        </label>
+                        <label className="enterprise-form-wide">
+                            Giá trị quy đổi (Xu) - Để 0 nếu miễn phí
+                            <input type="number" min="0" value={voucherForm.point_cost} onChange={(e) => setVoucherForm({ ...voucherForm, point_cost: e.target.value })} required />
+                        </label>
+                    </div>
+                    <div className="enterprise-action-row">
+                        <button type="button" className="enterprise-secondary-btn" onClick={() => setShowVoucherForm(false)}>
+                            Hủy
+                        </button>
+                        <button type="submit" className="enterprise-primary-btn" disabled={actionLoading || locations.length === 0}>
+                            <Save size={16} /> Tạo Voucher
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {loading ? (
+                <div className="enterprise-empty">Đang tải voucher...</div>
+            ) : vouchers.length === 0 ? (
+                <div className="enterprise-empty">Bạn chưa phát hành Voucher nào.</div>
+            ) : (
+                <div className="enterprise-card-list">
+                    {vouchers.map((voucher) => (
+                        <article className="enterprise-campaign-card" key={voucher.voucher_id} style={{flexDirection: 'row', alignItems: 'center'}}>
+                            <div style={{width: '70px', height: '70px', flexShrink: 0, borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0'}}>
+                                <img src={voucher.image_url || 'https://via.placeholder.com/100?text=Voucher'} alt={voucher.title} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                            </div>
+                            <div style={{flex: 1, minWidth: 0}}>
+                                <div className="enterprise-card-main" style={{marginBottom: '6px'}}>
+                                    <div>
+                                        <p style={{margin: '0', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase'}}>{voucher.brand_name}</p>
+                                        <h3 style={{fontSize: '15px'}}>{voucher.title}</h3>
+                                        <p style={{margin: '2px 0 0', fontSize: '12px'}}>Mã: <strong>{voucher.code}</strong></p>
+                                    </div>
+                                    <span className={`enterprise-badge ${voucher.status === 'ACTIVE' ? 'active' : 'inactive'}`}>
+                                        {voucher.status}
+                                    </span>
+                                </div>
+                                <div className="enterprise-meta-grid" style={{gridTemplateColumns: 'repeat(3, 1fr)'}}>
+                                    <span style={{fontSize: '11px'}}>Giá: {voucher.point_cost > 0 ? `${voucher.point_cost} xu` : 'Miễn phí'}</span>
+                                    <span style={{fontSize: '11px'}}>
+                                        Ưu đãi: {
+                                            voucher.discount_type === 'BOGO' ? '1 Tặng 1' :
+                                            voucher.discount_type === 'CUSTOM' ? 'Đặc biệt' :
+                                            voucher.discount_type === 'PERCENT' ? `${voucher.discount_value}%` : `${voucher.discount_value}đ`
+                                        }
+                                    </span>
+                                    <span style={{fontSize: '11px'}}>Kho: {voucher.remaining_quantity}/{voucher.quantity}</span>
+                                </div>
+                            </div>
+
+                            {voucher.status === 'ACTIVE' && (
+                                <button 
+                                    type="button" 
+                                    className="enterprise-danger-btn"
+                                    style={{ padding: '6px', minHeight: 'auto', flexShrink: 0 }}
+                                    disabled={actionLoading} 
+                                    onClick={() => handleDeleteVoucher(voucher.voucher_id)}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
+                        </article>
+                    ))}
+                </div>
+            )}
         </section>
     );
 

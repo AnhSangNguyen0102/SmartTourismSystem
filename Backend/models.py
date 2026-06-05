@@ -115,6 +115,25 @@ class FeedbackStatus(str, enum.Enum):
     PROCESSING = "PROCESSING"
     RESOLVED = "RESOLVED"
 
+class VoucherTypeEnum(str, enum.Enum):
+    SYSTEM = "SYSTEM"
+    BUSINESS = "BUSINESS"
+
+class DiscountTypeEnum(str, enum.Enum):
+    PERCENT = "PERCENT"
+    FIXED = "FIXED"
+    BOGO = "BOGO"       # Thêm: Mua 1 tặng 1
+    CUSTOM = "CUSTOM"   # Thêm: Ưu đãi đặc biệt (đồng giá, quà tặng...)
+
+class VoucherStatusEnum(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    EXPIRED = "EXPIRED"
+    DISABLED = "DISABLED"
+
+class UserVoucherStatusEnum(str, enum.Enum):
+    COLLECTED = "COLLECTED"
+    USED = "USED"
+    EXPIRED = "EXPIRED"
 
 # ============================================================
 # GROUP 1: USER MANAGEMENT
@@ -1060,3 +1079,59 @@ class UserDailyQuests(SQLModel, table=True):
     assigned_date: date = Field(default_factory=datetime.utcnow().date)
 
 
+# ============================================================
+# GROUP 11: VOUCHERS
+# ============================================================
+
+class Vouchers(SQLModel, table=True):
+    __tablename__ = "vouchers"
+
+    voucher_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    business_id: Optional[UUID] = Field(default=None, foreign_key="enterprise_profiles.enterprise_id", index=True)
+    voucher_type: VoucherTypeEnum
+    code: str = Field(max_length=50, unique=True, index=True)
+    title: str = Field(max_length=255)
+    description: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    image_url: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    brand_name: Optional[str] = Field(default=None, max_length=255)
+    discount_type: DiscountTypeEnum
+    discount_value: Decimal = Field(sa_column=Column(Numeric(18, 2), nullable=False))
+    start_date: date
+    end_date: date
+    quantity: int = Field(ge=0)
+    remaining_quantity: int = Field(ge=0)
+    
+    max_per_user: int = Field(default=1, ge=1)
+    point_cost: int = Field(default=0, ge=0)
+    
+    status: VoucherStatusEnum = Field(default=VoucherStatusEnum.ACTIVE)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    __table_args__ = (
+        sa.CheckConstraint(
+            "(discount_type != 'PERCENT') OR (discount_value > 0 AND discount_value <= 100)",
+            name="check_discount_percent"
+        ),
+        sa.CheckConstraint("end_date >= start_date", name="check_voucher_dates"),
+        sa.CheckConstraint("remaining_quantity >= 0", name="check_remaining_quantity"),
+    )
+
+
+class VoucherLocations(SQLModel, table=True):
+    __tablename__ = "voucher_locations"
+
+    voucher_id: UUID = Field(foreign_key="vouchers.voucher_id", primary_key=True)
+    location_id: UUID = Field(foreign_key="locations.location_id", primary_key=True)
+
+
+class UserVouchers(SQLModel, table=True):
+    __tablename__ = "user_vouchers"
+
+    user_voucher_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.user_id", index=True)
+    voucher_id: UUID = Field(foreign_key="vouchers.voucher_id", index=True)
+    
+    collected_at: datetime = Field(default_factory=datetime.utcnow)
+    used_at: Optional[datetime] = Field(default=None)
+    
+    status: UserVoucherStatusEnum = Field(default=UserVoucherStatusEnum.COLLECTED)
