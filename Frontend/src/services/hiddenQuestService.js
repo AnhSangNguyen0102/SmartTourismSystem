@@ -132,35 +132,7 @@ export const verifyQuest = async (spawnId, lat, lng, questType, extraData = {}) 
     return response.json();
 };
 
-/**
- * Force-spawn a chest or event near player (Dev / Debug only).
- * @param {string} taskType - CHEST | DYNAMIC_QUEST
- * @param {number} lat - latitude
- * @param {number} lng - longitude
- * @param {string} rarity - COMMON | RARE | EPIC | LEGENDARY
- * @returns {Promise<object>} - spawned task info
- */
-export const debugSpawn = async (taskType, lat, lng, rarity = 'COMMON') => {
-    const authHeader = await getAuthHeader();
-    const response = await fetch(`${BASE_URL}/api/v1/hidden/debug-spawn`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...authHeader
-        },
-        body: JSON.stringify({
-            task_type: taskType,
-            latitude: lat,
-            longitude: lng,
-            rarity: rarity
-        })
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(formatError(err, 'Debug spawn thất bại'));
-    }
-    return response.json();
-};
+
 
 // ─── Enterprise Event APIs ───────────────────────────────────────────────────
 

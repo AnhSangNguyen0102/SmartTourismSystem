@@ -341,17 +341,17 @@ const ChestOpeningAnimation = ({ task, onClose, onClaim, userLocation = null }) 
                                     
                                     <div className="reward-row" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Flame size={20} style={{ color: '#ff7f50' }} />
-                                        <div className="reward-text">
-                                            <span className="reward-val">+{rewards?.reward_exp || 0}</span>
-                                            <span className="reward-label">Kinh nghiệm (EXP)</span>
+                                        <div className="chest-reward-text">
+                                            <span className="chest-reward-val">+{rewards?.reward_exp || 0}</span>
+                                            <span className="chest-reward-label">Kinh nghiệm (EXP)</span>
                                         </div>
                                     </div>
 
                                     <div className="reward-row" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Coins size={20} style={{ color: '#fbc531' }} />
-                                        <div className="reward-text">
-                                            <span className="reward-val">+{rewards?.reward_coin || 0}</span>
-                                            <span className="reward-label">Xu (Coin)</span>
+                                        <div className="chest-reward-text">
+                                            <span className="chest-reward-val">+{rewards?.reward_coin || 0}</span>
+                                            <span className="chest-reward-label">Xu (Coin)</span>
                                         </div>
                                     </div>
 

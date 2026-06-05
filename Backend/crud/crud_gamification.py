@@ -8,8 +8,10 @@ hiển thị bảng xếp hạng thám hiểm tuần/tháng, và các địa đi
 
 import uuid
 from typing import List, Dict, Any, Optional
-from sqlmodel import Session
+from sqlmodel import Session, select
 from sqlalchemy import text
+from datetime import date, datetime, timedelta
+from models import UserProfiles
 
 def check_newbie_gift(session: Session, user_id: uuid.UUID) -> bool:
     """Kiểm tra người dùng đã nhận quà tân thủ chưa"""
@@ -32,30 +34,52 @@ def claim_newbie_gift(session: Session, user_id: uuid.UUID) -> bool:
 
 def daily_attendance(session: Session, user_id: uuid.UUID) -> Dict[str, Any]:
     """Thực hiện điểm danh hằng ngày"""
-    info_query = text("SELECT LAST_ATTENDANCE_DATE, ATTENDANCE_STREAK FROM USER_PROFILES WHERE USER_ID = :user_id")
-    info = session.exec(info_query, params={"user_id": str(user_id)}).first()
+    profile = session.exec(
+        select(UserProfiles).where(UserProfiles.user_id == user_id)
+    ).first()
     
-    if not info:
-        return {"error": "User not found"}
-        
-    last_date, streak = info
+    if not profile:
+        return {"error": "Không tìm thấy hồ sơ người dùng"}
+
+    today = date.today()
     
-    # Tính streak mới đơn giản (Tăng lên 1, hoặc có thể code thêm logic reset theo ngày)
-    new_streak = streak + 1 if streak else 1 
-    
-    update_query = text("""
-        UPDATE USER_PROFILES 
-        SET 
-            ATTENDANCE_STREAK = :new_streak,
-            LAST_ATTENDANCE_DATE = CURRENT_DATE,
-            TOTAL_EXP = TOTAL_EXP + 50,
-            COIN_BALANCE = COIN_BALANCE + 100
-        WHERE USER_ID = :user_id
-        RETURNING ATTENDANCE_STREAK
-    """)
-    
-    result = session.exec(update_query, params={"user_id": str(user_id), "new_streak": new_streak}).first()
-    return {"new_streak": result[0]} if result else {"error": "Update failed"}
+    # Kiểm tra xem hôm nay đã điểm danh chưa
+    if profile.last_attendance_date == today:
+        return {"error": "Hôm nay bạn đã điểm danh rồi!"}
+
+    # Tính toán streak
+    yesterday = today - timedelta(days=1)
+    if profile.last_attendance_date == yesterday:
+        profile.attendance_streak += 1
+    else:
+        profile.attendance_streak = 1
+
+    # Điểm thưởng
+    exp_reward = 100
+    coin_reward = 50
+
+    is_streak_bonus = False
+    if profile.attendance_streak > 0 and profile.attendance_streak % 7 == 0:
+        exp_reward += 300
+        coin_reward += 150
+        is_streak_bonus = True
+
+    # Cập nhật thông tin
+    profile.last_attendance_date = today
+    profile.total_points += exp_reward
+    profile.points_balance += coin_reward
+    profile.updated_at = datetime.utcnow()
+
+    session.add(profile)
+    session.commit()
+
+    return {
+        "status": "success",
+        "new_streak": profile.attendance_streak,
+        "exp_reward": exp_reward,
+        "coin_reward": coin_reward,
+        "is_streak_bonus": is_streak_bonus
+    }
 
 def get_nearby_treasures(session: Session, user_id: uuid.UUID) -> List[Dict[str, Any]]:
     """Lấy danh sách rương báu xung quanh (Bỏ qua các rương đã nhặt)"""

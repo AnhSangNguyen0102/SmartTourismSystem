@@ -1,6 +1,7 @@
 import secrets
+import hashlib
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
 from sqlalchemy.orm import Session
 from sqlmodel import select
 from jose import jwt, JWTError
@@ -39,9 +40,30 @@ class ResetPasswordReq(BaseModel):
     otp: str
     new_password: str
 
+class VerifyResetOtpReq(BaseModel):
+    email: str
+    otp: str
+
+class VerifyRegistrationReq(BaseModel):
+    email: str
+    otp: str
+
+class ResendRegisterOtpReq(BaseModel):
+    email: str
+
 # BỘ NHỚ TẠM ĐỂ LƯU OTP (Hết hạn sau 5 phút)
 otp_storage = {}
+register_otp_storage = {}
 rate_limit_storage = {}
+
+# Danh sách một số tên miền email rác/tạm thời phổ biến để chặn
+DISPOSABLE_DOMAINS = {
+    "temp-mail.org", "tempmail.com", "mailinator.com", "yopmail.com", 
+    "10minutemail.com", "guerrillamail.com", "sharklasers.com", "guerrillamailblock.com",
+    "guerrillamail.net", "guerrillamail.org", "guerrillamail.biz", "spam4.me",
+    "grr.la", "dispostable.com", "maildrop.cc", "getairmail.com", "throwawaymail.com",
+    "tempmailaddress.com", "crazymailing.com", "mintemail.com", "mailnesia.com"
+}
 
 def check_rate_limit(key: str, limit: int, window_seconds: int) -> None:
     now = datetime.now(timezone.utc)
@@ -61,26 +83,49 @@ def check_rate_limit(key: str, limit: int, window_seconds: int) -> None:
 def check_email(email: str, db: Session = Depends(get_session)):
     """Kiểm tra xem email hợp lệ và đã tồn tại trong hệ thống chưa."""
     # 1. Kiểm tra email thực tế (MX/DNS check)
+    email_clean = email.strip()
     try:
-        validate_email(email, check_deliverability=True)
+        validate_email(email_clean, check_deliverability=True)
     except EmailNotValidError:
         raise HTTPException(
             status_code=400, 
             detail="Email không tồn tại hoặc không thể nhận thư. Vui lòng kiểm tra lại."
         )
 
+    # 1.5 Kiểm tra xem có thuộc danh sách chặn email rác/ảo không
+    email_domain = email_clean.split("@")[-1].lower()
+    if email_domain in DISPOSABLE_DOMAINS:
+        raise HTTPException(
+            status_code=400,
+            detail="Hệ thống không chấp nhận các dịch vụ email tạm thời hoặc email rác. Vui lòng sử dụng địa chỉ email chính thức (như Gmail, Yahoo, Outlook, v.v.)."
+        )
+
     # 2. Kiểm tra tồn tại trong DB
-    user = crud_auth.get_user_by_email(db, email=email)
-    print(f"[!] Email check for {email} -> Exists: {user is not None}")
-    return {"exists": user is not None}
+    user = crud_auth.get_user_by_email(db, email=email_clean)
+    print(f"[!] Email check for {email_clean} -> Exists: {user is not None}")
+    
+    is_pending = False
+    if user:
+        is_pending = user.status == UserStatus.PENDING
+
+    return {
+        "exists": user is not None,
+        "is_pending": is_pending
+    }
 
 @router.post("/register")
-def register(user_data: schemas.UserCreate, db: Session = Depends(get_session)):
-    # 1. Kiểm tra user tồn tại
+def register(request: Request, user_data: schemas.UserCreate, db: Session = Depends(get_session)):
+    # 1. Kiểm tra email đã được đăng ký chưa
     existing_user = crud_auth.get_user_by_email(db, email=user_data.email)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email này đã được đăng ký")
     
+    # 1.5 Kiểm tra chặn các tên miền email rác bổ sung lúc gửi register
+    email_domain = user_data.email.split("@")[-1].lower()
+    if email_domain in DISPOSABLE_DOMAINS:
+        raise HTTPException(
+            status_code=400,
+            detail="Hệ thống không chấp nhận các dịch vụ email tạm thời hoặc email rác."
+        )
+
     requested_role = str(user_data.role or "USER").upper()
     is_enterprise_signup = requested_role == UserRole.ENTERPRISE.value
 
@@ -100,35 +145,94 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_session)):
                 detail="Thiếu thông tin hồ sơ doanh nghiệp",
             )
 
-    # 2. Tạo user. Tài khoản doanh nghiệp vẫn chờ Admin duyệt trước khi nhận role ENTERPRISE.
-    new_user = crud_user.create_user(
-        db=db, 
-        full_name=user_data.full_name, 
-        email=user_data.email, 
-        password=user_data.password,
-        register_type=user_data.register_type, 
-        role=UserRole.USER,
-        status=UserStatus.ACTIVE,
-        user_id=user_data.user_id,
-    )
-
-    if is_enterprise_signup:
-        profile = EnterpriseProfiles(
-            user_id=new_user.user_id,
-            business_name=user_data.business_name.strip(),
-            contact_person=user_data.contact_person.strip(),
-            contact_email=str(user_data.contact_email),
-            contact_phone=user_data.contact_phone.strip(),
-            status=EnterpriseStatus.PENDING,
+    if existing_user:
+        if existing_user.status == UserStatus.ACTIVE:
+            raise HTTPException(status_code=400, detail="Email này đã được đăng ký")
+        else:
+            # Nếu tài khoản vẫn ở trạng thái PENDING (chưa xác thực OTP xong),
+            # cho phép người dùng đăng ký lại để cập nhật thông tin mới và gửi mã OTP mới.
+            existing_user.full_name = user_data.full_name
+            existing_user.passwordhash = security.get_password_hash(user_data.password)
+            existing_user.register_type = user_data.register_type
+            
+            # Cập nhật thông tin doanh nghiệp nếu có
+            if is_enterprise_signup:
+                profile = db.query(EnterpriseProfiles).filter(EnterpriseProfiles.user_id == existing_user.user_id).first()
+                if profile:
+                    profile.business_name = user_data.business_name.strip()
+                    profile.contact_person = user_data.contact_person.strip()
+                    profile.contact_email = str(user_data.contact_email)
+                    profile.contact_phone = user_data.contact_phone.strip()
+                    db.add(profile)
+                else:
+                    profile = EnterpriseProfiles(
+                        user_id=existing_user.user_id,
+                        business_name=user_data.business_name.strip(),
+                        contact_person=user_data.contact_person.strip(),
+                        contact_email=str(user_data.contact_email),
+                        contact_phone=user_data.contact_phone.strip(),
+                        status=EnterpriseStatus.PENDING,
+                    )
+                    db.add(profile)
+            
+            db.add(existing_user)
+            db.commit()
+            new_user = existing_user
+    else:
+        # 2. Tạo user với trạng thái mặc định là PENDING
+        new_user = crud_user.create_user(
+            db=db, 
+            full_name=user_data.full_name, 
+            email=user_data.email, 
+            password=user_data.password,
+            register_type=user_data.register_type, 
+            role=UserRole.USER,
+            status=UserStatus.PENDING,
+            user_id=user_data.user_id,
         )
-        db.add(profile)
-        db.commit()
+
+        if is_enterprise_signup:
+            profile = EnterpriseProfiles(
+                user_id=new_user.user_id,
+                business_name=user_data.business_name.strip(),
+                contact_person=user_data.contact_person.strip(),
+                contact_email=str(user_data.contact_email),
+                contact_phone=user_data.contact_phone.strip(),
+                status=EnterpriseStatus.PENDING,
+            )
+            db.add(profile)
+            db.commit()
+
+    # 3. Sinh mã OTP xác thực email và gửi email
+    otp_code = str(secrets.randbelow(900000) + 100000)
+    expire_time = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    # Băm OTP trước khi lưu
+    hashed_otp = hashlib.sha256(otp_code.encode()).hexdigest()
+    register_otp_storage[user_data.email.lower().strip()] = {
+        "otp": hashed_otp,
+        "expire_time": expire_time,
+        "attempts": 0
+    }
+
+    # Ghi mã OTP vào file debug để dễ dàng lấy trong môi trường development
+    try:
+        with open("otp_debug.txt", "w", encoding="utf-8") as f:
+            f.write(f"Mã OTP gần nhất (Đăng ký) của {user_data.email.lower().strip()}: {otp_code}\nThời gian: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    except Exception as debug_err:
+        print(f"[Debug OTP] Lỗi ghi file debug: {debug_err}")
+
+    # Gọi gửi mail OTP
+    from services.email_service import send_otp_email
+    client_ip = request.client.host if request.client else "Không xác định"
+    send_otp_email(user_data.email, otp_code, client_ip=client_ip)
 
     return {
+        "status": "verification_pending",
         "message": (
-            "Đăng ký thành công, hồ sơ doanh nghiệp đang chờ Admin duyệt"
+            "Yêu cầu đăng ký doanh nghiệp đã được ghi nhận. Vui lòng xác thực email để hoàn tất."
             if is_enterprise_signup
-            else "Đăng ký thành công"
+            else "Đăng ký thành công. Vui lòng xác thực email của bạn bằng mã OTP."
         ),
         "email": new_user.email,
         "enterprise_profile_status": (
@@ -136,14 +240,121 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_session)):
         ),
     }
 
+@router.post("/verify-registration")
+def verify_registration(req: VerifyRegistrationReq, db: Session = Depends(get_session)):
+    email_lower = req.email.lower().strip()
+    record = register_otp_storage.get(email_lower)
+    if not record:
+        raise HTTPException(status_code=400, detail="Không tìm thấy yêu cầu xác thực hoặc phiên đã hết hạn!")
+
+    # 1. Kiểm tra hết hạn trước
+    if datetime.now(timezone.utc) > record["expire_time"]:
+        del register_otp_storage[email_lower]
+        raise HTTPException(status_code=400, detail="Mã OTP đã hết hạn!")
+
+    # 2. Kiểm tra khớp mã (OTP băm SHA-256)
+    submitted_otp_hash = hashlib.sha256(req.otp.strip().encode()).hexdigest()
+    if record["otp"] != submitted_otp_hash:
+        record["attempts"] += 1
+        if record["attempts"] >= 3:
+            del register_otp_storage[email_lower]
+            raise HTTPException(
+                status_code=400, 
+                detail="Mã OTP đã bị vô hiệu hóa do bạn nhập sai quá 3 lần. Vui lòng gửi lại yêu cầu để nhận mã mới."
+            )
+        else:
+            remaining_attempts = 3 - record["attempts"]
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Mã OTP không chính xác! Bạn còn {remaining_attempts} lần thử."
+            )
+
+    # Tìm user trong DB và kích hoạt tài khoản
+    user = crud_auth.get_user_by_email(db, email=email_lower)
+    if not user:
+        raise HTTPException(status_code=404, detail="Người dùng không tồn tại!")
+
+    user.status = UserStatus.ACTIVE
+    user.update_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.add(user)
+    db.commit()
+
+    # Tạo hồ sơ cá nhân tương ứng nếu là USER
+    user_role_str = getattr(user.role, 'value', user.role)
+    if user_role_str != "ENTERPRISE":
+        from models import UserProfiles
+        from datetime import date
+        profile = db.query(UserProfiles).filter(UserProfiles.user_id == user.user_id).first()
+        if not profile:
+            profile = UserProfiles(
+                user_id=user.user_id,
+                full_name=user.full_name,
+                date_of_birth=date(1990, 1, 1),
+                gender="OTHER"
+            )
+            db.add(profile)
+            db.commit()
+
+    # Xóa OTP sau khi xác nhận thành công
+    del register_otp_storage[email_lower]
+
+    return {"status": "success", "message": "Xác thực email thành công! Bạn hiện đã có thể đăng nhập."}
+
+@router.post("/resend-register-otp")
+def resend_register_otp(request: Request, req: ResendRegisterOtpReq, db: Session = Depends(get_session)):
+    email_lower = req.email.lower().strip()
+    user = crud_auth.get_user_by_email(db, email=email_lower)
+    if not user:
+        raise HTTPException(status_code=404, detail="Người dùng không tồn tại!")
+
+    if user.status == UserStatus.ACTIVE:
+        raise HTTPException(status_code=400, detail="Tài khoản này đã được xác thực hoạt động!")
+
+    # Giới hạn 60 giây gửi lại mã 1 lần
+    check_rate_limit(f"resend_otp:{email_lower}", limit=1, window_seconds=60)
+
+    # Sinh mã OTP mới
+    otp_code = str(secrets.randbelow(900000) + 100000)
+    expire_time = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    # Băm OTP trước khi lưu
+    hashed_otp = hashlib.sha256(otp_code.encode()).hexdigest()
+    register_otp_storage[email_lower] = {
+        "otp": hashed_otp,
+        "expire_time": expire_time,
+        "attempts": 0
+    }
+
+    # Ghi mã OTP vào file debug để dễ dàng lấy trong môi trường development
+    try:
+        with open("otp_debug.txt", "w", encoding="utf-8") as f:
+            f.write(f"Mã OTP gần nhất (Gửi lại) của {email_lower}: {otp_code}\nThời gian: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    except Exception as debug_err:
+        print(f"[Debug OTP] Lỗi ghi file debug: {debug_err}")
+
+    # Gửi email
+    from services.email_service import send_otp_email
+    client_ip = request.client.host if request.client else "Không xác định"
+    send_otp_email(user.email, otp_code, client_ip=client_ip)
+
+    return {"message": "Mã OTP mới đã được gửi lại vào email của bạn."}
+
 @router.post("/login", response_model=schemas.TokenResponse)
 def login(credentials: schemas.UserLogin, db: Session = Depends(get_session)):
     check_rate_limit(f"login:{credentials.email.lower()}", limit=5, window_seconds=300)
     user = crud_auth.get_user_by_email(db, email=credentials.email)
     
-    # Dùng UserStatus.ACTIVE thay vì string "ACTIVE"
-    if not user or user.status != UserStatus.ACTIVE:
-        raise HTTPException(status_code=401, detail="Tài khoản không tồn tại hoặc bị khóa")
+    if not user:
+        raise HTTPException(status_code=401, detail="Tài khoản không tồn tại")
+    
+    if user.status == UserStatus.PENDING:
+        raise HTTPException(status_code=401, detail="Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt bằng mã OTP.")
+        
+    if user.status == UserStatus.BANNED:
+        raise HTTPException(status_code=401, detail="Tài khoản của bạn đã bị khóa. Vui lòng liên hệ ban quản trị để được hỗ trợ.")
+        
+    if user.status != UserStatus.ACTIVE:
+        raise HTTPException(status_code=401, detail="Tài khoản không hoạt động hoặc đã bị ngừng sử dụng.")
 
     if not security.verify_password(credentials.password, user.passwordhash):
         raise HTTPException(status_code=401, detail="Mật khẩu không chính xác")
@@ -390,42 +601,104 @@ def update_profile(
 # ===========================================================================
 
 @router.post("/forgot-password")
-def forgot_password(req: ForgotPasswordReq, db: Session = Depends(get_session)):
-    check_rate_limit(f"forgot:{req.email.lower()}", limit=3, window_seconds=900)
+def forgot_password(request: Request, req: ForgotPasswordReq, db: Session = Depends(get_session)):
+    email_clean = req.email.lower().strip()
+    check_rate_limit(f"forgot_limit:{email_clean}", limit=1, window_seconds=60)
     # 1. Kiểm tra email có tồn tại không
-    user = crud_auth.get_user_by_email(db, email=req.email)
+    user = crud_auth.get_user_by_email(db, email=email_clean)
     if not user:
         return {"message": "Nếu email tồn tại, mã OTP sẽ được gửi qua kênh đã cấu hình."}
 
     # 2. Sinh mã OTP ngẫu nhiên (6 chữ số)
     otp_code = str(secrets.randbelow(900000) + 100000)
 
-    # 3. Lưu OTP và thời gian hết hạn (5 phút) vào bộ nhớ tạm
+    # 3. Lưu OTP và thời gian hết hạn (5 phút) vào bộ nhớ tạm sau khi băm
     expire_time = datetime.now(timezone.utc) + timedelta(minutes=5)
-    otp_storage[req.email] = {"otp": otp_code, "expire_time": expire_time}
+    hashed_otp = hashlib.sha256(otp_code.encode()).hexdigest()
+    otp_storage[email_clean] = {
+        "otp": hashed_otp,
+        "expire_time": expire_time,
+        "attempts": 0
+    }
 
-    # TODO: Gửi OTP qua email/SMS provider. Không ghi OTP ra log để tránh lộ mã.
+    # Ghi mã OTP vào file debug để dễ dàng lấy trong môi trường development
+    try:
+        with open("otp_debug.txt", "w", encoding="utf-8") as f:
+            f.write(f"Mã OTP gần nhất (Quên mật khẩu) của {email_clean}: {otp_code}\nThời gian: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    except Exception as debug_err:
+        print(f"[Debug OTP] Lỗi ghi file debug: {debug_err}")
+
+    # Gửi mã OTP khôi phục qua email
+    from services.email_service import send_reset_password_email
+    client_ip = request.client.host if request.client else "Không xác định"
+    send_reset_password_email(user.email, otp_code, client_ip=client_ip)
+
     return {"message": "Nếu email tồn tại, mã OTP sẽ được gửi qua kênh đã cấu hình."}
+
+@router.post("/verify-reset-otp")
+def verify_reset_otp(req: VerifyResetOtpReq):
+    email_clean = req.email.lower().strip()
+    record = otp_storage.get(email_clean)
+    if not record:
+        raise HTTPException(status_code=400, detail="Không tìm thấy yêu cầu xác thực hoặc phiên đã hết hạn!")
+
+    # 1. Kiểm tra hết hạn trước
+    if datetime.now(timezone.utc) > record["expire_time"]:
+        del otp_storage[email_clean]
+        raise HTTPException(status_code=400, detail="Mã OTP đã hết hạn!")
+
+    # 2. Kiểm tra khớp mã (OTP băm SHA-256)
+    submitted_otp_hash = hashlib.sha256(req.otp.strip().encode()).hexdigest()
+    if record["otp"] != submitted_otp_hash:
+        record["attempts"] += 1
+        if record["attempts"] >= 3:
+            del otp_storage[email_clean]
+            raise HTTPException(
+                status_code=400, 
+                detail="Mã OTP đã bị vô hiệu hóa do bạn nhập sai quá 3 lần. Vui lòng gửi lại yêu cầu để nhận mã mới."
+            )
+        else:
+            remaining_attempts = 3 - record["attempts"]
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Mã OTP không chính xác! Bạn còn {remaining_attempts} lần thử."
+            )
+
+    return {"status": "success", "message": "Xác thực mã OTP thành công! Vui lòng đặt lại mật khẩu mới."}
 
 @router.post("/reset-password")
 def reset_password(req: ResetPasswordReq, db: Session = Depends(get_session)):
-    check_rate_limit(f"reset:{req.email.lower()}", limit=5, window_seconds=900)
+    email_clean = req.email.lower().strip()
+    check_rate_limit(f"reset:{email_clean}", limit=5, window_seconds=900)
     # 1. Kiểm tra xem email này có đang yêu cầu OTP không
-    record = otp_storage.get(req.email)
+    record = otp_storage.get(email_clean)
     if not record:
         raise HTTPException(status_code=400, detail="Chưa gửi yêu cầu hoặc phiên đã bị hủy!")
 
-    # 2. Kiểm tra mã OTP gửi lên có khớp không
-    if record["otp"] != req.otp:
-        raise HTTPException(status_code=400, detail="Mã OTP không chính xác!")
-
-    # 3. Kiểm tra xem OTP có bị quá hạn 5 phút không
+    # 2. Kiểm tra xem OTP có bị quá hạn 5 phút không
     if datetime.now(timezone.utc) > record["expire_time"]:
-        del otp_storage[req.email]
+        del otp_storage[email_clean]
         raise HTTPException(status_code=400, detail="Mã OTP đã hết hạn!")
 
+    # 3. Kiểm tra mã OTP gửi lên có khớp không (OTP băm SHA-256)
+    submitted_otp_hash = hashlib.sha256(req.otp.strip().encode()).hexdigest()
+    if record["otp"] != submitted_otp_hash:
+        record["attempts"] += 1
+        if record["attempts"] >= 3:
+            del otp_storage[email_clean]
+            raise HTTPException(
+                status_code=400, 
+                detail="Mã OTP đã bị vô hiệu hóa do bạn nhập sai quá 3 lần. Vui lòng gửi lại yêu cầu để nhận mã mới."
+            )
+        else:
+            remaining_attempts = 3 - record["attempts"]
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Mã OTP không chính xác! Bạn còn {remaining_attempts} lần thử."
+            )
+
     # 4. Tìm User trong CSDL
-    user = crud_auth.get_user_by_email(db, email=req.email)
+    user = crud_auth.get_user_by_email(db, email=email_clean)
     if not user:
         raise HTTPException(status_code=404, detail="Người dùng không tồn tại!")
 
@@ -436,7 +709,7 @@ def reset_password(req: ResetPasswordReq, db: Session = Depends(get_session)):
     db.commit()
 
     # 6. Xóa OTP sau khi dùng thành công
-    del otp_storage[req.email]
+    del otp_storage[email_clean]
 
     return {"message": "Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay bây giờ."}
 

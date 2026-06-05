@@ -5,9 +5,14 @@
 
 Clear-Host
 
-# 1. Dependency check for Frontend node_modules
+# Set environment variable to prevent React from opening a separate browser window
+$env:BROWSER = 'none'
+
+# 1. Dependency check for Frontend node_modules and Backend venv
 $frontendDir = Join-Path $PSScriptRoot "Frontend"
 $nodeModulesDir = Join-Path $frontendDir "node_modules"
+$backendDir = Join-Path $PSScriptRoot "Backend"
+$venvDir = Join-Path $backendDir "venv"
 
 if (-not (Test-Path $nodeModulesDir)) {
     Write-Host "INFO: node_modules directory not found in Frontend. Installing dependencies..."
@@ -16,6 +21,22 @@ if (-not (Test-Path $nodeModulesDir)) {
     Pop-Location
 } else {
     Write-Host "INFO: node_modules exists in Frontend."
+}
+
+if (-not (Test-Path $venvDir)) {
+    Write-Host "INFO: Python virtual environment (venv) not found in Backend. Creating..."
+    Push-Location $backendDir
+    python -m venv venv
+    if ($?) {
+        Write-Host "INFO: venv created successfully. Installing backend dependencies..."
+        .\venv\Scripts\python.exe -m pip install --upgrade pip
+        .\venv\Scripts\python.exe -m pip install -r requirements.txt
+    } else {
+        Write-Error "ERROR: Failed to create virtual environment. Make sure python is installed."
+    }
+    Pop-Location
+} else {
+    Write-Host "INFO: Backend virtual environment (venv) exists."
 }
 
 # 2. Port conflict check and automatic release
@@ -56,10 +77,14 @@ Stop-ProcessOnPort 3000
 Stop-ProcessOnPort 8000
 
 # 3. Parallel process execution
-# Force fallback to Start-Process to avoid Windows Terminal string parsing bugs
-Write-Host "INFO: Launching in separate windows..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd `"$PSScriptRoot\Backend`"; python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd `"$PSScriptRoot\Frontend`"; `$env:BROWSER='none'; npm start"
+if (Get-Command wt -ErrorAction SilentlyContinue) {
+    Write-Host "SUCCESS: Windows Terminal detected. Launching split panes..."
+    wt -w 0 nt --title "Backend" -d "$PSScriptRoot\Backend" powershell -NoExit -Command ".\venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload" `; split-pane -V --title "Frontend" -d "$PSScriptRoot\Frontend" powershell -NoExit -Command "npm start"
+} else {
+    Write-Host "WARNING: Windows Terminal not found. Launching in separate windows..."
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\Backend'; .\venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\Frontend'; npm start"
+}
 
 # 4. Wait for both servers to be online
 Write-Host "INFO: Waiting for Backend and Frontend to be online..."

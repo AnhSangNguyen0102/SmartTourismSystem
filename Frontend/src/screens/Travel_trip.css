@@ -221,10 +221,21 @@
     border: 2.5px solid #2c3e50;
     border-radius: 16px;
     cursor: pointer;
-    transition: transform 0.1s ease;
+    transition: transform 0.1s ease, background-color 0.2s ease;
 }
 
-.quest-item-row:active {
+.quest-item-row:hover:not(.quest-done) {
+    background-color: #f5f6fa;
+}
+
+.quest-item-row.quest-done {
+    cursor: default;
+    background-color: #f1f2f6;
+    border-color: #bdc3c7;
+    opacity: 0.8;
+}
+
+.quest-item-row:active:not(.quest-done) {
     transform: scale(0.98);
 }
 
@@ -544,3 +555,267 @@
     from { opacity: 0; transform: translateY(-10px) scale(0.95); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Daily Attendance Card */
+.daily-attendance-card {
+    background-color: #fffdf0;
+    border: 3.5px solid #2c3e50;
+    border-radius: 24px;
+    padding: 16px;
+    box-shadow: 0 6px 0 #2c3e50;
+    margin-bottom: 24px;
+}
+
+.attendance-guest-state {
+    text-align: center;
+    padding: 16px 8px;
+    color: #7f8c8d;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.attendance-streak-header {
+    font-size: 12px;
+    font-weight: 800;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.attendance-days-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.attendance-day-box {
+    background-color: #ffffff;
+    border: 2.5px solid #2c3e50;
+    border-radius: 12px;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 72px;
+    position: relative;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    user-select: none;
+}
+
+.attendance-day-box .day-name {
+    font-size: 9px;
+    font-weight: 800;
+    color: #7f8c8d;
+}
+
+.attendance-day-box .day-status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    color: #bdc3c7;
+}
+
+.attendance-day-box .day-bonus {
+    font-size: 8px;
+    font-weight: 900;
+    color: #7f8c8d;
+    white-space: nowrap;
+}
+
+/* Day states */
+.attendance-day-box.checked {
+    background-color: #2ed573;
+    border-color: #2c3e50;
+}
+
+.attendance-day-box.checked .day-name,
+.attendance-day-box.checked .day-bonus {
+    color: #ffffff;
+}
+
+.attendance-day-box.checked .day-status-icon {
+    color: #ffffff;
+}
+
+.attendance-day-box.today {
+    border-color: #ff9f1a;
+    box-shadow: 0 0 0 2px #ffeaa7;
+    transform: scale(1.05);
+}
+
+.attendance-day-box.today .day-name {
+    color: #ff9f1a;
+}
+
+.attendance-day-box.milestone {
+    background-color: #fff9e6;
+    border-color: #2c3e50;
+    grid-column: span 2;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    padding: 8px 12px !important;
+    gap: 4px;
+}
+
+.attendance-day-box.milestone.checked {
+    background-color: #ffd32d;
+}
+
+.attendance-day-box.milestone .day-bonus {
+    color: #ff9f1a;
+}
+
+.attendance-day-box.milestone.checked .day-bonus {
+    color: #ffffff;
+}
+
+.attendance-action-btn {
+    width: 100%;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    padding: 10px 16px !important;
+    border-radius: 14px !important;
+    text-transform: uppercase;
+}
+
+.attendance-action-btn.disabled {
+    background-color: #bdc3c7 !important;
+    color: #7f8c8d !important;
+    box-shadow: 0 3px 0 #95a5a6 !important;
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* Quests Chest rewards */
+.chest-rewards-container {
+    margin-top: 16px;
+    border-top: 2px dashed #dfe6e9;
+    padding-top: 16px;
+}
+
+.chest-rewards-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background-color: #ffffff;
+    border: 3px solid #2c3e50;
+    border-radius: 20px;
+    padding: 12px 16px;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.chest-rewards-section.locked {
+    background-color: #f5f6fa;
+    opacity: 0.8;
+}
+
+.chest-rewards-section.claimed {
+    background-color: #e8f8f5;
+}
+
+.chest-rewards-section.ready-to-claim {
+    background-color: #fffdec;
+    border-color: #ff9f1a;
+    box-shadow: 0 4px 0 #d35400;
+}
+
+.chest-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 2.5px solid #2c3e50;
+    background-color: #ffffff;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.chest-icon-wrapper.locked {
+    background-color: #dfe6e9;
+    color: #7f8c8d;
+}
+
+.chest-icon-wrapper.opened {
+    background-color: #e8f8f5;
+    color: #2ed573;
+    border-color: #2ed573;
+}
+
+.chest-icon-wrapper.glowing {
+    background-color: #ffd32d;
+    color: #2c3e50;
+    animation: chestGlow 1.5s infinite alternate;
+}
+
+.chest-info-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.chest-info-meta h4 {
+    margin: 0 0 4px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #2c3e50;
+    text-transform: uppercase;
+}
+
+.chest-rewards-section.ready-to-claim .chest-info-meta h4 {
+    color: #ff9f1a;
+}
+
+.chest-info-meta p {
+    margin: 0;
+    font-size: 10px;
+    color: #7f8c8d;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.claim-chest-btn {
+    margin-top: 8px;
+    font-size: 10px !important;
+    padding: 6px 12px !important;
+    border-radius: 10px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-shadow: 0 2px 0 #2c3e50 !important;
+}
+
+/* Animations */
+@keyframes chestGlow {
+    from {
+        box-shadow: 0 0 5px #ffd32d, inset 0 0 5px #ffffff;
+    }
+    to {
+        box-shadow: 0 0 15px #ffd32d, inset 0 0 10px #ffffff;
+    }
+}
+
+.shaking {
+    animation: chestShake 1.2s infinite ease-in-out;
+}
+
+@keyframes chestShake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-2px, -1px) rotate(-3deg); }
+    20% { transform: translate(-3px, 0px) rotate(3deg); }
+    30% { transform: translate(0px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(2px, 1px) rotate(-2deg); }
+    80% { transform: translate(-1px, -1px) rotate(4deg); }
+    90% { transform: translate(2px, 2px) rotate(-2deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+

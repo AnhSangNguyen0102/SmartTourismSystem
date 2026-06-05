@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './Mascot.css';
 
 const Mascot = ({ message }) => {
@@ -12,18 +12,7 @@ const Mascot = ({ message }) => {
     const [animationClass, setAnimationClass] = useState('idle');
     const [replayTrigger, setReplayTrigger] = useState(0);
 
-    // Vị trí và kéo thả
-    const [position, setPosition] = useState(() => {
-        const savedPos = localStorage.getItem('mascotPosition');
-        if (savedPos) {
-            try { return JSON.parse(savedPos); } catch (e) {}
-        }
-        return { x: 20, y: window.innerHeight - 220 };
-    });
-    const [isDragging, setIsDragging] = useState(false);
-    const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0, dragged: false });
-
-    // Reset chuỗi thoại khi có message mới (đồng bộ trong render để tránh lệch index/mất chữ)
+    // Reset chuỗi thoại khi có message mới
     const lastMsgStrRef = useRef(msgsString);
     if (lastMsgStrRef.current !== msgsString) {
         lastMsgStrRef.current = msgsString;
@@ -45,8 +34,6 @@ const Mascot = ({ message }) => {
         const currentMsg = msgs[currentIndex];
         if (!currentMsg) return;
 
-        // Dùng biến local để tránh race condition giữa setState('') và setInterval
-        // React batch setState nên '' có thể flush SAU khi charAt(0) đã được append → mất ký tự đầu
         let builtText = '';
         setDisplayedMessage('');
         setIsTyping(true);
@@ -66,12 +53,10 @@ const Mascot = ({ message }) => {
                 animationTimeout = setTimeout(() => setAnimationClass('idle'), 1500);
                 
                 if (currentIndex < msgs.length - 1) {
-                    // Nếu còn câu thoại tiếp theo, đợi 2.5s rồi chuyển
                     nextMessageTimeout = setTimeout(() => {
                         setCurrentIndex(prev => prev + 1);
                     }, 2500);
                 } else {
-                    // Ẩn câu thoại cuối cùng sau 5 giây để không che màn hình
                     hideTimeout = setTimeout(() => setDisplayedMessage(''), 5000);
                 }
             }
@@ -86,8 +71,6 @@ const Mascot = ({ message }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [msgsString, currentIndex, replayTrigger]);
 
-    // Trình giả lập các animation random (chớp mắt, vẫy tay, liếc) bằng CSS
-    // Vì là ảnh tĩnh nên ta mô phỏng bằng cách nghiêng, nhún nhảy.
     useEffect(() => {
         if (animationClass === 'talking' || isTyping) return;
         
@@ -95,99 +78,21 @@ const Mascot = ({ message }) => {
             const actions = ['look-left', 'look-right', 'jump', 'wiggle', 'idle'];
             const random = actions[Math.floor(Math.random() * actions.length)];
             setAnimationClass(random);
-            setTimeout(() => setAnimationClass('idle'), 2000); // Back to idle
-        }, 5000); // Cứ 5s làm 1 hành động
+            setTimeout(() => setAnimationClass('idle'), 2000);
+        }, 5000);
 
         return () => clearInterval(randomAction);
     }, [isTyping, animationClass]);
 
-    // Drag events
-    const handlePointerDown = (e) => {
-        setIsDragging(true);
-        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        dragRef.current = {
-            startX: clientX,
-            startY: clientY,
-            initialX: position.x,
-            initialY: position.y,
-            dragged: false
-        };
-    };
-
-    const handlePointerMove = useCallback((e) => {
-        if (!isDragging) return;
-        if (e.cancelable) e.preventDefault(); 
-        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        
-        const dx = clientX - dragRef.current.startX;
-        const dy = clientY - dragRef.current.startY;
-        
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-            dragRef.current.dragged = true;
-        }
-
-        let newX = dragRef.current.initialX + dx;
-        let newY = dragRef.current.initialY + dy;
-        
-        // Clamp to screen bounds
-        const maxX = window.innerWidth - 80;
-        const maxY = window.innerHeight - 100;
-        newX = Math.max(0, Math.min(newX, maxX));
-        newY = Math.max(0, Math.min(newY, maxY));
-        
-        setPosition({ x: newX, y: newY });
-    }, [isDragging]);
-
-    const handlePointerUp = useCallback(() => {
-        if (isDragging) {
-            setIsDragging(false);
-            localStorage.setItem('mascotPosition', JSON.stringify(position));
-        }
-    }, [isDragging, position]);
-
-    useEffect(() => {
-        if (isDragging) {
-            window.addEventListener('mousemove', handlePointerMove);
-            window.addEventListener('mouseup', handlePointerUp);
-            window.addEventListener('touchmove', handlePointerMove, { passive: false });
-            window.addEventListener('touchend', handlePointerUp);
-        } else {
-            window.removeEventListener('mousemove', handlePointerMove);
-            window.removeEventListener('mouseup', handlePointerUp);
-            window.removeEventListener('touchmove', handlePointerMove);
-            window.removeEventListener('touchend', handlePointerUp);
-        }
-        return () => {
-            window.removeEventListener('mousemove', handlePointerMove);
-            window.removeEventListener('mouseup', handlePointerUp);
-            window.removeEventListener('touchmove', handlePointerMove);
-            window.removeEventListener('touchend', handlePointerUp);
-        };
-    }, [isDragging, handlePointerMove, handlePointerUp]);
-
-    const handleMascotClick = (e) => {
-        if (dragRef.current.dragged) return; // Prevent click if user was dragging
+    const handleMascotClick = () => {
         if (!isTyping && msgs.length > 0) {
-            setCurrentIndex(0); // Phát lại đoạn thoại khi người dùng nhấn vào mascot
+            setCurrentIndex(0);
             setReplayTrigger(prev => prev + 1);
         }
     };
 
     return (
-        <div 
-            className="mascot-container"
-            style={{ 
-                left: `${position.x}px`, 
-                top: `${position.y}px`,
-                bottom: 'auto',
-                touchAction: 'none',
-                zIndex: isDragging ? 9999 : 999
-            }}
-            onMouseDown={handlePointerDown}
-            onTouchStart={handlePointerDown}
-        >
+        <div className="mascot-container">
             {displayedMessage && (
                 <div className="mascot-bubble">
                     {displayedMessage}
@@ -195,9 +100,7 @@ const Mascot = ({ message }) => {
                 </div>
             )}
             <div className={`mascot-character ${animationClass}`} onClick={handleMascotClick} style={{ cursor: 'pointer' }}>
-                {/* Đặt ảnh mascot vào thư mục public/mascot.png để hệ thống load */}
                 <img src="/mascot.png" alt="Mascot" onError={(e) => {
-                    // Fallback avatar nếu người dùng chưa kịp lưu ảnh mascot
                     e.target.src = 'https://cdn-icons-png.flaticon.com/512/3069/3069172.png';
                 }} />
             </div>

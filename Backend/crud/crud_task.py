@@ -4,8 +4,16 @@ from datetime import datetime
 from decimal import Decimal
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
-from models import QATasks, QRTasks, UserTaskHistory, UserProfiles, Locations, TaskTypeEnum
+from models import (
+    QATasks,
+    QRTasks,
+    UserTaskHistory,
+    UserProfiles,
+    Locations,
+    TaskTypeEnum,
+)
 from schemas import QASubmissionRequest, QRScanRequest, TaskCompletionResponse
+from routers.gamification import auto_complete_daily_quest
 
 def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Tính khoảng cách giữa 2 tọa độ GPS bằng công thức Haversine (Đơn vị: mét)"""
@@ -71,6 +79,13 @@ class CRUDTask:
             earned_coin=task.reward_coin
         )
         db.add(history)
+        
+        # Tự động hoàn thành nhiệm vụ hằng ngày loại QUIZ
+        try:
+            auto_complete_daily_quest(db, user_id, "QUIZ")
+        except Exception as e:
+            print(f"[Daily Quest] Lỗi tự động hoàn thành: {e}")
+            
         db.commit()
 
         return TaskCompletionResponse(
@@ -135,6 +150,13 @@ class CRUDTask:
             earned_coin=qr_task.reward_coin
         )
         db.add(history)
+        
+        # Tự động hoàn thành nhiệm vụ hằng ngày loại GPS (vì quét QR chứng minh sự hiện diện tại điểm)
+        try:
+            auto_complete_daily_quest(db, user_id, "GPS")
+        except Exception as e:
+            print(f"[Daily Quest] Lỗi tự động hoàn thành: {e}")
+            
         db.commit()
 
         return TaskCompletionResponse(

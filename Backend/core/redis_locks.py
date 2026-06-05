@@ -50,3 +50,36 @@ def release_match_lock(user_id: str):
         redis_client.delete(lock_key)
     except ConnectionError:
         print(f"⚠️ Warning: Không thể kết nối tới Redis Server. Bỏ qua xóa lock cho {user_id}.")
+
+
+def acquire_voucher_lock(voucher_id: str, user_id: str, timeout_seconds: int = 10) -> bool:
+    """
+    Sử dụng SETNX để cấp phát lock khi user nhận voucher, chống spam click (race condition).
+    Trả về True nếu lấy được lock, False nếu đang xử lý request khác.
+    """
+    if not redis_client:
+        print("Warning: redis_client chưa được khởi tạo. Mock acquire_voucher_lock.")
+        return True
+    
+    lock_key = f"lock:voucher:{voucher_id}:{user_id}"
+    
+    try:
+        is_acquired = redis_client.set(lock_key, "1", ex=timeout_seconds, nx=True)
+        return bool(is_acquired)
+    except ConnectionError:
+        print("⚠️ Warning: Không thể kết nối tới Redis Server. Bỏ qua cấp lock voucher.")
+        return True
+
+def release_voucher_lock(voucher_id: str, user_id: str):
+    """
+    Giải phóng lock (Xóa Key) sau khi hoàn tất xử lý nhận voucher.
+    """
+    if not redis_client:
+        return
+        
+    lock_key = f"lock:voucher:{voucher_id}:{user_id}"
+    
+    try:
+        redis_client.delete(lock_key)
+    except ConnectionError:
+        print(f"⚠️ Warning: Không thể kết nối tới Redis Server. Bỏ qua xóa lock voucher cho {user_id}.")
