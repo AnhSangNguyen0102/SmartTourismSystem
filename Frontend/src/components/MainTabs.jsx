@@ -102,7 +102,7 @@ const getTierMeta = (level) => {
 
 
 
-const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenLocationRegister, onOpenProfileEdit, onOpenHistory, onOpenTripDetail, onOpenAdminModeration, refreshUser }) => {
+const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenLocationRegister, onOpenProfileEdit, onOpenHistory, onOpenTripDetail, onOpenAdminModeration, refreshUser, onOpenLocationDetail }) => {
 
     const { sendLocation } = useSocialQuest();
 
@@ -746,6 +746,8 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                     onOpenTripDetail={onOpenTripDetail}
 
                     refreshUser={refreshUser}
+
+                    onOpenLocationDetail={onOpenLocationDetail}
 
                 />;
 

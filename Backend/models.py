@@ -395,6 +395,23 @@ class LocationStats(SQLModel, table=True):
     recorded_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class LocationReviews(SQLModel, table=True):
+    """Đánh giá & bình luận của user về địa điểm."""
+    __tablename__ = "location_reviews"
+
+    review_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    location_id: UUID = Field(foreign_key="locations.location_id", index=True)
+    user_id: UUID = Field(foreign_key="users.user_id", index=True)
+    rating: int = Field(ge=1, le=5)          # 1–5 sao
+    comment: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("location_id", "user_id", name="uq_location_user_review"),
+    )
+
+
 # ============================================================
 # GROUP 6: PLANNING & ITINERARY
 # ============================================================

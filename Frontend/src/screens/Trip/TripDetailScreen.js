@@ -527,9 +527,11 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     </div>
                     
                     <div className="location-detail-content">
-                        {/* Ảnh minh họa giả lập (mock image) */}
+                        {/* Ảnh bìa địa điểm — ưu tiên ảnh thực từ API, fallback về ảnh bản đồ */}
                         <div className="location-cover-image" style={{ 
-                            backgroundImage: `url('/assets/island/map-dao.png')` 
+                            backgroundImage: `url(${selectedStop.image_url || selectedStop.cover_image || '/assets/island/map-dao.png'})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
                         }}>
                             {isCheckedIn && (
                                 <div className="status-badge checked-in-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -541,18 +543,52 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         <div className="location-info-card">
                             <div className="location-title-row">
                                 <h3>{selectedStop.location_name}</h3>
-                                <div className="rating-mock" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <Star size={14} fill="#f1c40f" color="#f1c40f" /> 4.8 <span>(124 đánh giá)</span>
-                                </div>
+                                {selectedStop.score != null && (
+                                    <div className="rating-mock" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Star size={14} fill="#f1c40f" color="#f1c40f" />
+                                        {Number(selectedStop.score).toFixed(1)}
+                                    </div>
+                                )}
                             </div>
-                            
-                            <p className="location-desc-mock">
-                                Một địa điểm tuyệt vời không thể bỏ qua trong hành trình của bạn. Nơi đây mang đậm dấu ấn văn hóa và lịch sử, hứa hẹn đem lại những trải nghiệm thú vị.
-                            </p>
+
+                            {/* Mô tả địa điểm — dùng data thực nếu có, không thì ẩn */}
+                            {selectedStop.description ? (
+                                <p className="location-desc-mock">{selectedStop.description}</p>
+                            ) : selectedStop.category_name ? (
+                                <p className="location-desc-mock" style={{ fontStyle: 'italic', color: '#a0aab4' }}>
+                                    📍 Loại hình: {selectedStop.category_name}
+                                </p>
+                            ) : null}
 
                             <div className="location-meta">
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={14} /> Mở cửa: 08:00 - 17:00</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Ticket size={14} /> Vé: Miễn phí</span>
+                                {/* Giờ mở cửa từ dữ liệu thực */}
+                                {(selectedStop.open_time || selectedStop.close_time) ? (
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Clock size={14} /> Mở cửa: {selectedStop.open_time
+                                            ? selectedStop.open_time.substring(0, 5)
+                                            : '?'}
+                                        {' - '}
+                                        {selectedStop.close_time
+                                            ? selectedStop.close_time.substring(0, 5)
+                                            : '?'}
+                                    </span>
+                                ) : null}
+                                {/* Giá vé từ dữ liệu thực */}
+                                {selectedStop.min_price != null ? (
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Ticket size={14} />
+                                        {Number(selectedStop.min_price) === 0 && Number(selectedStop.max_price) === 0
+                                            ? 'Vé: Miễn phí'
+                                            : `Giá: ${Number(selectedStop.min_price).toLocaleString('vi-VN')}đ${selectedStop.max_price && Number(selectedStop.max_price) > 0 ? ` - ${Number(selectedStop.max_price).toLocaleString('vi-VN')}đ` : ''}`
+                                        }
+                                    </span>
+                                ) : null}
+                                {/* Địa chỉ nếu có */}
+                                {selectedStop.address && (
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <MapPin size={14} /> {selectedStop.address}
+                                    </span>
+                                )}
                             </div>
                         </div>
 
