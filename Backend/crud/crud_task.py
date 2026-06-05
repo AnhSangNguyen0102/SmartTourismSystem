@@ -4,7 +4,14 @@ from datetime import datetime
 from decimal import Decimal
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
-from models import QATasks, QRTasks, UserTaskHistory, UserProfiles, Locations, TaskTypeEnum
+from models import (
+    QATasks,
+    QRTasks,
+    UserTaskHistory,
+    UserProfiles,
+    Locations,
+    TaskTypeEnum,
+)
 from schemas import QASubmissionRequest, QRScanRequest, TaskCompletionResponse
 from routers.gamification import auto_complete_daily_quest
 

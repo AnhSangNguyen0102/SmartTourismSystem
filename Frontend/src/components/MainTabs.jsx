@@ -71,6 +71,7 @@ import VouchersList from '../components/Voucher/VouchersList';
 import { getActiveTasks, pingLocation, verifyQuest, getActiveCampaigns, verifyCampaign } from '../services/hiddenQuestService';
 import { useSocialQuest } from './SocialQuest/SocialQuestProvider';
 import ChestOpeningAnimation from './HiddenQuest/ChestOpeningAnimation';
+import QuestQrScanner from './QuestQrScanner';
 import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
 import { showAlert, showConfirm } from '../platform/dialog';
@@ -312,7 +313,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
     const [showQuestModal, setShowQuestModal] = useState(false);
 
-    const [qrTokenInput, setQrTokenInput] = useState('');
+    const [, setQrTokenInput] = useState('');
 
     const [quizAnswer, setQuizAnswer] = useState('');
 
@@ -355,6 +356,9 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
         }
 
     };
+
+    const isMultiStepEvent = (item) => item?.event_mode === 'HIDDEN_MULTI_STEP' || item?.quest_type === 'MULTI_STEP';
+    const getEventStep = (item, stepType) => item?.steps?.find((step) => step.step_type === stepType) || {};
 
 
 
@@ -1165,9 +1169,65 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
 
 
+                                    {isMultiStepEvent(selectedTask) && (
+                                        <div className="quest-action-area">
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <Camera size={16} /> {getEventStep(selectedTask, 'PHOTO').prompt || 'Chụp ảnh check-in tại điểm sự kiện.'}
+                                            </p>
+                                            {photoUploaded ? (
+                                                <div className="photo-preview-box">
+                                                    <img src={photoUrl} alt="Preview checkin" />
+                                                    <button className="photo-reset" onClick={() => { setPhotoUploaded(false); setPhotoUrl(''); }}>✕ Xóa ảnh</button>
+                                                </div>
+                                            ) : (
+                                                <div className="photo-upload-placeholder" onClick={() => {
+                                                    setPhotoUrl("/assets/island/map-dao.png");
+                                                    setPhotoUploaded(true);
+                                                }}>
+                                                    <span className="photo-camera-icon" style={{ display: 'flex', justifyContent: 'center' }}><Camera size={28} /></span>
+                                                    <span>Chạm để tải lên / Chụp ảnh check-in</span>
+                                                </div>
+                                            )}
+
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px' }}>
+                                                <HelpCircle size={16} /> {getEventStep(selectedTask, 'QUIZ').prompt || 'Trả lời câu hỏi sự kiện.'}
+                                            </p>
+                                            <div className="quiz-options-grid">
+                                                {['A', 'B', 'C', 'D'].map((code) => {
+                                                    const step = getEventStep(selectedTask, 'QUIZ');
+                                                    const text = step[`option_${code.toLowerCase()}`];
+                                                    if (!text) return null;
+                                                    return (
+                                                        <button
+                                                            key={code}
+                                                            className={`quiz-option-card ${quizAnswer === code ? 'selected' : ''}`}
+                                                            onClick={() => setQuizAnswer(code)}
+                                                        >
+                                                            <span className="option-code">{code}</span>
+                                                            <span className="option-text">{text}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px' }}>
+                                                <QrCode size={16} /> Quét mã QR do doanh nghiệp cung cấp để hoàn thành sự kiện.
+                                            </p>
+                                            <QuestQrScanner
+                                                loading={questLoading}
+                                                disabled={!photoUploaded || !quizAnswer}
+                                                buttonLabel="Quét QR và hoàn thành sự kiện"
+                                                onScan={(token) => {
+                                                    setQrTokenInput(token);
+                                                    handleVerifyQuest({ image_url: photoUrl, answer: quizAnswer, qr_token: token });
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
                                     {/* 1. CHECKIN QUEST */}
 
-                                    {selectedTask.quest_type === 'CHECKIN' && (
+                                    {!isMultiStepEvent(selectedTask) && selectedTask.quest_type === 'CHECKIN' && (
 
                                         <div className="quest-action-area">
 
@@ -1195,39 +1255,19 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
                                     {/* 2. QR QUEST */}
 
-                                    {selectedTask.quest_type === 'QR' && (
+                                    {!isMultiStepEvent(selectedTask) && selectedTask.quest_type === 'QR' && (
 
                                         <div className="quest-action-area">
 
-                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><QrCode size={16} /> Vui lòng nhập mã token nhận được từ doanh nghiệp hoặc quét QR:</p>
-
-                                            <input 
-
-                                                type="text" 
-
-                                                className="quest-input"
-
-                                                placeholder="Ví dụ: QR_EVENT_TOKEN_123"
-
-                                                value={qrTokenInput}
-
-                                                onChange={(e) => setQrTokenInput(e.target.value)}
-
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><QrCode size={16} /> Quét mã QR tại doanh nghiệp để xác thực.</p>
+                                            <QuestQrScanner
+                                                loading={questLoading}
+                                                buttonLabel="Quét QR"
+                                                onScan={(token) => {
+                                                    setQrTokenInput(token);
+                                                    handleVerifyQuest({ qr_token: token });
+                                                }}
                                             />
-
-                                            <button 
-
-                                                className="quest-action-btn"
-
-                                                onClick={() => handleVerifyQuest({ qr_token: qrTokenInput })}
-
-                                                disabled={questLoading || !qrTokenInput.trim()}
-
-                                            >
-
-                                                {questLoading ? 'Đang xác thực...' : 'Xác nhận mã QR'}
-
-                                            </button>
 
                                         </div>
 
@@ -1237,7 +1277,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
                                     {/* 3. QUIZ QUEST */}
 
-                                    {selectedTask.quest_type === 'QUIZ' && (
+                                    {!isMultiStepEvent(selectedTask) && selectedTask.quest_type === 'QUIZ' && (
 
                                         <div className="quest-action-area">
 
@@ -1305,7 +1345,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
                                     {/* 4. PHOTO QUEST */}
 
-                                    {selectedTask.quest_type === 'PHOTO' && (
+                                    {!isMultiStepEvent(selectedTask) && selectedTask.quest_type === 'PHOTO' && (
 
                                         <div className="quest-action-area">
 
@@ -1511,9 +1551,66 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
 
 
+                                    {isMultiStepEvent(selectedCampaign) && (
+                                        <div className="quest-action-area">
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <Camera size={16} /> {getEventStep(selectedCampaign, 'PHOTO').prompt || 'Chụp ảnh check-in tại điểm sự kiện.'}
+                                            </p>
+                                            {photoUploaded ? (
+                                                <div className="photo-preview-box">
+                                                    <img src={photoUrl} alt="Preview checkin" />
+                                                    <button className="photo-reset" onClick={() => { setPhotoUploaded(false); setPhotoUrl(''); }}>✕ Xóa ảnh</button>
+                                                </div>
+                                            ) : (
+                                                <div className="photo-upload-placeholder" onClick={() => {
+                                                    setPhotoUrl("/assets/island/map-dao.png");
+                                                    setPhotoUploaded(true);
+                                                }}>
+                                                    <span className="photo-camera-icon" style={{ display: 'flex', justifyContent: 'center' }}><Camera size={28} /></span>
+                                                    <span>Chạm để tải lên / Chụp ảnh check-in</span>
+                                                </div>
+                                            )}
+
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px' }}>
+                                                <HelpCircle size={16} /> {getEventStep(selectedCampaign, 'QUIZ').prompt || 'Trả lời câu hỏi sự kiện.'}
+                                            </p>
+                                            <div className="quiz-options-grid">
+                                                {['A', 'B', 'C', 'D'].map((code) => {
+                                                    const step = getEventStep(selectedCampaign, 'QUIZ');
+                                                    const text = step[`option_${code.toLowerCase()}`];
+                                                    if (!text) return null;
+                                                    return (
+                                                        <button
+                                                            key={code}
+                                                            className={`quiz-option-card ${quizAnswer === code ? 'selected' : ''}`}
+                                                            onClick={() => setQuizAnswer(code)}
+                                                            type="button"
+                                                        >
+                                                            <span className="option-code">{code}</span>
+                                                            <span className="option-text">{text}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px' }}>
+                                                <QrCode size={16} /> Quét mã QR do doanh nghiệp cung cấp để hoàn thành sự kiện.
+                                            </p>
+                                            <QuestQrScanner
+                                                loading={questLoading}
+                                                disabled={!photoUploaded || !quizAnswer}
+                                                buttonLabel="Quét QR và hoàn thành sự kiện"
+                                                onScan={(token) => {
+                                                    setQrTokenInput(token);
+                                                    handleVerifyCampaign({ image_url: photoUrl, answer: quizAnswer, qr_token: token });
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
                                     {/* 1. CHECKIN QUEST */}
 
-                                    {selectedCampaign.quest_type === 'CHECKIN' && (
+                                    {!isMultiStepEvent(selectedCampaign) && selectedCampaign.quest_type === 'CHECKIN' && (
 
                                         <div className="quest-action-area">
 
@@ -1543,41 +1640,19 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
                                     {/* 2. QR QUEST */}
 
-                                    {selectedCampaign.quest_type === 'QR' && (
+                                    {!isMultiStepEvent(selectedCampaign) && selectedCampaign.quest_type === 'QR' && (
 
                                         <div className="quest-action-area">
 
-                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><QrCode size={16} /> Vui lòng nhập mã token nhận được từ doanh nghiệp hoặc quét QR:</p>
-
-                                            <input 
-
-                                                type="text" 
-
-                                                className="quest-input"
-
-                                                placeholder="Ví dụ: QR_EVENT_TOKEN_123"
-
-                                                value={qrTokenInput}
-
-                                                onChange={(e) => setQrTokenInput(e.target.value)}
-
+                                            <p className="quest-instruction" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><QrCode size={16} /> Quét mã QR tại doanh nghiệp để xác thực.</p>
+                                            <QuestQrScanner
+                                                loading={questLoading}
+                                                buttonLabel="Quét QR"
+                                                onScan={(token) => {
+                                                    setQrTokenInput(token);
+                                                    handleVerifyCampaign({ qr_token: token });
+                                                }}
                                             />
-
-                                            <button 
-
-                                                className="quest-action-btn"
-
-                                                onClick={() => handleVerifyCampaign({ qr_token: qrTokenInput })}
-
-                                                disabled={questLoading || !qrTokenInput.trim()}
-
-                                                type="button"
-
-                                            >
-
-                                                {questLoading ? 'Đang xác thực...' : 'Xác nhận mã QR'}
-
-                                            </button>
 
                                         </div>
 
@@ -1587,7 +1662,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
                                     {/* 3. QUIZ QUEST */}
 
-                                    {selectedCampaign.quest_type === 'QUIZ' && (
+                                    {!isMultiStepEvent(selectedCampaign) && selectedCampaign.quest_type === 'QUIZ' && (
 
                                         <div className="quest-action-area">
 
@@ -1659,7 +1734,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
                                     {/* 4. PHOTO QUEST */}
 
-                                    {selectedCampaign.quest_type === 'PHOTO' && (
+                                    {!isMultiStepEvent(selectedCampaign) && selectedCampaign.quest_type === 'PHOTO' && (
 
                                         <div className="quest-action-area">
 

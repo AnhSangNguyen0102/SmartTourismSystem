@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import EnterpriseDashboard from './EnterpriseDashboard';
 import { enterpriseService } from '../services/enterpriseService';
-import { getCurrentPosition } from '../platform/location';
 import './EnterpriseTabs.css';
 
 const defaultCampaignForm = () => {
@@ -27,15 +26,21 @@ const defaultCampaignForm = () => {
     return {
         title: '',
         description: '',
-        quest_type: 'CHECKIN',
-        latitude: '10.776797',
-        longitude: '106.700981',
+        location_id: '',
         radius_meters: 100,
         reward_exp: 100,
         reward_coin: 50,
         start_time: formatDateTimeLocal(start),
         end_time: formatDateTimeLocal(end),
-        max_scans: 100,
+        photo_title: '',
+        photo_description: '',
+        reference_image_url: '',
+        question: '',
+        option_a: '',
+        option_b: '',
+        option_c: '',
+        option_d: '',
+        correct_answer: 'A',
     };
 };
 
@@ -86,6 +91,15 @@ const getQrImageUrl = (value) => (
 );
 
 const formatEventDateTime = (value) => new Date(value).toLocaleString('vi-VN');
+
+const formatCoordinate = (value) => {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue.toFixed(6) : '-';
+};
+
+const formatLocationCoordinates = (location) => (
+    `${formatCoordinate(location?.latitude)}, ${formatCoordinate(location?.longitude)}`
+);
 
 const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -146,7 +160,9 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
             setError('');
             setMessage('');
             try {
-                if (activeTab === 'campaigns') await loadEvents();
+        if (activeTab === 'campaigns') {
+            await Promise.all([loadEvents(), loadLocations()]);
+        }
                 if (activeTab === 'locations') await loadLocations();
                 if (activeTab === 'vouchers') { await loadLocations(); await loadVouchers(); }
                 if (activeTab === 'profile') await loadProfile();
@@ -167,6 +183,11 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
         scans: events.reduce((sum, event) => sum + Number(event.scanned_count || 0), 0),
     }), [events]);
 
+    const selectedCampaignLocation = useMemo(() => {
+        const selectedLocationId = campaignForm.location_id || locations[0]?.location_id;
+        return locations.find((location) => location.location_id === selectedLocationId) || null;
+    }, [campaignForm.location_id, locations]);
+
     const updateCampaignForm = (field, value) => {
         setCampaignForm((prev) => ({ ...prev, [field]: value }));
     };
@@ -176,23 +197,6 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
         requestAnimationFrame(() => {
             contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
         });
-    };
-
-    const handleUseCurrentGps = async () => {
-        setActionLoading(true);
-        setError('');
-        try {
-            const position = await getCurrentPosition({ enableHighAccuracy: true, timeout: 12000 });
-            setCampaignForm((prev) => ({
-                ...prev,
-                latitude: position.latitude.toFixed(6),
-                longitude: position.longitude.toFixed(6),
-            }));
-        } catch (err) {
-            setError('Không lấy được GPS hiện tại. Bạn có thể nhập tọa độ thủ công.');
-        } finally {
-            setActionLoading(false);
-        }
     };
 
     const handleCreateCampaign = async (event) => {
@@ -209,15 +213,17 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
             if (startDate >= endDate) {
                 throw new Error('Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.');
             }
+            const selectedLocationId = campaignForm.location_id || locations[0]?.location_id;
+            if (!selectedLocationId) {
+                throw new Error('Bạn cần có ít nhất một địa điểm đã được duyệt trước khi tạo event.');
+            }
 
             const payload = {
                 ...campaignForm,
-                latitude: parseFloat(campaignForm.latitude),
-                longitude: parseFloat(campaignForm.longitude),
+                location_id: selectedLocationId,
                 radius_meters: parseInt(campaignForm.radius_meters, 10),
                 reward_exp: parseInt(campaignForm.reward_exp, 10),
                 reward_coin: parseInt(campaignForm.reward_coin, 10),
-                max_scans: parseInt(campaignForm.max_scans, 10),
                 start_time: startDate.toISOString(),
                 end_time: endDate.toISOString(),
             };
@@ -334,44 +340,45 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
                             <input value={campaignForm.title} onChange={(e) => updateCampaignForm('title', e.target.value)} required />
                         </label>
                         <label>
-                            Loại quest
-                            <select value={campaignForm.quest_type} onChange={(e) => updateCampaignForm('quest_type', e.target.value)}>
-                                <option value="CHECKIN">GPS Check-in</option>
-                                <option value="QR">Quét QR</option>
-                                <option value="QUIZ">Quiz</option>
-                                <option value="PHOTO">Photo</option>
+                            Địa điểm áp dụng
+                            <select
+                                value={campaignForm.location_id || locations[0]?.location_id || ''}
+                                onChange={(e) => updateCampaignForm('location_id', e.target.value)}
+                                required
+                            >
+                                {locations.length === 0 && <option value="">Chưa có địa điểm đã duyệt</option>}
+                                {locations.map((location) => (
+                                    <option key={location.location_id} value={location.location_id}>
+                                        {location.location_name} - GPS {formatLocationCoordinates(location)}
+                                    </option>
+                                ))}
                             </select>
                         </label>
+                        {selectedCampaignLocation && (
+                            <div className="enterprise-selected-location enterprise-form-wide">
+                                <MapPin size={16} />
+                                <div>
+                                    <strong>{selectedCampaignLocation.location_name}</strong>
+                                    <span>GPS {formatLocationCoordinates(selectedCampaignLocation)}</span>
+                                </div>
+                            </div>
+                        )}
                         <label className="enterprise-form-wide">
                             Mô tả
                             <textarea value={campaignForm.description} onChange={(e) => updateCampaignForm('description', e.target.value)} required />
                         </label>
                         <label>
-                            Latitude
-                            <input value={campaignForm.latitude} onChange={(e) => updateCampaignForm('latitude', e.target.value)} required />
-                        </label>
-                        <label>
-                            Longitude
-                            <input value={campaignForm.longitude} onChange={(e) => updateCampaignForm('longitude', e.target.value)} required />
-                        </label>
-                        <label>
-                            Bán kính (m)
-                            <input type="number" min="0" value={campaignForm.radius_meters} onChange={(e) => updateCampaignForm('radius_meters', e.target.value)} />
-                        </label>
-                        <label>
-                            Reward EXP
+                            Reward EXP mỗi bước
                             <input type="number" min="0" value={campaignForm.reward_exp} onChange={(e) => updateCampaignForm('reward_exp', e.target.value)} />
                         </label>
                         <label>
-                            Reward coin
+                            Reward coin mỗi bước
                             <input type="number" min="0" value={campaignForm.reward_coin} onChange={(e) => updateCampaignForm('reward_coin', e.target.value)} />
                         </label>
-                        {campaignForm.quest_type === 'QR' && (
-                            <label>
-                                Max scans
-                                <input type="number" min="1" value={campaignForm.max_scans} onChange={(e) => updateCampaignForm('max_scans', e.target.value)} />
-                            </label>
-                        )}
+                        <label>
+                            Bán kính xác thực (m)
+                            <input type="number" min="0" value={campaignForm.radius_meters} onChange={(e) => updateCampaignForm('radius_meters', e.target.value)} />
+                        </label>
                         <label>
                             Bắt đầu
                             <input type="datetime-local" value={campaignForm.start_time} onChange={(e) => updateCampaignForm('start_time', e.target.value)} required />
@@ -380,16 +387,50 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
                             Kết thúc
                             <input type="datetime-local" value={campaignForm.end_time} onChange={(e) => updateCampaignForm('end_time', e.target.value)} required />
                         </label>
+                        <label>
+                            Tiêu đề bước ảnh
+                            <input value={campaignForm.photo_title} onChange={(e) => updateCampaignForm('photo_title', e.target.value)} placeholder="Tự sinh theo tên địa điểm nếu bỏ trống" />
+                        </label>
+                        <label className="enterprise-form-wide">
+                            Hướng dẫn chụp ảnh
+                            <textarea value={campaignForm.photo_description} onChange={(e) => updateCampaignForm('photo_description', e.target.value)} placeholder="Tự sinh theo tên địa điểm nếu bỏ trống" />
+                        </label>
+                        <label className="enterprise-form-wide">
+                            Câu hỏi
+                            <input value={campaignForm.question} onChange={(e) => updateCampaignForm('question', e.target.value)} placeholder="Tự sinh câu hỏi mặc định nếu bỏ trống" />
+                        </label>
+                        <label>
+                            Đáp án A
+                            <input value={campaignForm.option_a} onChange={(e) => updateCampaignForm('option_a', e.target.value)} placeholder="Mặc định là tên địa điểm" />
+                        </label>
+                        <label>
+                            Đáp án B
+                            <input value={campaignForm.option_b} onChange={(e) => updateCampaignForm('option_b', e.target.value)} />
+                        </label>
+                        <label>
+                            Đáp án C
+                            <input value={campaignForm.option_c} onChange={(e) => updateCampaignForm('option_c', e.target.value)} />
+                        </label>
+                        <label>
+                            Đáp án D
+                            <input value={campaignForm.option_d} onChange={(e) => updateCampaignForm('option_d', e.target.value)} />
+                        </label>
+                        <label>
+                            Đáp án đúng
+                            <select value={campaignForm.correct_answer} onChange={(e) => updateCampaignForm('correct_answer', e.target.value)}>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </label>
                     </div>
                     <div className="enterprise-action-row">
-                        <button type="button" className="enterprise-secondary-btn" onClick={handleUseCurrentGps} disabled={actionLoading}>
-                            <MapPin size={16} /> Dùng GPS hiện tại
-                        </button>
                         <button type="button" className="enterprise-secondary-btn" onClick={() => setShowCampaignForm(false)}>
                             Hủy
                         </button>
-                        <button type="submit" className="enterprise-primary-btn" disabled={actionLoading}>
-                            <Save size={16} /> Lưu chiến dịch
+                        <button type="submit" className="enterprise-primary-btn" disabled={actionLoading || locations.length === 0}>
+                            <Save size={16} /> Lưu event nhiệm vụ
                         </button>
                     </div>
                 </form>
@@ -402,8 +443,8 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
             ) : (
                 <div className="enterprise-card-list">
                     {events.map((event) => {
-                        const questMeta = getQuestTypeMeta(event.quest_type);
-                        const QuestIcon = questMeta.icon;
+                        const isMultiStepEvent = event.event_mode === 'HIDDEN_MULTI_STEP';
+                        const steps = event.steps?.length ? event.steps.map((step) => step.step_type) : ['PHOTO', 'QUIZ', 'QR'];
 
                         return (
                             <article className="enterprise-campaign-card" key={event.event_id}>
@@ -417,13 +458,26 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
                                     </span>
                                 </div>
                                 <div className="enterprise-meta-grid">
-                                    <span><QuestIcon size={14} /> {questMeta.label}</span>
-                                    <span><MapPin size={14} /> {event.radius_meters}m</span>
+                                    {isMultiStepEvent ? (
+                                        steps.map((step) => {
+                                            const stepMeta = getQuestTypeMeta(step === 'QA' ? 'QUIZ' : step);
+                                            const StepIcon = stepMeta.icon;
+                                            return <span key={step}><StepIcon size={14} /> {step}</span>;
+                                        })
+                                    ) : (
+                                        (() => {
+                                            const questMeta = getQuestTypeMeta(event.quest_type);
+                                            const QuestIcon = questMeta.icon;
+                                            return <span><QuestIcon size={14} /> {questMeta.label}</span>;
+                                        })()
+                                    )}
+                                    <span><MapPin size={14} /> GPS {formatLocationCoordinates(event)}</span>
+                                    <span><MapPin size={14} /> Bán kính {event.radius_meters}m</span>
                                     <span><BarChart2 size={14} /> {event.scanned_count || 0} lượt</span>
                                     <span className="enterprise-meta-time"><CalendarClock size={14} /> Bắt đầu: {formatEventDateTime(event.start_time)}</span>
                                     <span className="enterprise-meta-time"><Clock3 size={14} /> Kết thúc: {formatEventDateTime(event.end_time)}</span>
                                 </div>
-                                {event.quest_type === 'QR' && event.qr_token && (
+                                {event.qr_token && (
                                     <div className="enterprise-qr-row">
                                         <div className="enterprise-qr-preview" aria-label={`QR cho ${event.title}`}>
                                             <img
@@ -488,7 +542,10 @@ const EnterpriseTabs = ({ user, onLogout, onOpenLocationRegister }) => {
                                 <article className="enterprise-location-card" key={location.location_id}>
                                     <h3>{location.location_name}</h3>
                                     <p>{location.address || 'Chưa có địa chỉ'}</p>
-                                    <span>{location.min_price} - {location.max_price} {location.currency}</span>
+                                    <div className="enterprise-location-meta">
+                                        <span><MapPin size={14} /> GPS {formatLocationCoordinates(location)}</span>
+                                        <span>{location.min_price} - {location.max_price} {location.currency}</span>
+                                    </div>
                                 </article>
                             ))}
                         </div>

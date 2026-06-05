@@ -46,6 +46,7 @@ def ensure_same_user(requested_user_id: uuid.UUID, token_user_id: uuid.UUID) -> 
     if requested_user_id != token_user_id:
         raise HTTPException(status_code=403, detail="Không được thao tác dữ liệu của người dùng khác")
 
+
 @router.post("/claim-newbie-gift/{user_id}")
 def api_claim_newbie_gift(
     user_id: uuid.UUID,
@@ -317,7 +318,6 @@ def get_location_tasks(
         raise HTTPException(status_code=404, detail="Không tìm thấy địa điểm du lịch này.")
 
     result = []
-
     # 2. XỬ LÝ NHIỆM VỤ CHỤP ẢNH (PHOTO)
     photo_tasks = session.exec(
         select(PhotoTasks).where(PhotoTasks.location_id == location_id, PhotoTasks.is_active == True)

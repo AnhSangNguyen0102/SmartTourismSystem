@@ -20,6 +20,7 @@ from models import (
     PlayerHiddenTasks,
     EnterpriseEvents,
     EnterpriseEventQR,
+    EnterpriseEventSteps,
     HiddenEventParticipants,
     HiddenSpawnLogs,
     HiddenTaskCooldowns,
@@ -150,9 +151,28 @@ def get_active_hidden_tasks(
         else:
             event = db.get(EnterpriseEvents, task.target_id)
             if event:
+                steps = db.exec(
+                    select(EnterpriseEventSteps)
+                    .where(EnterpriseEventSteps.event_id == event.event_id)
+                    .order_by(EnterpriseEventSteps.sort_order.asc())
+                ).all()
                 details["title"] = event.title
                 details["description"] = event.description
-                details["quest_type"] = event.quest_type
+                details["quest_type"] = "MULTI_STEP" if steps else event.quest_type
+                details["event_mode"] = "HIDDEN_MULTI_STEP" if steps else "CAMPAIGN"
+                details["steps"] = [
+                    {
+                        "step_type": step.step_type,
+                        "title": step.title,
+                        "prompt": step.prompt,
+                        "option_a": step.option_a,
+                        "option_b": step.option_b,
+                        "option_c": step.option_c,
+                        "option_d": step.option_d,
+                        "sort_order": step.sort_order,
+                    }
+                    for step in steps
+                ]
                 details["radius_meters"] = event.radius_meters
                 details["reward_exp"] = event.reward_exp
                 details["reward_coin"] = event.reward_coin
@@ -192,26 +212,15 @@ def ping_location(
         db.add(t)
     db.commit()
     
-    # 2. Check Cooldown
-    cooldown = db.exec(
-        select(HiddenTaskCooldowns)
-        .where(HiddenTaskCooldowns.user_id == target_user_id)
-        .where(HiddenTaskCooldowns.cooldown_until > now)
-    ).first()
-    
-    # 3. Check active count
+    # 2. Check active count
     active_tasks = db.exec(
         select(PlayerHiddenTasks)
         .where(PlayerHiddenTasks.user_id == target_user_id)
         .where(PlayerHiddenTasks.status == SpawnStatusEnum.ACTIVE)
     ).all()
-    
-    if cooldown or len(active_tasks) >= 3:
-        return {"status": "ok", "message": "Cooldown active or maximum tasks reached", "spawned": False}
-        
-    if random.random() > 0.3:
-        return {"status": "ok", "message": "Spawn roll missed", "spawned": False}
-        
+
+    # Enterprise events are deterministic location content, so do not let the
+    # random chest cooldown hide a business event when the user is at the point.
     enterprise_events = db.exec(
         select(EnterpriseEvents)
         .where(EnterpriseEvents.is_active == True)
@@ -222,7 +231,10 @@ def ping_location(
     nearby_events = []
     for ev in enterprise_events:
         dist = haversine_distance(float(lat), float(lng), float(ev.latitude), float(ev.longitude))
-        if dist <= 500.0:
+        event_radius = float(ev.radius_meters or 0)
+        if event_radius <= 0:
+            event_radius = 500.0
+        if dist <= event_radius:
             participated = db.exec(
                 select(HiddenEventParticipants)
                 .where(HiddenEventParticipants.user_id == target_user_id)
@@ -233,71 +245,101 @@ def ping_location(
             
             if not participated and not already_spawned:
                 nearby_events.append(ev)
-                
+
+    if nearby_events:
+        if len(active_tasks) >= 3:
+            return {"status": "ok", "message": "Maximum active hidden tasks reached", "spawned": False}
+
+        spawn_slots = max(0, 3 - len(active_tasks))
+        spawned_events = []
+        for target_event in sorted(nearby_events, key=lambda ev: ev.start_time, reverse=True)[:spawn_slots]:
+            new_task = PlayerHiddenTasks(
+                user_id=target_user_id,
+                task_type="DYNAMIC_QUEST",
+                target_id=target_event.event_id,
+                latitude=target_event.latitude,
+                longitude=target_event.longitude,
+                status=SpawnStatusEnum.ACTIVE,
+                rarity=target_event.rarity,
+                expires_at=now + timedelta(minutes=15)
+            )
+            db.add(new_task)
+            spawned_events.append({
+                "type": "DYNAMIC_QUEST",
+                "title": target_event.title,
+                "rarity": target_event.rarity
+            })
+            db.add(HiddenSpawnLogs(
+                user_id=target_user_id,
+                action="SPAWN_QUEST",
+                target_id=target_event.event_id,
+                latitude=target_event.latitude,
+                longitude=target_event.longitude
+            ))
+
+        db.commit()
+        return {
+            "status": "ok",
+            "spawned": bool(spawned_events),
+            "item": spawned_events[0] if len(spawned_events) == 1 else None,
+            "items": spawned_events,
+        }
+
+    # 3. Check cooldown and active count for random chest spawns only.
+    cooldown = db.exec(
+        select(HiddenTaskCooldowns)
+        .where(HiddenTaskCooldowns.user_id == target_user_id)
+        .where(HiddenTaskCooldowns.cooldown_until > now)
+    ).first()
+
+    if cooldown or len(active_tasks) >= 3:
+        return {"status": "ok", "message": "Cooldown active or maximum tasks reached", "spawned": False}
+
     spawned_item = None
-    if nearby_events and random.random() < 0.6:
-        target_event = random.choice(nearby_events)
-        offset_lat = random.uniform(-0.001, 0.001)
-        offset_lng = random.uniform(-0.001, 0.001)
-        
-        new_task = PlayerHiddenTasks(
-            user_id=target_user_id,
-            task_type="DYNAMIC_QUEST",
-            target_id=target_event.event_id,
-            latitude=Decimal(str(float(target_event.latitude) + offset_lat)),
-            longitude=Decimal(str(float(target_event.longitude) + offset_lng)),
-            status=SpawnStatusEnum.ACTIVE,
-            rarity=target_event.rarity,
-            expires_at=now + timedelta(minutes=15)
-        )
-        db.add(new_task)
-        spawned_item = {
-            "type": "DYNAMIC_QUEST",
-            "title": target_event.title,
-            "rarity": target_event.rarity
-        }
+    if random.random() > 0.3:
+        return {"status": "ok", "message": "Spawn roll missed", "spawned": False}
+
+    chests = db.exec(select(HiddenChests)).all()
+    if not chests:
+        return {"status": "ok", "message": "No chest templates found", "spawned": False}
+
+    rarity_roll = random.random()
+    if rarity_roll < 0.02:
+        target_rarity = RarityEnum.LEGENDARY
+    elif rarity_roll < 0.10:
+        target_rarity = RarityEnum.EPIC
+    elif rarity_roll < 0.30:
+        target_rarity = RarityEnum.RARE
     else:
-        chests = db.exec(select(HiddenChests)).all()
-        if not chests:
-            return {"status": "ok", "message": "No chest templates found", "spawned": False}
-            
-        rarity_roll = random.random()
-        if rarity_roll < 0.02:
-            target_rarity = RarityEnum.LEGENDARY
-        elif rarity_roll < 0.10:
-            target_rarity = RarityEnum.EPIC
-        elif rarity_roll < 0.30:
-            target_rarity = RarityEnum.RARE
-        else:
-            target_rarity = RarityEnum.COMMON
-            
-        chest_candidates = [c for c in chests if c.rarity == target_rarity]
-        if not chest_candidates:
-            chest_candidates = chests
-            
-        target_chest = random.choice(chest_candidates)
-        angle = random.uniform(0, 360)
-        distance = random.uniform(20, 100)
-        
-        lat_offset = (distance * cos(radians(angle))) / 111320
-        lng_offset = (distance * sin(radians(angle))) / (40075000 * cos(radians(float(lat))) / 360)
-        
-        new_task = PlayerHiddenTasks(
-            user_id=target_user_id,
-            task_type="CHEST",
-            target_id=target_chest.chest_id,
-            latitude=Decimal(str(float(lat) + lat_offset)),
-            longitude=Decimal(str(float(lng) + lng_offset)),
-            status=SpawnStatusEnum.ACTIVE,
-            rarity=target_chest.rarity,
-            expires_at=now + timedelta(minutes=10)
-        )
-        db.add(new_task)
-        spawned_item = {
-            "type": "CHEST",
-            "title": target_chest.title,
-            "rarity": target_chest.rarity
-        }
+        target_rarity = RarityEnum.COMMON
+
+    chest_candidates = [c for c in chests if c.rarity == target_rarity]
+    if not chest_candidates:
+        chest_candidates = chests
+
+    target_chest = random.choice(chest_candidates)
+    angle = random.uniform(0, 360)
+    distance = random.uniform(20, 100)
+
+    lat_offset = (distance * cos(radians(angle))) / 111320
+    lng_offset = (distance * sin(radians(angle))) / (40075000 * cos(radians(float(lat))) / 360)
+
+    new_task = PlayerHiddenTasks(
+        user_id=target_user_id,
+        task_type="CHEST",
+        target_id=target_chest.chest_id,
+        latitude=Decimal(str(float(lat) + lat_offset)),
+        longitude=Decimal(str(float(lng) + lng_offset)),
+        status=SpawnStatusEnum.ACTIVE,
+        rarity=target_chest.rarity,
+        expires_at=now + timedelta(minutes=10)
+    )
+    db.add(new_task)
+    spawned_item = {
+        "type": "CHEST",
+        "title": target_chest.title,
+        "rarity": target_chest.rarity
+    }
         
     log = HiddenSpawnLogs(
         user_id=target_user_id,
@@ -495,7 +537,41 @@ def verify_quest(
     if dist > float(event.radius_meters) + 20.0:
         raise HTTPException(status_code=400, detail=f"Bạn ở quá xa địa điểm diễn ra sự kiện ({int(dist)}m / Bán kính: {event.radius_meters}m)")
         
-    if event.quest_type == QuestTypeEnum.QR:
+    steps = db.exec(
+        select(EnterpriseEventSteps).where(EnterpriseEventSteps.event_id == event.event_id)
+    ).all()
+
+    if steps:
+        image_url = verify_data.get("image_url") or verify_data.get("photo_url")
+        if not image_url:
+            raise HTTPException(status_code=400, detail="Vui lòng hoàn thành bước chụp ảnh sự kiện")
+
+        quiz_step = next((step for step in steps if step.step_type == "QUIZ"), None)
+        user_answer = verify_data.get("answer")
+        correct_answer = quiz_step.correct_answer if quiz_step else "A"
+        if not user_answer or user_answer.strip().upper() != correct_answer.strip().upper():
+            raise HTTPException(status_code=400, detail="Đáp án câu hỏi sự kiện chưa chính xác")
+
+        qr_token = verify_data.get("qr_token")
+        if not qr_token:
+            raise HTTPException(status_code=400, detail="Yêu cầu quét mã QR sự kiện")
+
+        qr_entry = db.exec(
+            select(EnterpriseEventQR)
+            .where(EnterpriseEventQR.event_id == event.event_id)
+            .where(EnterpriseEventQR.qr_token == qr_token)
+        ).first()
+
+        if not qr_entry:
+            raise HTTPException(status_code=400, detail="Mã QR sự kiện không hợp lệ")
+
+        if qr_entry.scanned_count >= qr_entry.max_scans:
+            raise HTTPException(status_code=400, detail="Số lượng phần quà sự kiện qua mã QR này đã đạt giới hạn tối đa")
+
+        qr_entry.scanned_count += 1
+        db.add(qr_entry)
+
+    elif event.quest_type == QuestTypeEnum.QR:
         qr_token = verify_data.get("qr_token")
         if not qr_token:
             raise HTTPException(status_code=400, detail="Yêu cầu quét mã QR sự kiện")

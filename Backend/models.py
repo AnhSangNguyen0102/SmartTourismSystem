@@ -854,6 +854,24 @@ class EnterpriseEventQR(SQLModel, table=True):
     scanned_count: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+
+class EnterpriseEventSteps(SQLModel, table=True):
+    __tablename__ = "enterprise_event_steps"
+
+    step_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    event_id: UUID = Field(foreign_key="enterprise_events.event_id", index=True)
+    step_type: str = Field(max_length=20)  # PHOTO, QUIZ, QR
+    title: Optional[str] = Field(default=None, max_length=255)
+    prompt: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    option_a: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    option_b: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    option_c: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    option_d: Optional[str] = Field(default=None, sa_column=Column(TEXT, nullable=True))
+    correct_answer: Optional[str] = Field(default=None, max_length=5)
+    sort_order: int = Field(default=1)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class HiddenEventParticipants(SQLModel, table=True):
     __tablename__ = "hidden_event_participants"
 

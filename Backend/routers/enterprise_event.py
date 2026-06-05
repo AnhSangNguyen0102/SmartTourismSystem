@@ -11,11 +11,14 @@ from core.security import verify_token
 from database import get_session
 from routers.gamification import auto_complete_daily_quest
 from models import (
+    BusinessLocation,
     EnterpriseEventQR,
+    EnterpriseEventSteps,
     EnterpriseEvents,
     EnterpriseProfiles,
     EnterpriseStatus,
     HiddenEventParticipants,
+    Locations,
     PlayerHiddenTasks,
     QuestTypeEnum,
     RarityEnum,
@@ -77,6 +80,11 @@ def get_enterprise_profile(current_user: dict, db: Session) -> EnterpriseProfile
 
 
 def _serialize_event(db: Session, event: EnterpriseEvents) -> dict:
+    steps = db.exec(
+        select(EnterpriseEventSteps)
+        .where(EnterpriseEventSteps.event_id == event.event_id)
+        .order_by(EnterpriseEventSteps.sort_order.asc())
+    ).all()
     qr_entry = db.exec(
         select(EnterpriseEventQR).where(EnterpriseEventQR.event_id == event.event_id)
     ).first()
@@ -91,6 +99,20 @@ def _serialize_event(db: Session, event: EnterpriseEvents) -> dict:
         "event_id": str(event.event_id),
         "title": event.title,
         "description": event.description,
+        "event_mode": "HIDDEN_MULTI_STEP" if steps else "CAMPAIGN",
+        "steps": [
+            {
+                "step_type": step.step_type,
+                "title": step.title,
+                "prompt": step.prompt,
+                "option_a": step.option_a,
+                "option_b": step.option_b,
+                "option_c": step.option_c,
+                "option_d": step.option_d,
+                "sort_order": step.sort_order,
+            }
+            for step in steps
+        ],
         "quest_type": event.quest_type.value,
         "latitude": float(event.latitude),
         "longitude": float(event.longitude),
@@ -122,11 +144,6 @@ async def create_enterprise_event(
         raise HTTPException(status_code=400, detail="Tên và mô tả chiến dịch là bắt buộc.")
 
     try:
-        quest_type = QuestTypeEnum(str(event_data.get("quest_type", "CHECKIN")).upper())
-    except ValueError:
-        raise HTTPException(status_code=400, detail="quest_type không hợp lệ.")
-
-    try:
         rarity = RarityEnum(str(event_data.get("rarity", "COMMON")).upper())
     except ValueError:
         raise HTTPException(status_code=400, detail="rarity không hợp lệ.")
@@ -137,17 +154,56 @@ async def create_enterprise_event(
         raise HTTPException(status_code=400, detail="start_time phải nhỏ hơn end_time.")
 
     try:
-        latitude = Decimal(str(event_data["latitude"]))
-        longitude = Decimal(str(event_data["longitude"]))
+        location_id = UUID(str(event_data["location_id"])) if event_data.get("location_id") else None
         radius_meters = int(event_data.get("radius_meters", 100))
         reward_exp = int(event_data.get("reward_exp", 100))
         reward_coin = int(event_data.get("reward_coin", 50))
         max_scans = int(event_data.get("max_scans", 100))
-    except (KeyError, TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="Tọa độ, bán kính và phần thưởng phải hợp lệ.")
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Địa điểm/tọa độ, bán kính và phần thưởng phải hợp lệ.")
 
     if radius_meters < 0 or reward_exp < 0 or reward_coin < 0 or max_scans < 1:
         raise HTTPException(status_code=400, detail="Bán kính/phần thưởng/lượt quét không được âm.")
+
+    location = db.get(Locations, location_id) if location_id else None
+    if location_id:
+        if not location or not location.is_active:
+            raise HTTPException(status_code=404, detail="Địa điểm doanh nghiệp không tồn tại hoặc chưa active.")
+
+        owns_location = db.exec(
+            select(BusinessLocation).where(
+                BusinessLocation.business_id == enterprise.enterprise_id,
+                BusinessLocation.location_id == location.location_id,
+            )
+        ).first()
+        if not owns_location:
+            raise HTTPException(status_code=403, detail="Bạn chỉ được tạo event cho địa điểm thuộc doanh nghiệp mình.")
+
+        event_latitude = location.latitude
+        event_longitude = location.longitude
+        place_name = location.location_name
+    else:
+        try:
+            event_latitude = Decimal(str(event_data["latitude"]))
+            event_longitude = Decimal(str(event_data["longitude"]))
+        except (KeyError, TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="Thiếu latitude/longitude khi không chọn địa điểm.")
+        place_name = title
+
+    question = (event_data.get("question") or f"Bạn đang tham gia sự kiện nào?").strip()
+    option_a = (event_data.get("option_a") or title).strip()
+    option_b = (event_data.get("option_b") or "Một địa điểm khác").strip()
+    option_c = (event_data.get("option_c") or "Khu vực chưa xác định").strip()
+    option_d = (event_data.get("option_d") or "Không có đáp án đúng").strip()
+    correct_answer = (event_data.get("correct_answer") or "A").strip().upper()
+    if correct_answer not in {"A", "B", "C", "D"}:
+        raise HTTPException(status_code=400, detail="Đáp án đúng phải là A, B, C hoặc D.")
+
+    photo_title = (event_data.get("photo_title") or f"Chụp ảnh check-in tại {place_name}").strip()
+    photo_description = (
+        event_data.get("photo_description")
+        or f"Chụp ảnh rõ khu vực sự kiện {place_name} để xác thực bạn đã đến đúng điểm."
+    ).strip()
 
     rarity_multipliers = {
         RarityEnum.COMMON: 1,
@@ -160,9 +216,9 @@ async def create_enterprise_event(
         enterprise_id=enterprise.enterprise_id,
         title=title,
         description=description,
-        quest_type=quest_type,
-        latitude=latitude,
-        longitude=longitude,
+        quest_type=QuestTypeEnum.CHECKIN,
+        latitude=event_latitude,
+        longitude=event_longitude,
         radius_meters=radius_meters,
         reward_exp=reward_exp,
         reward_coin=reward_coin,
@@ -173,64 +229,60 @@ async def create_enterprise_event(
         is_active=True,
     )
     db.add(new_event)
-    db.commit()
+    db.flush()
     db.refresh(new_event)
 
-    qr_data = None
-    if quest_type == QuestTypeEnum.QR:
-        qr_token = f"EVT-{new_event.event_id.hex[:6].upper()}-{secrets.token_hex(4).upper()}"
-        qr_entry = EnterpriseEventQR(
+    qr_token = f"EVT-{new_event.event_id.hex[:6].upper()}-{secrets.token_hex(4).upper()}"
+    qr_entry = EnterpriseEventQR(
+        event_id=new_event.event_id,
+        qr_token=qr_token,
+        max_scans=max_scans,
+        scanned_count=0,
+    )
+    db.add(qr_entry)
+    db.add(
+        EnterpriseEventSteps(
             event_id=new_event.event_id,
-            qr_token=qr_token,
-            max_scans=max_scans,
-            scanned_count=0,
+            step_type="PHOTO",
+            title=photo_title,
+            prompt=photo_description,
+            sort_order=1,
         )
-        db.add(qr_entry)
-        db.commit()
-        db.refresh(qr_entry)
-        qr_data = {
-            "qr_id": str(qr_entry.qr_id),
-            "qr_token": qr_entry.qr_token,
-            "max_scans": qr_entry.max_scans,
-        }
-
-    # Phat thong bao realtime toi player dang online va nam trong ban kinh campaign.
-    # Frontend van refetch /campaigns/active voi GPS hien tai de tranh hien sai vung.
-    try:
-        from routers.social_quest import manager, player_locations
-        from core.spatial_logic import calculate_haversine_distance
-
-        evt_lat = float(new_event.latitude)
-        evt_lng = float(new_event.longitude)
-        visible_radius = float(new_event.radius_meters) + 20.0
-        campaign_message = {
-            "event": "new_campaign",
-            "data": _serialize_event(db, new_event),
-        }
-
-        for user_id_str in list(manager.active_connections.keys()):
-            loc = player_locations.get(user_id_str)
-            if not loc:
-                continue
-
-            dist = calculate_haversine_distance(
-                float(loc.get("lat", 0)),
-                float(loc.get("lng", 0)),
-                evt_lat,
-                evt_lng,
-            )
-            if dist > visible_radius:
-                continue
-
-            await manager.send_personal_message(campaign_message, user_id_str)
-    except Exception as ws_err:
-        print(f"[Realtime Campaign] Lỗi khi phát WebSocket: {ws_err}")
+    )
+    db.add(
+        EnterpriseEventSteps(
+            event_id=new_event.event_id,
+            step_type="QUIZ",
+            title="Câu hỏi sự kiện",
+            prompt=question,
+            option_a=option_a,
+            option_b=option_b,
+            option_c=option_c,
+            option_d=option_d,
+            correct_answer=correct_answer,
+            sort_order=2,
+        )
+    )
+    db.add(
+        EnterpriseEventSteps(
+            event_id=new_event.event_id,
+            step_type="QR",
+            title="Quét QR sự kiện",
+            prompt="Quét hoặc nhập mã QR do doanh nghiệp cung cấp để hoàn thành sự kiện.",
+            sort_order=3,
+        )
+    )
+    db.commit()
 
     return {
         "status": "ok",
-        "message": "Tạo chiến dịch thành công",
+        "message": "Tạo event nhiệm vụ ẩn nhiều bước thành công",
         "event_id": str(new_event.event_id),
-        "qr": qr_data,
+        "location_id": str(location.location_id) if location else None,
+        "qr": {
+            "qr_token": qr_token,
+            "max_scans": max_scans,
+        },
     }
 
 
@@ -403,37 +455,68 @@ def verify_campaign(
             detail=f"Bạn ở quá xa địa điểm chiến dịch ({int(dist)}m / Bán kính: {event.radius_meters}m)"
         )
 
-    # Xác thực cụ thể theo loại thử thách
-    if event.quest_type == QuestTypeEnum.QR:
+    steps = db.exec(
+        select(EnterpriseEventSteps).where(EnterpriseEventSteps.event_id == event.event_id)
+    ).all()
+
+    if steps:
+        image_url = verify_data.get("image_url") or verify_data.get("photo_url")
+        if not image_url:
+            raise HTTPException(status_code=400, detail="Vui lòng hoàn thành bước chụp ảnh sự kiện")
+
+        quiz_step = next((step for step in steps if step.step_type == "QUIZ"), None)
+        user_answer = verify_data.get("answer")
+        correct_answer = quiz_step.correct_answer if quiz_step else "A"
+        if not user_answer or user_answer.strip().upper() != correct_answer.strip().upper():
+            raise HTTPException(status_code=400, detail="Đáp án câu hỏi sự kiện chưa chính xác")
+
         qr_token = verify_data.get("qr_token")
         if not qr_token:
             raise HTTPException(status_code=400, detail="Yêu cầu quét mã QR sự kiện")
-
         qr_entry = db.exec(
             select(EnterpriseEventQR)
             .where(EnterpriseEventQR.event_id == event.event_id)
             .where(EnterpriseEventQR.qr_token == qr_token)
         ).first()
-
         if not qr_entry:
             raise HTTPException(status_code=400, detail="Mã QR sự kiện không hợp lệ")
-
         if qr_entry.scanned_count >= qr_entry.max_scans:
             raise HTTPException(status_code=400, detail="Số lượng quà tặng qua mã QR này đã đạt giới hạn")
-
         qr_entry.scanned_count += 1
         db.add(qr_entry)
 
-    elif event.quest_type == QuestTypeEnum.QUIZ:
-        user_answer = verify_data.get("answer")
-        correct_answer = verify_data.get("correct_answer", "A")
-        if not user_answer or user_answer.strip().upper() != correct_answer.strip().upper():
-            raise HTTPException(status_code=400, detail="Đáp án câu hỏi chưa chính xác")
+    else:
+        # Xác thực cụ thể theo loại thử thách cũ để không phá dữ liệu event đã có.
+        if event.quest_type == QuestTypeEnum.QR:
+            qr_token = verify_data.get("qr_token")
+            if not qr_token:
+                raise HTTPException(status_code=400, detail="Yêu cầu quét mã QR sự kiện")
 
-    elif event.quest_type == QuestTypeEnum.PHOTO:
-        image_url = verify_data.get("image_url")
-        if not image_url:
-            raise HTTPException(status_code=400, detail="Vui lòng cung cấp ảnh chụp check-in")
+            qr_entry = db.exec(
+                select(EnterpriseEventQR)
+                .where(EnterpriseEventQR.event_id == event.event_id)
+                .where(EnterpriseEventQR.qr_token == qr_token)
+            ).first()
+
+            if not qr_entry:
+                raise HTTPException(status_code=400, detail="Mã QR sự kiện không hợp lệ")
+
+            if qr_entry.scanned_count >= qr_entry.max_scans:
+                raise HTTPException(status_code=400, detail="Số lượng quà tặng qua mã QR này đã đạt giới hạn")
+
+            qr_entry.scanned_count += 1
+            db.add(qr_entry)
+
+        elif event.quest_type == QuestTypeEnum.QUIZ:
+            user_answer = verify_data.get("answer")
+            correct_answer = verify_data.get("correct_answer", "A")
+            if not user_answer or user_answer.strip().upper() != correct_answer.strip().upper():
+                raise HTTPException(status_code=400, detail="Đáp án câu hỏi chưa chính xác")
+
+        elif event.quest_type == QuestTypeEnum.PHOTO:
+            image_url = verify_data.get("image_url")
+            if not image_url:
+                raise HTTPException(status_code=400, detail="Vui lòng cung cấp ảnh chụp check-in")
 
     final_exp = event.reward_exp * event.multiplier
     final_coin = event.reward_coin * event.multiplier
