@@ -10,7 +10,7 @@ def test_repair_json_reason():
     broken = '{"is_matched": true, "confidence_score": 90.0, "anti_cheat_passed": true, "reason": "Ảnh rất đẹp, khớp với "Bạch Dinh" mẫu"}'
     fixed = repair_json_reason(broken)
     # The double quotes around "Bạch Dinh" should be replaced by single quotes
-    assert "Bạch Dinh" not in fixed
+    assert '"Bạch Dinh"' not in fixed
     assert "'Bạch Dinh'" in fixed
 
     # JSON cut off at the end
@@ -86,8 +86,10 @@ async def test_verify_image_with_gemini_failed_anti_cheat():
 
 @pytest.mark.asyncio
 async def test_verify_image_with_gemini_download_error():
+    mock_photo_svc = AsyncMock()
     # Simulated connection error during download
-    with patch("httpx.AsyncClient.get", side_effect=httpx.HTTPError("Network failure")):
+    with patch("services.ai_verification.get_photo_service", return_value=mock_photo_svc), \
+         patch("httpx.AsyncClient.get", side_effect=httpx.HTTPError("Network failure")):
         result = await verify_image_with_gemini(b'user_image_data', "https://example.com/ref.jpg")
         # Should result in failure response
         assert result["is_matched"] is False

@@ -85,6 +85,8 @@ def test_location_update_and_matching_flow(client: TestClient):
             ws_b.send_json({
                 "action": "accept_quest"
             })
+            wait_msg_b = ws_b.receive_json()
+            assert wait_msg_b["event"] == "waiting_for_partner"
             
             start_msg_a = ws_a.receive_json()
             start_msg_b = ws_b.receive_json()

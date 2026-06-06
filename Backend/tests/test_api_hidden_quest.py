@@ -10,7 +10,7 @@ from models import (
     Users, UserProfiles, HiddenChests, PlayerHiddenTasks,
     EnterpriseProfiles, EnterpriseEvents, EnterpriseEventQR,
     EnterpriseEventSteps, HiddenSpawnLogs, SpawnStatusEnum,
-    RarityEnum, QuestTypeEnum, RegisterType, UserRole, UserStatus
+    RarityEnum, QuestTypeEnum, RegisterType, UserRole, UserStatus, EnterpriseStatus
 )
 from core.security import create_access_token
 
@@ -60,7 +60,7 @@ def hidden_setup_fixture(db_session: Session):
         contact_person="Người liên hệ",
         contact_email="ent@gmail.com",
         contact_phone="0909090909",
-        status=EnterpriseStatus = "ACTIVE"
+        status=EnterpriseStatus.ACTIVE
     )
     db_session.add(enterprise)
     db_session.commit()

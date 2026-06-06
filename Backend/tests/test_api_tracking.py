@@ -157,7 +157,9 @@ def test_checkin_stop_success(client: TestClient, db_session: Session, tracking_
     # Xác minh được cộng điểm thưởng (mặc định trạm đầu tiên là 10 điểm)
     assert stop_db.reward == 10
     db_session.refresh(profile)
-    assert profile.total_points == 10
+    # Since there was only 1 stop, the itinerary auto-completed, transferring total_points to points_balance
+    assert profile.total_points == 0
+    assert profile.points_balance == 230  # 100 base + 10 checkin + 120 completion bonus (1 stop * 20 + 100 perfect trip)
 
 def test_checkin_stop_too_far(client: TestClient, db_session: Session, tracking_setup):
     user_uid = tracking_setup["user_id"]

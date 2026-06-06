@@ -93,14 +93,14 @@ def test_daily_attendance_api(client: TestClient, db_session: Session, game_setu
     assert response.status_code == 200
     res_data = response.json()
     assert res_data["status"] == "success"
-    assert res_data["data"]["streak"] == 1
-    assert res_data["data"]["exp_reward"] == 50
+    assert res_data["data"]["new_streak"] == 1
+    assert res_data["data"]["exp_reward"] == 100
 
     # Kiểm tra database cập nhật
     db_session.refresh(profile)
     assert profile.last_attendance_date == date.today()
     assert profile.attendance_streak == 1
-    assert profile.total_points == 50
+    assert profile.total_points == 100
 
     # 2. Cố tình điểm danh lần 2 trong ngày -> Trả về lỗi 400
     response = client.post(f"/api/gamification/daily-attendance/{user_uid}", headers=headers)
@@ -175,7 +175,7 @@ def test_qa_task_submit(client: TestClient, db_session: Session, game_setup):
     response = client.post("/tasks/qa/submit", json=payload_wrong, headers=headers)
     assert response.status_code == 200
     assert response.json()["success"] is False
-    assert "không chính xác" in response.json()["message"]
+    assert "chưa chính xác" in response.json()["message"]
 
     # 2. Trả lời đúng trắc nghiệm -> Trả về success: True và được cộng EXP
     payload_correct = {"task_id": str(task_id), "selected_option": "B"}

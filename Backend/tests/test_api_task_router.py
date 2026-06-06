@@ -2,7 +2,7 @@ import pytest
 from uuid import uuid4
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 
 from models import Users, RegisterType, UserRole, UserStatus
 from core.security import create_access_token
@@ -27,7 +27,19 @@ def task_setup_fixture(db_session: Session):
 def test_get_location_qa_tasks_api(client: TestClient, task_setup):
     location_id = uuid4()
     mock_tasks = [
-        {"task_id": str(uuid4()), "question": "Đây là địa danh nào?", "options": ["A", "B"], "points": 10}
+        {
+            "task_id": uuid4(),
+            "location_id": location_id,
+            "question": "Đây là địa danh nào?",
+            "option_a": "A",
+            "option_b": "B",
+            "option_c": "C",
+            "option_d": "D",
+            "question_type": "multiple_choice",
+            "difficulty": "easy",
+            "reward_exp": 10,
+            "reward_coin": 5
+        }
     ]
 
     with patch("routers.task_router.crud_task.get_qa_tasks_by_location", return_value=mock_tasks) as mock_get:
@@ -35,7 +47,7 @@ def test_get_location_qa_tasks_api(client: TestClient, task_setup):
         assert response.status_code == 200
         assert len(response.json()) == 1
         assert response.json()[0]["question"] == "Đây là địa danh nào?"
-        mock_get.assert_called_once_with(db=pytest.any, location_id=location_id)
+        mock_get.assert_called_once_with(db=ANY, location_id=location_id)
 
 def test_submit_qa_task_api(client: TestClient, task_setup):
     user_id = task_setup["user_id"]
@@ -49,8 +61,10 @@ def test_submit_qa_task_api(client: TestClient, task_setup):
 
     mock_result = {
         "success": True,
-        "reward_points": 20,
-        "message": "Trả lời chính xác!"
+        "message": "Trả lời chính xác!",
+        "reward_exp": 20,
+        "reward_coin": 10,
+        "new_total_points": 100
     }
 
     with patch("routers.task_router.crud_task.submit_qa_answer", return_value=mock_result) as mock_submit:
@@ -65,14 +79,17 @@ def test_scan_qr_task_api(client: TestClient, task_setup):
     headers = {"Authorization": f"Bearer {token}"}
 
     payload = {
-        "location_id": str(uuid4()),
-        "qr_code_content": "https://smarttourism.vn/qr/location/123"
+        "qr_token": "ben-thanh-secret-qr-token-999",
+        "latitude": 10.3541,
+        "longitude": 107.0768
     }
 
     mock_result = {
         "success": True,
-        "reward_points": 50,
-        "message": "Quét mã thành công!"
+        "message": "Quét mã thành công!",
+        "reward_exp": 50,
+        "reward_coin": 25,
+        "new_total_points": 150
     }
 
     with patch("routers.task_router.crud_task.scan_qr_task", return_value=mock_result) as mock_scan:
@@ -88,7 +105,14 @@ def test_get_all_tasks_for_location_api(client: TestClient, task_setup):
 
     location_id = uuid4()
     mock_tasks_data = [
-        {"task_id": str(uuid4()), "task_type": "QA", "is_completed": False}
+        {
+            "task_id": uuid4(),
+            "task_type": "QA",
+            "title": "Hỏi đáp: Cổng Ngọ Môn...",
+            "is_completed": False,
+            "reward_exp": 100,
+            "reward_coin": 50
+        }
     ]
 
     with patch("routers.task_router.crud_task.get_aggregated_tasks", return_value=mock_tasks_data) as mock_agg:
@@ -108,7 +132,7 @@ def test_finalize_stop_checkin_api(client: TestClient, task_setup):
         response = client.post("/stops/12/complete", headers=headers)
         assert response.status_code == 200
         assert response.json()["success"] is True
-        mock_complete.assert_called_once_with(db=pytest.any, user_id=user_id, stop_id=12)
+        mock_complete.assert_called_once_with(db=ANY, user_id=user_id, stop_id=12)
 
     with patch("routers.task_router.complete_itinerary_stop", return_value=False):
         response = client.post("/stops/12/complete", headers=headers)

@@ -175,7 +175,7 @@ def test_claim_and_use_voucher_flow(client: TestClient, db_session: Session, vou
     user_uid = voucher_setup["normal_user_id"]
     profile = voucher_setup["profile"]
 
-    # Đăng ký sẵn 1 voucher giá 200 điểm tích lũy, số lượng = 1
+    # Đăng ký sẵn 1 voucher giá 200 điểm tích lũy, số lượng = 2
     voucher_id = uuid4()
     v = Vouchers(
         voucher_id=voucher_id,
@@ -187,8 +187,8 @@ def test_claim_and_use_voucher_flow(client: TestClient, db_session: Session, vou
         discount_value=Decimal("50000"),
         start_date=date.today() - timedelta(days=1),  # Bắt đầu từ hôm qua
         end_date=date.today() + timedelta(days=5),
-        quantity=1,
-        remaining_quantity=1,
+        quantity=2,
+        remaining_quantity=2,
         max_per_user=1,
         point_cost=200,
         status=VoucherStatusEnum.ACTIVE

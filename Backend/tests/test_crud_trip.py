@@ -71,7 +71,12 @@ def test_create_itinerary_with_days_transactional(db_session: Session, trip_setu
     user_id = trip_setup["user_id"]
     session_id = trip_setup["session_id"]
 
-    itinerary_in = ItineraryCreate(budget=Decimal("1200000"))
+    itinerary_in = ItineraryCreate(
+        city_id=1,
+        start_day=date.today(),
+        end_day=date.today(),
+        budget=Decimal("1200000")
+    )
     days_data = [
         {
             "day_order": 1,
