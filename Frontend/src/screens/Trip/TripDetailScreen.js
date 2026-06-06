@@ -15,7 +15,7 @@ import QuestQrScanner from '../../components/QuestQrScanner';
 import { storageGet } from '../../platform/storage';
 import { showAlert, showConfirm, showToast } from '../../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../../platform/location';
-import { SHOW_MASCOT } from '../../config/uiFlags';
+import { isMascotEnabled } from '../../config/uiFlags';
 import { playSound } from '../../utils/soundUtils';
 import { 
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, 
@@ -45,6 +45,15 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [questLoading, setQuestLoading] = useState(false);
     const [questError, setQuestError] = useState('');
     const [questSuccess, setQuestSuccess] = useState(null);
+    const [showMascot, setShowMascot] = useState(isMascotEnabled());
+
+    useEffect(() => {
+        const handleMascotChange = () => {
+            setShowMascot(isMascotEnabled());
+        };
+        window.addEventListener('mascotSettingsChanged', handleMascotChange);
+        return () => window.removeEventListener('mascotSettingsChanged', handleMascotChange);
+    }, []);
 
     // States for Public Campaigns
     const [, setCampaigns] = useState([]);
@@ -52,10 +61,54 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [showCampaignModal, setShowCampaignModal] = useState(false);
 
     // Fetch active campaigns list
-    const fetchActiveCampaigns = async (locationOverride = null) => {
+    const fetchActiveCampaigns = async (locationOverride = null, force = false) => {
+        const loc = locationOverride || userLocationRef.current;
+        if (!loc || typeof loc.lat === 'undefined' || typeof loc.lng === 'undefined') {
+            return;
+        }
+
+        const now = Date.now();
+        const lastLoc = lastFetchedLocationRef.current;
+        const lastTime = lastFetchedTimeRef.current;
+
+        if (!force && lastLoc) {
+            const timeElapsed = now - lastTime;
+            
+            // 1. Hard limit: never fetch more than once every 10 seconds unless forced
+            if (timeElapsed < 10000) {
+                return;
+            }
+
+            // 2. Soft limit: if less than 60 seconds, only fetch if moved >= 10 meters
+            if (timeElapsed < 60000) {
+                const lat1 = lastLoc.lat;
+                const lon1 = lastLoc.lng;
+                const lat2 = loc.lat;
+                const lon2 = loc.lng;
+                
+                const R = 6371000; // meters
+                const dLat = ((lat2 - lat1) * Math.PI) / 180;
+                const dLon = ((lon2 - lon1) * Math.PI) / 180;
+                const a =
+                  Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos((lat1 * Math.PI) / 180) *
+                    Math.cos((lat2 * Math.PI) / 180) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distance = R * c;
+
+                if (distance < 10) {
+                    return;
+                }
+            }
+        }
+
         try {
-            const activeCampaigns = await getActiveCampaigns(locationOverride || userLocationRef.current);
+            const activeCampaigns = await getActiveCampaigns(loc);
             setCampaigns(activeCampaigns);
+            lastFetchedLocationRef.current = loc;
+            lastFetchedTimeRef.current = now;
         } catch (err) {
             console.error('Lỗi lấy chiến dịch hoạt động:', err);
         }
@@ -82,7 +135,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             );
             playSound('success.mp3');
             setQuestSuccess(res);
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
         } catch (err) {
             playSound('error.mp3');
             setQuestError(err.message || 'Xác thực thất bại');
@@ -217,7 +270,25 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     };
 
     const userLocationRef = useRef(userLocation);
+    const lastFetchedLocationRef = useRef(null);
+    const lastFetchedTimeRef = useRef(0);
     useEffect(() => { userLocationRef.current = userLocation; }, [userLocation]);
+
+    // Lắng nghe sự kiện Mock GPS thủ công
+    useEffect(() => {
+        const handleMockLocationUpdate = (e) => {
+            const loc = e.detail;
+            setUserLocation(loc);
+            sendLocation(loc.lat, loc.lng);
+            fetchActiveCampaigns(loc, true);
+        };
+
+        window.addEventListener('mock_location_update', handleMockLocationUpdate);
+        return () => {
+            window.removeEventListener('mock_location_update', handleMockLocationUpdate);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         // Reset trạng thái check-in khi chuyển trip (tránh khóa nút từ trip cũ)
@@ -227,14 +298,14 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         if (itineraryId) {
             fetchDetail();
             fetchHiddenTasks();
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
         }
 
         // Lắng nghe sự kiện chiến dịch mới từ doanh nghiệp
         const handleNewCampaignEvent = (event) => {
             const data = event.detail;
             void showAlert(`[Chiến dịch mới] "${data.title}" vừa được tạo gần bạn! Hãy khám phá trên bản đồ để check-in và nhận quà nhé!`);
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
         };
 
         window.addEventListener('new_campaign', handleNewCampaignEvent);
@@ -664,7 +735,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 />
                 
                 {/* Mascot Layer */}
-                {SHOW_MASCOT && <Mascot message={mascotMessage} />}
+                {showMascot && <Mascot message={mascotMessage} />}
             </div>
         </div>
         );

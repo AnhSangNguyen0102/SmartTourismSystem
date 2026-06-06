@@ -17,6 +17,7 @@ const LocationSimulator = () => {
             sendLocation(lat, lng);
             console.log(`📍 Đã bắn tọa độ lên Server: ${lat}, ${lng}`);
         }
+        window.dispatchEvent(new CustomEvent('mock_location_update', { detail: { lat, lng } }));
     };
 
     // ==========================================

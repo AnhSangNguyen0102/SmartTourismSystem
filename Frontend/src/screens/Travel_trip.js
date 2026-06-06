@@ -21,7 +21,7 @@ import {
     Check
 } from 'lucide-react';
 import Mascot from '../components/Mascot/Mascot';
-import { SHOW_MASCOT } from '../config/uiFlags';
+import { isMascotEnabled } from '../config/uiFlags';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import { showAlert } from '../platform/dialog';
 import './Travel_trip.css';
@@ -47,6 +47,15 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
     const [loadingCheckIn, setLoadingCheckIn] = useState(false);
     const [loadingChest, setLoadingChest] = useState(false);
     const [loadingQuests, setLoadingQuests] = useState(false);
+    const [showMascot, setShowMascot] = useState(isMascotEnabled());
+
+    useEffect(() => {
+        const handleMascotChange = () => {
+            setShowMascot(isMascotEnabled());
+        };
+        window.addEventListener('mascotSettingsChanged', handleMascotChange);
+        return () => window.removeEventListener('mascotSettingsChanged', handleMascotChange);
+    }, []);
 
     // Lấy icon tương ứng với loại nhiệm vụ
     const getQuestIcon = (type) => {
@@ -652,7 +661,7 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                 </div>
             </div>
 
-            {SHOW_MASCOT && <Mascot message={mascotMessage} />}
+            {showMascot && <Mascot message={mascotMessage} />}
         </div>
     );
 };

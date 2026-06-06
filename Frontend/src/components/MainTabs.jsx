@@ -78,6 +78,7 @@ import { showAlert, showConfirm } from '../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../platform/location';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import { isBgmEnabled, isSfxEnabled, setBgmEnabled, setSfxEnabled, getBgmVolume, setBgmVolume } from '../utils/soundUtils';
+import { isMascotEnabled, setMascotEnabled } from '../config/uiFlags';
 
 const getTierMeta = (level) => {
     if (level <= 5) {
@@ -341,13 +342,57 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
     // Fetch active campaigns list
 
-    const fetchActiveCampaigns = async (locationOverride = null) => {
+    const fetchActiveCampaigns = async (locationOverride = null, force = false) => {
         if (isGuest) return;
+
+        const loc = locationOverride || userLocationRef.current;
+        if (!loc || typeof loc.lat === 'undefined' || typeof loc.lng === 'undefined') {
+            return;
+        }
+
+        const now = Date.now();
+        const lastLoc = lastFetchedLocationRef.current;
+        const lastTime = lastFetchedTimeRef.current;
+
+        if (!force && lastLoc) {
+            const timeElapsed = now - lastTime;
+            
+            // 1. Hard limit: never fetch more than once every 10 seconds unless forced
+            if (timeElapsed < 10000) {
+                return;
+            }
+
+            // 2. Soft limit: if less than 60 seconds, only fetch if moved >= 10 meters
+            if (timeElapsed < 60000) {
+                const lat1 = lastLoc.lat;
+                const lon1 = lastLoc.lng;
+                const lat2 = loc.lat;
+                const lon2 = loc.lng;
+                
+                const R = 6371000; // meters
+                const dLat = ((lat2 - lat1) * Math.PI) / 180;
+                const dLon = ((lon2 - lon1) * Math.PI) / 180;
+                const a =
+                  Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos((lat1 * Math.PI) / 180) *
+                    Math.cos((lat2 * Math.PI) / 180) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distance = R * c;
+
+                if (distance < 10) {
+                    return;
+                }
+            }
+        }
 
         try {
 
-            const activeCampaigns = await getActiveCampaigns(locationOverride || userLocationRef.current);
+            const activeCampaigns = await getActiveCampaigns(loc);
             setCampaigns(activeCampaigns);
+            lastFetchedLocationRef.current = loc;
+            lastFetchedTimeRef.current = now;
 
         } catch (err) {
 
@@ -396,7 +441,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
             setQuestSuccess(res);
 
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
 
         } catch (err) {
 
@@ -423,6 +468,8 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
 
     const userLocationRef = useRef(userLocation);
+    const lastFetchedLocationRef = useRef(null);
+    const lastFetchedTimeRef = useRef(0);
 
     // Map component states and ref moved to LocationScreen component
 
@@ -528,6 +575,24 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
 
 
+    // Lắng nghe sự kiện Mock GPS thủ công
+    useEffect(() => {
+        const handleMockLocationUpdate = (e) => {
+            const loc = e.detail;
+            setUserLocation(loc);
+            sendLocation(loc.lat, loc.lng);
+            fetchActiveCampaigns(loc, true);
+        };
+
+        window.addEventListener('mock_location_update', handleMockLocationUpdate);
+        return () => {
+            window.removeEventListener('mock_location_update', handleMockLocationUpdate);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+
+
     // Lắng nghe chiến dịch mới toàn cục
 
     useEffect(() => {
@@ -542,7 +607,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
             void showAlert(`[Chiến dịch mới] "${data.title}" vừa được tạo gần bạn! Hãy mở Bản đồ để check-in và nhận quà nhé!`);
 
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
 
         };
 
@@ -574,7 +639,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
         fetchActiveTasks();
 
-        fetchActiveCampaigns();
+        fetchActiveCampaigns(null, true);
 
 
 
@@ -692,7 +757,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
                 if (!isGuest) {
 
-                    fetchActiveCampaigns(loc);
+                    fetchActiveCampaigns(loc, true);
                     pingLocation(loc.lat, loc.lng)
 
                         .then((res) => {
@@ -2919,6 +2984,8 @@ const ProfileScreen = ({
 
     const [bgmVol, setBgmVol] = useState(getBgmVolume());
 
+    const [mascotOn, setMascotOn] = useState(isMascotEnabled());
+
     
 
     useEffect(() => {
@@ -2933,9 +3000,23 @@ const ProfileScreen = ({
 
         };
 
+        const syncMascotSettings = () => {
+
+            setMascotOn(isMascotEnabled());
+
+        };
+
         window.addEventListener('audioSettingsChanged', syncAudioSettings);
 
-        return () => window.removeEventListener('audioSettingsChanged', syncAudioSettings);
+        window.addEventListener('mascotSettingsChanged', syncMascotSettings);
+
+        return () => {
+
+            window.removeEventListener('audioSettingsChanged', syncAudioSettings);
+
+            window.removeEventListener('mascotSettingsChanged', syncMascotSettings);
+
+        };
 
     }, []);
 
@@ -2962,6 +3043,18 @@ const ProfileScreen = ({
         setSfxEnabled(newState);
 
         setSfxOn(newState);
+
+    };
+
+
+
+    const toggleMascot = () => {
+
+        const newState = !mascotOn;
+
+        setMascotEnabled(newState);
+
+        setMascotOn(newState);
 
     };
 
@@ -3538,19 +3631,71 @@ const ProfileScreen = ({
 
                 
 
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1.5px dashed #cbd5e1' }}>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+
+                            <strong style={{ fontSize: '14px', color: '#2c3e50' }}>Âm thanh hiệu ứng (SFX)</strong>
+
+                            <span style={{ fontSize: '11px', color: '#747d8c' }}>Tiếng click, nhận thưởng</span>
+
+                        </div>
+
+                        <button 
+
+                            onClick={toggleSfx}
+
+                            style={{
+
+                                padding: '6px 16px',
+
+                                borderRadius: '20px',
+
+                                fontWeight: 'bold',
+
+                                fontSize: '12px',
+
+                                border: '2px solid #2c3e50',
+
+                                backgroundColor: sfxOn ? '#2ed573' : '#ff4757',
+
+                                color: '#fff',
+
+                                cursor: 'pointer',
+
+                                boxShadow: '0 3px 0 #2c3e50',
+
+                                transition: 'all 0.1s'
+
+                            }}
+
+                        >
+
+                            {sfxOn ? 'BẬT' : 'TẮT'}
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
 
-                        <strong style={{ fontSize: '14px', color: '#2c3e50' }}>Âm thanh hiệu ứng (SFX)</strong>
+                        <strong style={{ fontSize: '14px', color: '#2c3e50' }}>Trợ lý Mascot</strong>
 
-                        <span style={{ fontSize: '11px', color: '#747d8c' }}>Tiếng click, nhận thưởng</span>
+                        <span style={{ fontSize: '11px', color: '#747d8c' }}>Bật/tắt Mascot hướng dẫn hành trình</span>
 
                     </div>
 
                     <button 
 
-                        onClick={toggleSfx}
+                        onClick={toggleMascot}
 
                         style={{
 
@@ -3564,7 +3709,7 @@ const ProfileScreen = ({
 
                             border: '2px solid #2c3e50',
 
-                            backgroundColor: sfxOn ? '#2ed573' : '#ff4757',
+                            backgroundColor: mascotOn ? '#2ed573' : '#ff4757',
 
                             color: '#fff',
 
@@ -3578,7 +3723,7 @@ const ProfileScreen = ({
 
                     >
 
-                        {sfxOn ? 'BẬT' : 'TẮT'}
+                        {mascotOn ? 'BẬT' : 'TẮT'}
 
                     </button>
 
