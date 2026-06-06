@@ -268,7 +268,7 @@ def test_create_social_user(db_session: Session):
     assert social_user.full_name == "Google User"
     assert social_user.email == "google.user@example.com"
     assert social_user.social_id == "google-id-112233"
-    assert social_user.register_type == "GOOGLE"
+    assert social_user.register_type == RegisterType.SOCIAL
     assert social_user.status == UserStatus.ACTIVE
 
 def test_enterprise_profile_crud(db_session: Session, user_id):

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE } from '../../config/api';
 import { storageGet } from '../../platform/storage';
+import LocationDetailMap from '../../components/LocationDetailMap/LocationDetailMap';
 import './LocationDetailScreen.css';
 
 // ── Helper ──────────────────────────────────────────────────────────────────
@@ -451,13 +452,9 @@ const LocationDetailScreen = ({ location, onBack }) => {
                 const lat = location.latitude || location.lat;
                 const lng = location.longitude || location.lng;
                 const name = encodeURIComponent(location.location_name || 'Địa điểm');
-                // Dùng tọa độ nếu có, fallback về tên địa điểm
-                const mapSrc = (lat && lng)
-                    ? `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`
-                    : `https://maps.google.com/maps?q=${name}&output=embed`;
                 const mapsLink = (lat && lng)
-                    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
-                    : `https://www.google.com/maps/search/?api=1&query=${name}`;
+                    ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`
+                    : `https://www.openstreetmap.org/search?query=${name}`;
 
                 return (
                     <div className="map-overlay-backdrop" onClick={() => setShowMap(false)}>
@@ -471,14 +468,12 @@ const LocationDetailScreen = ({ location, onBack }) => {
                                 <button className="map-overlay-close" onClick={() => setShowMap(false)}>✕</button>
                             </div>
 
-                            {/* Map iframe */}
-                            <iframe
-                                className="map-overlay-iframe"
-                                title="map"
-                                src={mapSrc}
-                                allowFullScreen
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
+                            <LocationDetailMap
+                                stop={{
+                                    ...location,
+                                    latitude: lat,
+                                    longitude: lng,
+                                }}
                             />
 
                             {/* Footer */}
@@ -488,7 +483,7 @@ const LocationDetailScreen = ({ location, onBack }) => {
                                     onClick={() => window.open(mapsLink, '_blank')}
                                 >
                                     <i className="fas fa-external-link-alt"></i>
-                                    Mở Google Maps
+                                    Mở OpenStreetMap
                                 </button>
                             </div>
                         </div>

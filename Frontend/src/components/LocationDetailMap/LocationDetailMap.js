@@ -100,23 +100,6 @@ const LocationDetailMap = ({ stop, userLocation }) => {
                 className: 'detail-game-popup',
             }).addTo(layers);
 
-            // Draw line
-            if (hasStopCoords) {
-                L.polyline([[userLocation.lat, userLocation.lng], [lat, lng]], {
-                    color: '#243447',
-                    weight: 10,
-                    opacity: 0.3,
-                    lineCap: 'round'
-                }).addTo(layers);
-                L.polyline([[userLocation.lat, userLocation.lng], [lat, lng]], {
-                    color: '#ffd32d',
-                    weight: 5,
-                    dashArray: '10 10',
-                    opacity: 0.95,
-                    lineCap: 'round',
-                    className: 'detail-quest-line'
-                }).addTo(layers);
-            }
         }
 
     }, [stop, userLocation]);
@@ -135,18 +118,20 @@ const LocationDetailMap = ({ stop, userLocation }) => {
     return (
         <div className="location-detail-map-wrapper">
             <div ref={mapRef} className="location-detail-map" />
-            <button
-                type="button"
-                className="location-detail-my-location-btn"
-                onClick={focusUserLocation}
-                aria-label="Đến vị trí của bạn"
-            >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-            </button>
+            {userLocation?.lat && userLocation?.lng && (
+                <button
+                    type="button"
+                    className="location-detail-my-location-btn"
+                    onClick={focusUserLocation}
+                    aria-label="Đến vị trí của bạn"
+                >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                </button>
+            )}
         </div>
     );
 };

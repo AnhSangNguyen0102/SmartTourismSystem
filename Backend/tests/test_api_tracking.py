@@ -7,8 +7,8 @@ from sqlmodel import Session
 
 from models import (
     Users, UserProfiles, UserRole, UserStatus, RegisterType,
-    Cities, Locations, PlanningSessions, Itineraries, ItineraryDays, ItineraryStops, ItineraryRoutes,
-    StopStatus, ItineraryStatus, CheckinProgress, GpsTrackingLogs, DeviationLogs
+    Cities, Locations, PlanningSessions, Itineraries, ItineraryDays, ItineraryStops,
+    StopStatus, ItineraryStatus, CheckinProgress
 )
 from core.security import create_access_token
 
@@ -176,32 +176,3 @@ def test_checkin_stop_too_far(client: TestClient, db_session: Session, tracking_
     
     assert response.status_code == 400
     assert "Cần ở trong phạm vi 100m để check-in" in response.json()["detail"]
-
-def test_gps_tracking_logs(client: TestClient, db_session: Session, tracking_setup):
-    user_uid = tracking_setup["user_id"]
-    itinerary_id = tracking_setup["itinerary_id"]
-    stop_id = tracking_setup["stop_id"]
-    loc = tracking_setup["location"]
-
-    token = create_access_token(data={"sub": str(user_uid), "role": "USER"})
-    headers = {"Authorization": f"Bearer {token}"}
-
-    # Gửi tọa độ tracking thực tế của User
-    tracking_payload = {
-        "itinerary_id": str(itinerary_id),
-        "current_stop_id": stop_id,
-        "latitude": float(loc.latitude),
-        "longitude": float(loc.longitude)
-    }
-    response = client.post("/api/trips/tracking", json=tracking_payload, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["is_deviated"] is False
-
-    # Xác minh DB đã lưu vết CheckinProgress dạng nháp và lưu tọa độ trong GpsTrackingLogs
-    progress = db_session.query(CheckinProgress).filter(CheckinProgress.stop_id == stop_id).first()
-    assert progress is not None
-    assert progress.is_completed is False  # chưa check-in xong, chỉ lưu vết tracking
-
-    gps_log = db_session.query(GpsTrackingLogs).filter(GpsTrackingLogs.progress_id == progress.progress_id).first()
-    assert gps_log is not None
-    assert float(gps_log.latitude) == float(loc.latitude)

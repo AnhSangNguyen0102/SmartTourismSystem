@@ -320,13 +320,6 @@
     background: #e0e0e0;
 }
 
-.map-overlay-iframe {
-    width: 100%;
-    height: 340px;
-    border: none;
-    display: block;
-}
-
 .map-overlay-footer {
     padding: 12px 20px;
     display: flex;
@@ -348,4 +341,3 @@
     justify-content: center;
     gap: 8px;
 }
-

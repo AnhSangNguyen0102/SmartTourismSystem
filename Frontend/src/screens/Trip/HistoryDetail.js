@@ -3,7 +3,7 @@ import { getTripDetail } from '../../services/tripService';
 import { storageGet } from '../../platform/storage';
 import { 
     ArrowLeft, CheckCircle2, XCircle, RefreshCw, Clock, 
-    Route, Circle 
+    Circle
 } from 'lucide-react';
 import './TripDetailScreen.css';
 
@@ -89,15 +89,6 @@ const HistoryDetail = ({ itineraryId, onBack }) => {
                         <strong>{tripDetail.total_travel_time} phút</strong>
                     </div>
                 </div>
-                <div className="summary-item">
-                    <span className="icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Route size={20} style={{ color: '#2ed573' }} />
-                    </span>
-                    <div>
-                        <small>Quãng đường</small>
-                        <strong>{tripDetail.total_distance} km</strong>
-                    </div>
-                </div>
             </div>
 
             <div className="trip-itinerary">
@@ -140,4 +131,3 @@ const HistoryDetail = ({ itineraryId, onBack }) => {
 };
 
 export default HistoryDetail;
-

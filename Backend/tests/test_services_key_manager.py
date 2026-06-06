@@ -173,7 +173,7 @@ def test_rate_limited_key_manager_sleep_logic():
             # Sleep 60.1s -> virtual_time = 1120.2.
             k3 = await manager.acquire()
             assert k3 == "key1"
-            assert virtual_time == 1120.2
+            assert virtual_time == pytest.approx(1120.2)
             mock_s.assert_called_once()
             assert mock_s.call_args[0][0] == pytest.approx(60.1)
 

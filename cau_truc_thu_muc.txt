@@ -8,11 +8,11 @@ backend/
 ├── api/                    # Chứa các file xử lý API (Controllers)
 │   ├── auth.py             # Xử lý Đăng nhập, Đăng ký, Đăng xuất, Phân quyền.
 │   ├── locations.py        # Chức năng xử lí đầu vào & Gợi ý địa điểm.
-│   └── trips.py            # Chức năng planning, tracking, tối ưu lộ trình, lưu lịch sử.
+│   └── trips.py            # Chức năng tạo chuyến đi từ lựa chọn của user, tracking, lưu lịch sử.
 │
 ├── core/                   # Các logic cốt lõi và bảo mật
 │   ├── security.py         # Mã hóa mật khẩu (bắt buộc nên làm, dùng thư viện passlib/bcrypt), tạo token phân quyền.
-│   └── algorithms.py       # Thuật toán gợi ý địa điểm và tối ưu lộ trình (TSP).
+│   └── algorithms.py       # Chấm điểm gợi ý địa điểm, kiểm tra khoảng cách và ghép đôi.
 │
 ├── crud/                   # (Create, Read, Update, Delete) - Chứa các câu Query SQL
 │   ├── crud_user.py        # Query lấy thông tin user, kiểm tra đăng nhập.

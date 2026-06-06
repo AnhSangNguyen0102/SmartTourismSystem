@@ -4,7 +4,7 @@ import IslandMap from '../../components/IslandMap/IslandMap';
 import LocationTasks from './LocationTasks';
 import TaskDetail from './TaskDetail';
 import './TripDetailScreen.css';
-import RouteMap from '../../components/RouteMap/RouteMap';
+import LocationDetailMap from '../../components/LocationDetailMap/LocationDetailMap';
 import Mascot from '../../components/Mascot/Mascot';
 import TreasureOverlay from '../../components/TreasureOverlay/TreasureOverlay';
 // Hidden Quest imports
@@ -34,7 +34,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [selectedLocationForTasks, setSelectedLocationForTasks] = useState(null);
 
     // Hidden Quest states
-    const [hiddenTasks, setHiddenTasks] = useState([]);
+    const [, setHiddenTasks] = useState([]);
     const [selectedHiddenTask, setSelectedHiddenTask] = useState(null);
     const [showChestAnimation, setShowChestAnimation] = useState(false);
     const [showQuestModal, setShowQuestModal] = useState(false);
@@ -47,8 +47,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [questSuccess, setQuestSuccess] = useState(null);
 
     // States for Public Campaigns
-    const [campaigns, setCampaigns] = useState([]);
-    const [selectedCampaign, setSelectedCampaign] = useState(null);
+    const [, setCampaigns] = useState([]);
+    const [selectedCampaign] = useState(null);
     const [showCampaignModal, setShowCampaignModal] = useState(false);
 
     // Fetch active campaigns list
@@ -186,16 +186,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             setHiddenTasks(tasks);
         } catch (err) {
             console.error('Lỗi lấy nhiệm vụ ẩn:', err);
-        }
-    };
-
-    // Handle hidden task click from map marker
-    const handleHiddenTaskClick = (task) => {
-        setSelectedHiddenTask(task);
-        if (task.task_type === 'CHEST') {
-            setShowChestAnimation(true);
-        } else if (task.task_type === 'DYNAMIC_QUEST') {
-            setShowQuestModal(true);
         }
     };
 
@@ -580,24 +570,10 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         </div>
 
                         <div className="location-map-section">
-                            <h4>Bản đồ & Chỉ đường</h4>
-                            <RouteMap 
-                                stops={[selectedStop]} 
-                                routes={[]} 
-                                hiddenTasks={[]}
-                                campaigns={[]}
-                                onCampaignClick={(campaign) => {
-                                    setSelectedCampaign(campaign);
-                                    setShowCampaignModal(true);
-                                }}
+                            <h4>Bản đồ địa điểm</h4>
+                            <LocationDetailMap
+                                stop={selectedStop}
                                 userLocation={userLocation}
-                                user={user}
-                                nextStop={selectedStop}
-                                onStopClick={setSelectedStop}
-                                onHiddenTaskClick={(task) => {
-                                    setSelectedHiddenTask(task);
-                                    setShowChestAnimation(true);
-                                }}
                             />
                         </div>
                         
@@ -680,7 +656,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 </div>
             )}
 
-            {/* Bản đồ Đảo (Island Map) thay thế RouteMap */}
+            {/* Bản đồ đảo dùng để chọn địa điểm trong chuyến đi */}
             <div className="island-map-section" style={{ position: 'relative' }}>
                 <IslandMap
                     stops={allStops}

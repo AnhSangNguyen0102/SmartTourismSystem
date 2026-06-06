@@ -36,10 +36,9 @@ def _get_enterprise_by_user(db: Session, user_id: UUID) -> EnterpriseProfiles:
     return enterprise
 
 
-def _geocode_address(address: str) -> tuple[float, float]:
+def _resolve_coordinates(address: str) -> tuple[float, float]:
     """
-    Temporary local geocoder for the current POC environment.
-    Replace with Google Maps in production once GOOGLE_API_KEY is configured.
+    Temporary local coordinate resolver for the current POC environment.
     """
     import random
     
@@ -93,7 +92,7 @@ def register_location(
             ),
         )
 
-    latitude, longitude = _geocode_address(data.address)
+    latitude, longitude = _resolve_coordinates(data.address)
     pending_data = {
         "location_name": data.location_name,
         "address": data.address,

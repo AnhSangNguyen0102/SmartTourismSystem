@@ -356,9 +356,6 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                                             <p className="ongoing-trip-meta">Ngày kích hoạt: {formatDate(trip.create_at)}</p>
                                             <div className="ongoing-trip-stats">
                                                 <span className="ongoing-stat-item">
-                                                    <Map size={13} className="stat-icon" /> {trip.total_distance} km
-                                                </span>
-                                                <span className="ongoing-stat-item">
                                                     <Coins size={13} className="stat-icon" /> {new Intl.NumberFormat('vi-VN').format(trip.total_budget)} đ
                                                 </span>
                                             </div>

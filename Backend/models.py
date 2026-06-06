@@ -494,17 +494,6 @@ class ItineraryStops(SQLModel, table=True):
     status: StopStatus = Field(default=StopStatus.PENDING)
 
 
-class ItineraryRoutes(SQLModel, table=True):
-    __tablename__ = "itinerary_routes"
-
-    route_id: Optional[int] = Field(default=None, primary_key=True)
-    from_stop_id: int = Field(foreign_key="itinerary_stops.stop_id")
-    to_stop_id: int = Field(foreign_key="itinerary_stops.stop_id")
-    travel_time: int = Field(ge=0)
-    distance: Decimal = Field(sa_column=Column(Numeric(10, 2), nullable=False))
-    polyline_data: str
-
-
 # ============================================================
 # GROUP 7: TRACKING
 # ============================================================
@@ -523,26 +512,6 @@ class CheckinProgress(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint("user_id", "stop_id", name="uq_checkin"),
     )
-
-
-class GpsTrackingLogs(SQLModel, table=True):
-    __tablename__ = "gps_tracking_logs"
-
-    log_id: Optional[int] = Field(default=None, primary_key=True)
-    progress_id: int = Field(foreign_key="checkin_progress.progress_id", index=True)
-    latitude: Decimal = Field(sa_column=Column(Numeric(10, 6), nullable=False))
-    longitude: Decimal = Field(sa_column=Column(Numeric(10, 6), nullable=False))
-    tracking_time: datetime = Field(default_factory=datetime.utcnow)
-
-
-class DeviationLogs(SQLModel, table=True):
-    __tablename__ = "deviation_logs"
-
-    alert_id: Optional[int] = Field(default=None, primary_key=True)
-    itinerary_id: UUID = Field(foreign_key="itineraries.itinerary_id", index=True)
-    latitude: Decimal = Field(sa_column=Column(Numeric(10, 6), nullable=False))
-    longitude: Decimal = Field(sa_column=Column(Numeric(10, 6), nullable=False))
-    alert_time: datetime = Field(default_factory=datetime.utcnow)
 
 
 # ============================================================

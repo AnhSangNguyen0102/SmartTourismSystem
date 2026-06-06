@@ -40,9 +40,9 @@ PHẦN 2: HƯỚNG DẪN SỬ DỤNG CÁC TÍNH NĂNG CƠ BẢN
 - Sau khi đăng nhập, màn hình chính sẽ hiển thị các địa điểm du lịch, danh lam thắng cảnh xung quanh hoặc các địa điểm nổi bật.
 - Bấm vào một địa điểm bất kỳ để xem thông tin chi tiết: mô tả, hình ảnh, đánh giá và vị trí bản đồ.
 
-3. Tính năng Chỉ đường & GPS
+3. Tính năng Bản đồ & GPS
 - Ứng dụng sẽ yêu cầu quyền truy cập Vị trí (Location). Hãy chọn "Cho phép khi dùng ứng dụng" để hệ thống theo dõi GPS và tính toán khoảng cách đến các địa điểm du lịch.
-- (Tùy chọn) Sử dụng bản đồ tích hợp để lên kế hoạch lộ trình tham quan thuận tiện nhất.
+- Sử dụng bản đồ tích hợp để xem vị trí; thứ tự và các địa điểm trong chuyến đi do bạn tự chọn.
 
 4. Tính năng Gamification (Trò chơi hoá & Nhiệm vụ)
 - Để chuyến đi thêm phần thú vị, ứng dụng có hệ thống nhiệm vụ (Quest) và rương báu (Chest) ảo ẩn tại các địa điểm thực tế.

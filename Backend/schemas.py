@@ -301,19 +301,17 @@ class CreateItineraryRequest(BaseModel):
     start_date: date
     end_date: Optional[date] = None
     location_ids: list[UUID]
-    start_lat: Optional[float] = None
-    start_lon: Optional[float] = None
 
 # LOCATION SCHEMAS
 # ============================================================
 class LocationCreate(BaseModel):
     """
     Payload để doanh nghiệp đăng ký địa điểm kinh doanh mới.
-    ``address`` được dùng để gọi Google Maps Geocoding API lấy latitude/longitude.
+    ``address`` được dùng để xác định latitude/longitude.
     Dùng cho services/location_service.register_location().
     """
     location_name: str = Field(max_length=255, description="Tên địa điểm kinh doanh")
-    address: str = Field(description="Địa chỉ đầy đủ — dùng để Geocode tọa độ qua Google Maps API")
+    address: str = Field(description="Địa chỉ đầy đủ dùng để xác định tọa độ")
     city_id: int = Field(description="ID thành phố thuộc hệ thống")
     open_time: time = Field(description="Giờ mở cửa (HH:MM:SS)")
     close_time: time = Field(description="Giờ đóng cửa (HH:MM:SS) — phải sau open_time")
@@ -389,7 +387,6 @@ class ItineraryResponse(BaseModel):
     total_budget: Decimal
     currency: CurrencyEnum
     total_travel_time: int
-    total_distance: Decimal
     score_earned: Optional[int] = 0
     budget_category: Optional[str] = Field(default="MEDIUM", description="LOW, MEDIUM, or HIGH")
     warning_message: Optional[str] = None
@@ -404,7 +401,6 @@ class ItineraryHistoryItem(BaseModel):
     name: Optional[str] = None
     status: ItineraryStatus
     total_budget: Decimal
-    total_distance: Decimal
     create_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
@@ -483,21 +479,9 @@ class ItineraryStopResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class RouteResponse(BaseModel):
-    """Thông tin đường đi giữa 2 trạm dừng (polyline + khoảng cách + thời gian)."""
-    route_id: int
-    from_stop_id: int
-    to_stop_id: int
-    travel_time: int          # phút
-    distance: Decimal         # km
-    polyline_data: str        # Encoded polyline string (OSRM format)
-
-    model_config = ConfigDict(from_attributes=True)
-
 class ItineraryDetailResponse(ItineraryResponse):
-    """Schema chi tiết lộ trình bao gồm các trạm dừng và đường đi"""
+    """Schema chi tiết chuyến đi bao gồm các điểm dừng người dùng đã chọn."""
     stops: list[ItineraryStopResponse] = []
-    routes: list[RouteResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -507,17 +491,6 @@ class ItineraryStatusUpdate(BaseModel):
 # ============================================================
 # TRACKING & CHECK-IN SCHEMAS
 # ============================================================
-
-class TrackingRequest(BaseModel):
-    itinerary_id: UUID
-    current_stop_id: int
-    latitude: float = Field(ge=-90, le=90, description="Vĩ độ phải nằm trong khoảng -90 đến 90")
-    longitude: float = Field(ge=-180, le=180, description="Kinh độ phải nằm trong khoảng -180 đến 180")
-
-class DeviationAlert(BaseModel):
-    is_deviated: bool
-    distance_to_target: float # mét
-    message: str
 
 class CheckInRequest(BaseModel):
     latitude: float = Field(ge=-90, le=90, description="Vĩ độ phải nằm trong khoảng -90 đến 90")
@@ -550,26 +523,6 @@ class CheckinResponse(BaseModel):
     longitude: Decimal
 
     model_config = ConfigDict(from_attributes=True)
-
-class GpsLogCreate(BaseModel):
-    """
-    Payload ghi nhận tọa độ GPS real-time trong quá trình di chuyển.
-    Dùng cho crud_tracking.create_gps_log() (UC7 Q2).
-    """
-    progress_id: int
-    latitude: Decimal = Field(decimal_places=6)
-    longitude: Decimal = Field(decimal_places=6)
-
-class DeviationLogCreate(BaseModel):
-    """
-    Payload ghi nhận cảnh báo lệch lộ trình.
-    Dùng cho crud_tracking.create_deviation_log() (UC7 Q3).
-    """
-    itinerary_id: UUID
-    latitude: Decimal = Field(decimal_places=6)
-
-    longitude: Decimal = Field(decimal_places=6)
-
 
 # ============================================================
 # GAMIFIED TASK SCHEMAS

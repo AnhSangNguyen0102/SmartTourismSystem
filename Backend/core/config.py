@@ -53,10 +53,6 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_SENDER: str = "noreply@smarttourism.com"
 
-    # --- External APIs & Logics ---------------------------------------------
-    OSRM_BASE_URL: str = "https://router.project-osrm.org"
-    AVG_CITY_SPEED_KMH: float = 40.0
-
     # --- Pydantic-settings config -------------------------------------------
     model_config = SettingsConfigDict(
         env_file=".env",

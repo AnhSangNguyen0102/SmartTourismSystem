@@ -159,6 +159,10 @@ def test_create_and_manage_itinerary_flow(client: TestClient, db_session: Sessio
     detail_data = detail_response.json()
     assert len(detail_data["stops"]) == 2
     assert detail_data["stops"][0]["location_name"] == "Tháp Bà Ponagar"
+    assert [stop["location_id"] for stop in detail_data["stops"]] == [
+        str(location_id) for location_id in planning_setup["location_ids"]
+    ]
+    assert "routes" not in detail_data
 
     # 3. Hủy chuyến đi
     cancel_response = client.put(f"/api/trips/{itinerary_id}/cancel", headers=headers)

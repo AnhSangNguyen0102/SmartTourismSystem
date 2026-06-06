@@ -7,11 +7,10 @@
  Q1  INSERT  ITINERARIES                                   create_itinerary
  Q2  INSERT  ITINERARY_DAYS                                create_itinerary_days
  Q3  INSERT  ITINERARY_STOPS                               create_itinerary_stops
- Q4  INSERT  ITINERARY_ROUTES                              create_itinerary_routes
- Q5  SELECT  ITINERARIES, ITINERARY_DAYS, ITINERARY_STOPS  get_itinerary_full
- Q6  UPDATE  ITINERARIES                                   update_itinerary_status
- Q7  SELECT  ITINERARIES                                   get_itinerary_history
- Q8  SELECT  ITINERARY_DAYS, ITINERARY_STOPS, LOCATIONS    get_itinerary_stops_with_locations
+ Q4  SELECT  ITINERARIES, ITINERARY_DAYS, ITINERARY_STOPS  get_itinerary_full
+ Q5  UPDATE  ITINERARIES                                   update_itinerary_status
+ Q6  SELECT  ITINERARIES                                   get_itinerary_history
+ Q7  SELECT  ITINERARY_DAYS, ITINERARY_STOPS, LOCATIONS    get_itinerary_stops_with_locations
 ================================================================================
 """
 
@@ -27,7 +26,6 @@ from models import (
     Itineraries,
     ItineraryDays,
     ItineraryStops,
-    ItineraryRoutes,
     ItineraryStatus,
     StopStatus,
     CurrencyEnum,
@@ -49,10 +47,9 @@ def create_itinerary(
     total_budget: Decimal,
     currency: CurrencyEnum = CurrencyEnum.VND,
     total_travel_time: int,
-    total_distance: Decimal,
 ) -> Itineraries:
     """
-    Tạo bản ghi ``itineraries`` sau khi thuật toán tối ưu hoàn thành.
+    Tạo bản ghi ``itineraries`` từ danh sách địa điểm người dùng chọn.
 
     Tự động sinh ``itinerary_id`` (UUID v4), ``create_at``, ``update_at``.
     """
@@ -66,7 +63,7 @@ def create_itinerary(
         total_budget=total_budget,
         currency=currency,
         total_travel_time=total_travel_time,
-        total_distance=total_distance,
+        total_distance=0,
         create_at=now,
         update_at=now,
     )
@@ -175,46 +172,7 @@ def create_itinerary_stops(
 
 
 # ---------------------------------------------------------------------------
-# Q4 – Tạo đường đi giữa các điểm dừng  (INSERT INTO itinerary_routes)
-# ---------------------------------------------------------------------------
-
-def create_itinerary_routes(
-    db: Session,
-    routes_data: list[dict],
-) -> list[ItineraryRoutes]:
-    """
-    Tạo nhiều bản ghi ``itinerary_routes`` cùng lúc (bulk insert).
-
-    Parameters
-    ----------
-    routes_data : list[dict]
-        Mỗi phần tử chứa: from_stop_id, to_stop_id, travel_time,
-        distance, polyline_data.
-
-    Returns
-    -------
-    list[ItineraryRoutes]
-        Danh sách bản ghi vừa tạo.
-    """
-    rows: list[ItineraryRoutes] = []
-    for r in routes_data:
-        row = ItineraryRoutes(
-            from_stop_id=r["from_stop_id"],
-            to_stop_id=r["to_stop_id"],
-            travel_time=r["travel_time"],
-            distance=r["distance"],
-            polyline_data=r["polyline_data"],
-        )
-        db.add(row)
-        rows.append(row)
-    db.commit()
-    for row in rows:
-        db.refresh(row)
-    return rows
-
-
-# ---------------------------------------------------------------------------
-# Q5 – Lấy toàn bộ thông tin lộ trình
+# Q4 – Lấy toàn bộ thông tin lộ trình
 #       (SELECT itineraries JOIN itinerary_days JOIN itinerary_stops WHERE itinerary_id = ?)
 # ---------------------------------------------------------------------------
 
@@ -224,7 +182,7 @@ def get_itinerary_full(db: Session, itinerary_id: UUID) -> list:
     sắp xếp theo day_order ASC, stop_order ASC.
 
     Columns trả về:
-        itinerary_id, total_budget, total_travel_time, total_distance, status,
+        itinerary_id, total_budget, total_travel_time, status,
         day_id, day_order, travel_date,
         stop_id, stop_order, arrival_time, departure_time.
     """
@@ -233,7 +191,6 @@ def get_itinerary_full(db: Session, itinerary_id: UUID) -> list:
             Itineraries.itinerary_id,
             Itineraries.total_budget,
             Itineraries.total_travel_time,
-            Itineraries.total_distance,
             Itineraries.status,
             ItineraryDays.day_id,
             ItineraryDays.day_order,
@@ -252,7 +209,7 @@ def get_itinerary_full(db: Session, itinerary_id: UUID) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Q6 – Cập nhật trạng thái lộ trình  (UPDATE itineraries SET status, update_at)
+# Q5 – Cập nhật trạng thái chuyến đi  (UPDATE itineraries SET status, update_at)
 # ---------------------------------------------------------------------------
 
 def update_itinerary_status(
@@ -281,7 +238,7 @@ def update_itinerary_status(
 
 
 # ---------------------------------------------------------------------------
-# Q7 – Lấy lịch sử lộ trình của user
+# Q6 – Lấy lịch sử chuyến đi của user
 #       (SELECT itineraries WHERE user_id = ? AND status IN ('COMPLETED', 'CANCELLED'))
 # ---------------------------------------------------------------------------
 
@@ -291,7 +248,7 @@ def get_itinerary_history(db: Session, user_id: UUID) -> list:
     sắp xếp theo ``create_at`` giảm dần (mới nhất trước).
 
     Columns trả về:
-        itinerary_id, name, status, total_budget, total_distance, create_at.
+        itinerary_id, name, status, total_budget, create_at.
     """
     statement = (
         select(
@@ -299,7 +256,6 @@ def get_itinerary_history(db: Session, user_id: UUID) -> list:
             Itineraries.name,
             Itineraries.status,
             Itineraries.total_budget,
-            Itineraries.total_distance,
             Itineraries.create_at,
         )
         .where(
@@ -311,14 +267,14 @@ def get_itinerary_history(db: Session, user_id: UUID) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Q8 – Lấy danh sách trạm kèm thông tin địa điểm  (UC7 Q1 – Tracking screen)
+# Q7 – Lấy danh sách trạm kèm thông tin địa điểm  (UC7 Q1 – Tracking screen)
 #       SELECT itineraries + itinerary_days + itinerary_stops + locations
 # ---------------------------------------------------------------------------
 
 def get_itinerary_stops_with_locations(db: Session, itinerary_id: UUID) -> list:
     """
     Lấy toàn bộ các trạm trong lộ trình kèm thông tin địa điểm tương ứng.
-    Dùng cho màn hình bản đồ tracking để vẽ markers và route.
+    Dùng cho màn hình bản đồ tracking để vẽ markers.
 
     Columns trả về:
         day_id, day_order, travel_date,
@@ -405,4 +361,3 @@ def auto_cancel_expired_trips(db: Session, user_id: Optional[UUID] = None) -> li
             db.refresh(itinerary)
             
     return cancelled_trips
-

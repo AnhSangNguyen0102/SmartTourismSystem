@@ -235,9 +235,7 @@ Ket qua: khong co loi cu phap.
 
 9. Them audit log cho admin action: update role, approve/reject enterprise, reset rank, grant point.
 
-10. Backup database dinh ky va dat retention policy cho `gps_tracking_logs`.
-
-11. Chay dependency audit:
+10. Chay dependency audit:
 
 ```bash
 pip-audit

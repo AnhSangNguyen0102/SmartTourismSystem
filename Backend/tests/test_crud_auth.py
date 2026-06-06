@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from sqlmodel import Session
 
-from models import Users, UserSessions, UserProfiles, PreferenceTagWeights, ActivityLog, UserRole, UserStatus, RegisterType
+from models import Users, UserSessions, UserProfiles, PreferenceTagWeights, ActivityLog, Tags, UserRole, UserStatus, RegisterType
 from crud.crud_auth import (
     get_user_by_email,
     get_active_sessions_count,
@@ -170,6 +170,11 @@ def test_get_user_profile_with_preferences(db_session: Session, test_user: Users
         bio="Lập trình viên test"
     )
     db_session.add(profile)
+
+    # Tạo tag cha trước để dữ liệu preference thỏa khóa ngoại như PostgreSQL thật.
+    db_session.add(Tags(tag_id=10, tag_name="Ẩm thực"))
+    db_session.add(Tags(tag_id=11, tag_name="Lịch sử"))
+    db_session.flush()
 
     # Tạo một vài tag preferences
     t1 = PreferenceTagWeights(tag_id=10, user_id=test_user.user_id, weight=0.8)

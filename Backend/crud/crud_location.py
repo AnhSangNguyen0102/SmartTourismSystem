@@ -278,7 +278,7 @@ def create_location(
     Parameters
     ----------
     latitude, longitude : Decimal
-        Tọa độ lấy từ Google Maps Geocoding API.
+        Tọa độ đã được xác định cho địa điểm.
     """
     from uuid import uuid4
     from datetime import datetime, timezone
