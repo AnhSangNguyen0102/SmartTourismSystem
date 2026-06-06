@@ -584,9 +584,29 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
             fetchActiveCampaigns(loc, true);
         };
 
+        const handleMockLocationDisabled = () => {
+            getCurrentPosition({
+                enableHighAccuracy: false,
+                timeout: 5000,
+                maximumAge: 10000
+            })
+                .then((position) => {
+                    const loc = {
+                        lat: position.latitude,
+                        lng: position.longitude
+                    };
+                    setUserLocation(loc);
+                    sendLocation(loc.lat, loc.lng);
+                    fetchActiveCampaigns(loc, true);
+                })
+                .catch((err) => console.warn("Lỗi khôi phục định vị thật:", err));
+        };
+
         window.addEventListener('mock_location_update', handleMockLocationUpdate);
+        window.addEventListener('mock_location_disabled', handleMockLocationDisabled);
         return () => {
             window.removeEventListener('mock_location_update', handleMockLocationUpdate);
+            window.removeEventListener('mock_location_disabled', handleMockLocationDisabled);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -646,6 +666,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
         const stopWatching = startWatchingPosition({
 
             onSuccess: (position) => {
+                if (window.isMockGpsActive) return; // Skip updating if mock GPS is active
 
                 const loc = {
 
@@ -726,6 +747,20 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
         setActiveTab(tab);
 
         if (tab === 'location') {
+            if (window.isMockGpsActive && userLocation) {
+                if (!isGuest) {
+                    fetchActiveCampaigns(userLocation, true);
+                    pingLocation(userLocation.lat, userLocation.lng)
+                        .then((res) => {
+                            if (res.spawned) {
+                                void showAlert(`[Nhiệm vụ ẩn] Phát hiện nhiệm vụ ẩn mới: "${res.item.title}" (${res.item.rarity}) vừa xuất hiện!`);
+                            }
+                            fetchActiveTasks();
+                        })
+                        .catch((err) => console.error(err));
+                }
+                return;
+            }
 
             try {
 

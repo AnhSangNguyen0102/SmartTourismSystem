@@ -283,9 +283,29 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             fetchActiveCampaigns(loc, true);
         };
 
+        const handleMockLocationDisabled = () => {
+            getCurrentPosition({
+                enableHighAccuracy: false,
+                timeout: 5000,
+                maximumAge: 10000
+            })
+                .then((position) => {
+                    const loc = {
+                        lat: position.latitude,
+                        lng: position.longitude
+                    };
+                    setUserLocation(loc);
+                    sendLocation(loc.lat, loc.lng);
+                    fetchActiveCampaigns(loc, true);
+                })
+                .catch((err) => console.warn("Lỗi khôi phục định vị thật:", err));
+        };
+
         window.addEventListener('mock_location_update', handleMockLocationUpdate);
+        window.addEventListener('mock_location_disabled', handleMockLocationDisabled);
         return () => {
             window.removeEventListener('mock_location_update', handleMockLocationUpdate);
+            window.removeEventListener('mock_location_disabled', handleMockLocationDisabled);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -313,6 +333,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         // Theo dõi vị trí hiện tại của người dùng
         const stopWatching = startWatchingPosition({
             onSuccess: (position) => {
+                if (window.isMockGpsActive) return; // Skip updating if mock GPS is active
+
                 const loc = {
                     lat: position.latitude,
                     lng: position.longitude
@@ -529,15 +551,25 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         // 1. Lấy vị trí thực tế
         (async () => {
             try {
-                const position = await getCurrentPosition({
-                    enableHighAccuracy: false,
-                    timeout: 8000,
-                    maximumAge: 10000
-                });
+                let checkinLat = null;
+                let checkinLng = null;
 
-                setUserLocation({ lat: position.latitude, lng: position.longitude });
-                sendLocation(position.latitude, position.longitude);
-                executeCheckinAPI(position.latitude, position.longitude);
+                if (window.isMockGpsActive && userLocation) {
+                    checkinLat = userLocation.lat;
+                    checkinLng = userLocation.lng;
+                } else {
+                    const position = await getCurrentPosition({
+                        enableHighAccuracy: false,
+                        timeout: 8000,
+                        maximumAge: 10000
+                    });
+                    checkinLat = position.latitude;
+                    checkinLng = position.longitude;
+                    setUserLocation({ lat: checkinLat, lng: checkinLng });
+                    sendLocation(checkinLat, checkinLng);
+                }
+
+                executeCheckinAPI(checkinLat, checkinLng);
             } catch (error) {
                 // FALLBACK: Khi lỗi vị trí (như timeout trên máy tính), cho phép check-in không cần tọa độ
                 console.warn("Lỗi lấy vị trí:", error?.message || error);
