@@ -11,9 +11,12 @@ from models import (
     Itineraries,
     ItineraryDays,
     ItineraryStops,
+    ItineraryRoutes,
     ItineraryStatus,
     StopStatus,
     CheckinProgress,
+    GpsTrackingLogs,
+    DeviationLogs,
     CurrencyEnum,
 )
 from schemas import ItineraryCreate
@@ -159,6 +162,22 @@ def create_itinerary_stop(db: Session, day_id: int, location_id: UUID, stop_orde
     else:
         db.flush()
     return db_stop
+
+def create_itinerary_route(db: Session, from_stop_id: int, to_stop_id: int, travel_time: int, distance: float, polyline: str, commit: bool = True) -> ItineraryRoutes:
+    db_route = ItineraryRoutes(
+        from_stop_id=from_stop_id,
+        to_stop_id=to_stop_id,
+        travel_time=travel_time,
+        distance=distance,
+        polyline_data=polyline
+    )
+    db.add(db_route)
+    if commit:
+        db.commit()
+        db.refresh(db_route)
+    else:
+        db.flush()
+    return db_route
 
 # --- Tracking & Check-in Logic ---
 

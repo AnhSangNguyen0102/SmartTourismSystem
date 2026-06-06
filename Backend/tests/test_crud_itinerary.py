@@ -102,7 +102,8 @@ def test_itinerary_flow(db_session: Session, itinerary_setup):
         user_id=user_id,
         name="Tour Hà Nội Mùa Thu",
         total_budget=Decimal("2000000"),
-        total_travel_time=480
+        total_travel_time=480,
+        total_distance=Decimal("0")
     )
     assert itinerary.itinerary_id is not None
     assert itinerary.name == "Tour Hà Nội Mùa Thu"
@@ -177,7 +178,8 @@ def test_auto_cancel_expired_trips(db_session: Session, itinerary_setup):
         name="Expired Tour",
         status=ItineraryStatus.DRAFT,
         total_budget=Decimal("1500000"),
-        total_travel_time=360
+        total_travel_time=360,
+        total_distance=Decimal("0")
     )
 
     # Run auto cancellation

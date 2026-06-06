@@ -372,6 +372,16 @@ CREATE TABLE ITINERARY_STOPS (
 
 -- ============================================================
 
+CREATE TABLE ITINERARY_ROUTES (
+    ROUTE_ID        SERIAL          PRIMARY KEY,
+    FROM_STOP_ID    INT             NOT NULL REFERENCES ITINERARY_STOPS(STOP_ID),
+    TO_STOP_ID      INT             NOT NULL REFERENCES ITINERARY_STOPS(STOP_ID),
+    TRAVEL_TIME     INT             NOT NULL CHECK (TRAVEL_TIME >= 0),
+    DISTANCE        NUMERIC(10, 2)  NOT NULL CHECK (DISTANCE >= 0),
+    POLYLINE_DATA   TEXT            NOT NULL
+);
+
+-- ============================================================
 -- NHÓM 7: TRACKING
 -- ============================================================
 
@@ -384,6 +394,26 @@ CREATE TABLE CHECKIN_PROGRESS (
     LATITUDE        NUMERIC(10, 6)  NOT NULL CHECK (LATITUDE >= -90 AND LATITUDE <= 90),
     LONGITUDE       NUMERIC(10, 6)  NOT NULL CHECK (LONGITUDE >= -180 AND LONGITUDE <= 180),
     CONSTRAINT UQ_CHECKIN UNIQUE (USER_ID, STOP_ID)
+);
+
+-- ============================================================
+
+CREATE TABLE GPS_TRACKING_LOGS (
+    LOG_ID          BIGSERIAL       PRIMARY KEY,
+    PROGRESS_ID     INT             NOT NULL REFERENCES CHECKIN_PROGRESS(PROGRESS_ID),
+    LATITUDE        NUMERIC(10, 6)  NOT NULL CHECK (LATITUDE >= -90 AND LATITUDE <= 90),
+    LONGITUDE       NUMERIC(10, 6)  NOT NULL CHECK (LONGITUDE >= -180 AND LONGITUDE <= 180),
+    TRACKING_TIME   TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+
+CREATE TABLE DEVIATION_LOGS (
+    ALERT_ID        SERIAL          PRIMARY KEY,
+    ITINERARY_ID    UUID            NOT NULL REFERENCES ITINERARIES(ITINERARY_ID),
+    LATITUDE        NUMERIC(10, 6)  NOT NULL CHECK (LATITUDE >= -90 AND LATITUDE <= 90),
+    LONGITUDE       NUMERIC(10, 6)  NOT NULL CHECK (LONGITUDE >= -180 AND LONGITUDE <= 180),
+    ALERT_TIME      TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
