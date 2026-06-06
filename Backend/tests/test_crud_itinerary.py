@@ -6,12 +6,12 @@ from sqlmodel import Session, select
 
 from models import (
     Users, Cities, Locations, PlanningSessions, Itineraries, ItineraryDays, ItineraryStops,
-    ItineraryStatus, StopStatus, CurrencyEnum, UserProfiles, RegisterType, UserRole, UserStatus
+    ItineraryStatus, StopStatus, CurrencyEnum, UserProfiles, RegisterType, UserRole, UserStatus, ItineraryRoutes
 )
 from crud.crud_itinerary import (
     create_itinerary, create_itinerary_days, create_itinerary_stops, get_itinerary_full,
     update_itinerary_status, get_itinerary_history, get_itinerary_stops_with_locations,
-    auto_cancel_expired_trips
+    auto_cancel_expired_trips, create_itinerary_routes
 )
 
 @pytest.fixture(name="itinerary_setup")
@@ -192,3 +192,76 @@ def test_auto_cancel_expired_trips(db_session: Session, itinerary_setup):
     db_session.refresh(profile)
     assert profile.points_balance == 150 # 50 (original) + 100 (total_points refunded)
     assert profile.total_points == 0
+
+def test_create_itinerary_routes(db_session: Session, itinerary_setup):
+    session_id = itinerary_setup["session_id"]
+    user_id = itinerary_setup["user_id"]
+    loc_id = itinerary_setup["location_id"]
+
+    # 1. Create itinerary
+    itinerary = create_itinerary(
+        db=db_session,
+        session_id=session_id,
+        user_id=user_id,
+        name="Tour Test Routes",
+        total_budget=Decimal("1000000"),
+        total_travel_time=120,
+        total_distance=Decimal("0")
+    )
+    db_session.commit()
+
+    # 2. Create day
+    days = create_itinerary_days(db_session, [
+        {
+            "itinerary_id": itinerary.itinerary_id,
+            "day_order": 1,
+            "travel_date": date.today(),
+            "estimated_budget": Decimal("500000"),
+            "total_time": 120
+        }
+    ])
+    day_id = days[0].day_id
+
+    # 3. Create 2 stops
+    stops = create_itinerary_stops(db_session, [
+        {
+            "day_id": day_id,
+            "location_id": loc_id,
+            "stop_order": 1,
+            "arrival_time": time(9, 0),
+            "departure_time": time(10, 0),
+            "checkin_radius": 150,
+            "reward": 50,
+            "status": StopStatus.PENDING
+        },
+        {
+            "day_id": day_id,
+            "location_id": loc_id,
+            "stop_order": 2,
+            "arrival_time": time(11, 0),
+            "departure_time": time(12, 0),
+            "checkin_radius": 150,
+            "reward": 50,
+            "status": StopStatus.PENDING
+        }
+    ])
+    from_stop_id = stops[0].stop_id
+    to_stop_id = stops[1].stop_id
+
+    # 4. Create routes
+    routes_data = [
+        {
+            "from_stop_id": from_stop_id,
+            "to_stop_id": to_stop_id,
+            "travel_time": 15,
+            "distance": Decimal("2.5"),
+            "polyline_data": "abcxyz"
+        }
+    ]
+    routes = create_itinerary_routes(db_session, routes_data)
+    assert len(routes) == 1
+    assert routes[0].from_stop_id == from_stop_id
+    assert routes[0].to_stop_id == to_stop_id
+    assert routes[0].travel_time == 15
+    assert routes[0].distance == Decimal("2.5")
+    assert routes[0].polyline_data == "abcxyz"

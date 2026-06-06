@@ -4,11 +4,12 @@ from datetime import date, time
 from decimal import Decimal
 from sqlmodel import Session, select
 
-from models import Users, Cities, Locations, PlanningSessions, Itineraries, ItineraryDays, ItineraryStops, StopStatus, ItineraryStatus, RegisterType, UserRole, UserStatus
+from models import Users, Cities, Locations, PlanningSessions, Itineraries, ItineraryDays, ItineraryStops, StopStatus, ItineraryStatus, RegisterType, UserRole, UserStatus, ItineraryRoutes
 from schemas import ItineraryCreate
 from crud.crud_trip import (
     create_itinerary_with_days, create_itinerary, create_itinerary_day, create_itinerary_stop,
-    get_itinerary_stop, mark_stop_completed, get_user_itineraries, get_itinerary_by_id
+    get_itinerary_stop, mark_stop_completed, get_user_itineraries, get_itinerary_by_id,
+    create_itinerary_route
 )
 
 @pytest.fixture(name="trip_setup")
@@ -146,3 +147,34 @@ def test_flexible_trip_crud_ops(db_session: Session, trip_setup):
     by_id = get_itinerary_by_id(db_session, itinerary.itinerary_id)
     assert by_id is not None
     assert by_id.name == "Nha Trang Vui Vẻ"
+
+def test_create_itinerary_route(db_session: Session, trip_setup):
+    user_id = trip_setup["user_id"]
+    session_id = trip_setup["session_id"]
+    loc_id = trip_setup["location_id"]
+
+    # 1. Create Itinerary
+    itinerary = create_itinerary(db_session, session_id, user_id, "Nha Trang Test Route", 300)
+    
+    # 2. Create Day
+    day = create_itinerary_day(db_session, itinerary.itinerary_id, 1, str(date.today()), 150, 500000)
+    
+    # 3. Create 2 Stops
+    stop1 = create_itinerary_stop(db_session, day.day_id, loc_id, 1, "09:00:00", "10:30:00", 25000)
+    stop2 = create_itinerary_stop(db_session, day.day_id, loc_id, 2, "11:00:00", "12:30:00", 25000)
+
+    # 4. Create Route
+    route = create_itinerary_route(
+        db=db_session,
+        from_stop_id=stop1.stop_id,
+        to_stop_id=stop2.stop_id,
+        travel_time=20,
+        distance=Decimal("1.8"),
+        polyline="test_poly"
+    )
+    assert route.route_id is not None
+    assert route.from_stop_id == stop1.stop_id
+    assert route.to_stop_id == stop2.stop_id
+    assert route.travel_time == 20
+    assert route.distance == Decimal("1.8")
+    assert route.polyline_data == "test_poly"

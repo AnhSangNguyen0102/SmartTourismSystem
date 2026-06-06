@@ -6,11 +6,12 @@ from sqlmodel import Session
 
 from models import (
     Users, Cities, Locations, PlanningSessions, Itineraries, ItineraryDays, ItineraryStops,
-    CheckinProgress, StopStatus, RegisterType, UserRole, UserStatus
+    CheckinProgress, StopStatus, RegisterType, UserRole, UserStatus, GpsTrackingLogs, DeviationLogs
 )
 from crud.crud_tracking import (
     create_checkin_progress, update_checkin_status, get_checkin_by_stop,
-    get_stop_with_ownership, verify_stop_ownership, complete_itinerary_stop
+    get_stop_with_ownership, verify_stop_ownership, complete_itinerary_stop,
+    create_gps_log, create_deviation_log, verify_stop_in_itinerary, get_stop_with_radius
 )
 
 @pytest.fixture(name="tracking_setup")
@@ -159,3 +160,73 @@ def test_complete_itinerary_stop(db_session: Session, tracking_setup):
     # Call again when already completed -> should return False
     success_retry = complete_itinerary_stop(db_session, user_id, stop_id)
     assert success_retry is False
+
+def test_create_gps_log(db_session: Session, tracking_setup):
+    user_id = tracking_setup["user_id"]
+    stop_id = tracking_setup["stop_id"]
+    
+    # 1. Create check-in progress
+    progress = create_checkin_progress(
+        db=db_session,
+        user_id=user_id,
+        stop_id=stop_id,
+        latitude=Decimal("10.7795"),
+        longitude=Decimal("106.6992")
+    )
+    db_session.commit()
+    
+    # 2. Create GPS log
+    log = create_gps_log(
+        db=db_session,
+        progress_id=progress.progress_id,
+        latitude=Decimal("10.7796"),
+        longitude=Decimal("106.6991"),
+        tracking_time=datetime.now()
+    )
+    db_session.commit()
+    
+    assert log.log_id is not None
+    assert log.progress_id == progress.progress_id
+    assert log.latitude == Decimal("10.7796")
+    assert log.longitude == Decimal("106.6991")
+
+def test_create_deviation_log(db_session: Session, tracking_setup):
+    itinerary_id = tracking_setup["itinerary_id"]
+    
+    log = create_deviation_log(
+        db=db_session,
+        itinerary_id=itinerary_id,
+        latitude=Decimal("10.7800"),
+        longitude=Decimal("106.7000"),
+        alert_time=datetime.now()
+    )
+    db_session.commit()
+    
+    assert log.alert_id is not None
+    assert log.itinerary_id == itinerary_id
+    assert log.latitude == Decimal("10.7800")
+    assert log.longitude == Decimal("106.7000")
+
+def test_verify_stop_in_itinerary(db_session: Session, tracking_setup):
+    itinerary_id = tracking_setup["itinerary_id"]
+    stop_id = tracking_setup["stop_id"]
+    
+    # Verify valid stop
+    assert verify_stop_in_itinerary(db_session, itinerary_id, stop_id) is True
+    
+    # Verify non-existent mapping
+    assert verify_stop_in_itinerary(db_session, itinerary_id, 99999) is False
+    assert verify_stop_in_itinerary(db_session, uuid4(), stop_id) is False
+
+def test_get_stop_with_radius(db_session: Session, tracking_setup):
+    stop_id = tracking_setup["stop_id"]
+    location_id = tracking_setup["location_id"]
+    
+    # Fetch stop
+    res = get_stop_with_radius(db_session, stop_id)
+    assert res is not None
+    assert res.stop_id == stop_id
+    assert res.location_id == location_id
+    assert res.location_name == "Nhà Thờ Đức Bà"
+    assert res.latitude == Decimal("10.7797")
+    assert res.longitude == Decimal("106.6990")
