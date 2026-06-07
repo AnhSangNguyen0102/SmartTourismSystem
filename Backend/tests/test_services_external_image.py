@@ -1,0 +1,74 @@
+import asyncio
+
+import httpx
+
+from services.external_image_service import search_wikimedia_commons_images
+
+
+def test_search_wikimedia_commons_images_parses_reusable_bitmap_metadata():
+    payload = {
+        "query": {
+            "pages": [
+                {
+                    "title": "File:Ignored map.svg",
+                    "imageinfo": [
+                        {
+                            "mime": "image/svg+xml",
+                            "url": "https://example.com/map.svg",
+                            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Ignored_map.svg",
+                        }
+                    ],
+                },
+                {
+                    "title": "File:Ben Thanh Market.jpg",
+                    "imageinfo": [
+                        {
+                            "mime": "image/jpeg",
+                            "url": "https://example.com/original.jpg",
+                            "thumburl": "https://example.com/thumb.jpg",
+                            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Ben_Thanh_Market.jpg",
+                            "extmetadata": {
+                                "Artist": {"value": "<a href='/wiki/User:Test'>Test Author</a>"},
+                                "LicenseShortName": {"value": "CC BY-SA 4.0"},
+                                "LicenseUrl": {"value": "https://creativecommons.org/licenses/by-sa/4.0/"},
+                            },
+                        }
+                    ],
+                },
+            ]
+        }
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["gsrnamespace"] == "6"
+        return httpx.Response(200, json=payload)
+
+    async def run_search():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await search_wikimedia_commons_images("Ben Thanh Market Vietnam", client=client)
+
+    images = asyncio.run(run_search())
+
+    assert images == [
+        {
+            "url": "https://example.com/thumb.jpg",
+            "source_url": "https://commons.wikimedia.org/wiki/File:Ben_Thanh_Market.jpg",
+            "title": "Ben Thanh Market.jpg",
+            "author": "Test Author",
+            "license": "CC BY-SA 4.0",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        }
+    ]
+
+
+def test_search_wikimedia_commons_images_returns_empty_on_http_error():
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
+
+    async def run_search():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await search_wikimedia_commons_images("Ben Thanh Market", client=client)
+
+    images = asyncio.run(run_search())
+
+    assert images == []

@@ -490,7 +490,7 @@ function App() {
                             <div style={{ display: currentScreen === 'location_detail' ? 'contents' : 'none' }}>
                                 <LocationDetailScreen
                                     location={currentLocationDetail}
-                                    onBack={() => goBackFromHistory('plan_recommend')}
+                                    onBack={() => goBackFromHistory('main')}
                                 />
                             </div>
                         </>

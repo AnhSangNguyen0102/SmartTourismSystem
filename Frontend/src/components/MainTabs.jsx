@@ -457,7 +457,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                         onRequireLogin={onRequireLogin} 
                     />
                 ) : (
-                    <FavoritesScreen />
+                    <FavoritesScreen onOpenLocationDetail={onOpenLocationDetail} />
                 );
 
             case 'profile':

@@ -40,6 +40,9 @@ python-multipart>=0.0.9
 # Social Quest
 redis>=5.0.0
 
+# Testing
+pytest>=9.0.0
+
 # Supabase Auth
 PyJWT>=2.8.0
 requests>=2.31.0

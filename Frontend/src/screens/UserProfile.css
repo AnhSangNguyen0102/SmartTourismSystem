@@ -95,6 +95,72 @@
     font-weight: 700;
 }
 
+.user-profile-wallet-btn {
+    margin: 0;
+    width: 100%;
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    text-align: left;
+    border-radius: 18px;
+    border: 2px solid #2c3e50;
+    background: linear-gradient(135deg, #fff8dc, #ffe08a);
+    color: #243447;
+    box-shadow: 0 4px 0 #2c3e50;
+    cursor: pointer;
+}
+
+.user-profile-wallet-btn > span:nth-child(2) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-profile-wallet-btn strong {
+    font-size: 15px;
+}
+
+.user-profile-wallet-btn small {
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.user-profile-wallet-btn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: #f59e0b;
+}
+
+.user-profile-wallet-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #2c3e50;
+}
+
+.user-profile-wallet-view {
+    padding-bottom: 28px;
+}
+
+.user-profile-wallet-back {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 0;
+    background: none;
+    border: none;
+    color: var(--st-text-muted, #64748b);
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
 .user-profile-avatar-section {
     display: flex;
     justify-content: center;
@@ -385,6 +451,12 @@ body.dark-theme .user-profile-points-value {
 }
 body.dark-theme .user-profile-points-unit {
     color: #d8c290;
+}
+body.dark-theme .user-profile-wallet-btn {
+    color: var(--st-text);
+    background: var(--podium-1-bg);
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
 }
 body.dark-theme .user-profile-field input::placeholder,
 body.dark-theme .user-profile-field textarea::placeholder {

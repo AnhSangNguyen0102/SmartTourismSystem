@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
-import { ArrowLeft, Edit2, Award, Camera, Save } from 'lucide-react';
+import { ArrowLeft, Edit2, Award, Camera, Save, WalletCards, ChevronRight } from 'lucide-react';
 import { showAlert } from '../platform/dialog';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import VoucherWallet from '../components/Voucher/VoucherWallet';
@@ -270,26 +270,28 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                     
                     <button 
                         onClick={() => setShowWallet(true)}
-                        className="squishy-btn yellow"
-                        style={{ margin: '0 20px', padding: '12px' }}
+                        className="user-profile-wallet-btn"
                         type="button"
                     >
-                        Khám phá Ví Voucher
+                        <span className="user-profile-wallet-btn-icon"><WalletCards size={22} /></span>
+                        <span>
+                            <strong>Ví Voucher</strong>
+                            <small>Xem và sử dụng ưu đãi đã đổi</small>
+                        </span>
+                        <ChevronRight size={20} />
                     </button>
                 </div>
             )}
             
             {showWallet && (
-                <div style={{ padding: '0 20px' }}>
+                <div className="user-profile-wallet-view">
                     <button 
                         onClick={() => setShowWallet(false)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', color: '#64748b', fontWeight: 'bold', cursor: 'pointer', marginBottom: '10px' }}
+                        className="user-profile-wallet-back"
                     >
-                        <ArrowLeft size={16} /> Đóng Ví
+                        <ArrowLeft size={16} /> Quay lại hồ sơ
                     </button>
-                    <div style={{ background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                        <VoucherWallet />
-                    </div>
+                    <VoucherWallet />
                 </div>
             )}
 

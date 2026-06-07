@@ -336,8 +336,9 @@ const ProfileScreen = ({
                             <Coins size={18} style={{ color: '#ffd32d' }} /> Cửa hàng đổi quà ưu đãi
                         </h4>
                         <VouchersList onVoucherClaimed={(res) => {
-                            if (res && res.new_exp_balance !== undefined && setLocalPointsBalance) {
-                                setLocalPointsBalance(res.new_exp_balance);
+                            const newBalance = res?.new_point_balance ?? res?.new_points_balance ?? res?.new_exp_balance;
+                            if (newBalance !== undefined && setLocalPointsBalance) {
+                                setLocalPointsBalance(newBalance);
                             }
                         }} />
                     </div>

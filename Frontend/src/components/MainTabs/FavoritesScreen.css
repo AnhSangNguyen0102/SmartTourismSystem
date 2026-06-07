@@ -1,2 +1,65 @@
-/* src/components/MainTabs/FavoritesScreen.css */
-/* Styles for FavoritesScreen are primarily defined inline */
+.favorite-location-list {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.favorite-location-list h3 {
+    margin: 0 0 2px;
+    color: var(--st-text);
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.favorite-location-card {
+    width: 100%;
+    border: 2px solid var(--game-border-color);
+    border-radius: 16px;
+    background: var(--st-surface);
+    color: var(--st-text);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+
+.favorite-location-card > span {
+    min-width: 0;
+    flex: 1;
+    display: grid;
+    gap: 4px;
+}
+
+.favorite-location-card strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.favorite-location-card small {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--st-text-muted);
+}
+
+.favorite-location-card > svg {
+    color: #e74c3c;
+    margin-right: 5px;
+}
+
+.favorite-location-image {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    border-radius: 12px;
+    background-color: var(--st-surface-muted);
+    background-size: cover;
+    background-position: center;
+    display: grid;
+    place-items: center;
+    color: var(--st-text-muted);
+}

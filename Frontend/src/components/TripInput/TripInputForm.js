@@ -4,6 +4,14 @@ import { ArrowLeft, ArrowRight, Compass, Sparkles, Coins, MapPin } from 'lucide-
 import { showAlert } from '../../platform/dialog';
 import './TripInputForm.css';
 
+const BUDGET_PRESETS = [
+    { label: '350k', value: 350000 },
+    { label: '500k', value: 500000 },
+    { label: '1tr', value: 1000000 },
+    { label: '2tr', value: 2000000 },
+    { label: '5tr', value: 5000000 }
+];
+
 const TripInputForm = ({ onSubmitPlan, onCancel }) => {
     // State quản lý bước hiện tại 
     const [step, setStep] = useState(1);
@@ -50,6 +58,14 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
 
     const handleChange = (field, value) => {
         setTripData({ ...tripData, [field]: value });
+    };
+
+    const addBudget = (amount) => {
+        setTripData(prev => ({ ...prev, budget: (Number(prev.budget) || 0) + amount }));
+    };
+
+    const setBudget = (amount) => {
+        setTripData(prev => ({ ...prev, budget: amount }));
     };
 
     const togglePreference = (tagId) => {
@@ -247,6 +263,36 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                             onChange={(e) => handleChange('budget', parseInt(e.target.value) || 0)}
                             className="cartoon-input"
                         />
+                        <div className="budget-preset-group">
+                            <span className="budget-preset-label">Cộng thêm</span>
+                            <div className="budget-preset-buttons">
+                                {BUDGET_PRESETS.map(preset => (
+                                    <button
+                                        key={`add-${preset.value}`}
+                                        type="button"
+                                        className="budget-preset-btn add"
+                                        onClick={() => addBudget(preset.value)}
+                                    >
+                                        +{preset.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="budget-preset-group">
+                            <span className="budget-preset-label">Đặt nhanh</span>
+                            <div className="budget-preset-buttons">
+                                {BUDGET_PRESETS.map(preset => (
+                                    <button
+                                        key={`set-${preset.value}`}
+                                        type="button"
+                                        className={`budget-preset-btn set ${tripData.budget === preset.value ? 'selected' : ''}`}
+                                        onClick={() => setBudget(preset.value)}
+                                    >
+                                        {preset.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <small className="cartoon-helper-text">
                             Kinh phí tối thiểu cần nhập là {minTotalBudget.toLocaleString('vi-VN')} VNĐ (chưa bao gồm chi phí liên tỉnh).
                         </small>

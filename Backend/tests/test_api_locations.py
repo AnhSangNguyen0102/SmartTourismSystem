@@ -7,7 +7,7 @@ from sqlmodel import Session
 
 from models import (
     Users, UserProfiles, UserRole, UserStatus, RegisterType,
-    Cities, Locations, LocationsImage, LocationReviews,
+    BusinessLocation, Cities, Locations, LocationsImage, LocationReviews,
     EnterpriseProfiles, EnterpriseStatus, LocationSubmissions
 )
 from core.security import create_access_token
@@ -154,6 +154,86 @@ def test_get_location_images(client: TestClient, db_session: Session, setup_data
     # Phải sắp xếp theo display_order (tăng dần: img2 hiển thị trước img1)
     assert res_list[0]["url"] == "http://img.com/ben-thanh-2.jpg"
     assert res_list[1]["url"] == "http://img.com/ben-thanh-1.jpg"
+
+
+def test_external_images_for_system_location(client: TestClient, setup_data, monkeypatch):
+    async def fake_search(query, *, limit):
+        assert "Chợ Bến Thành" in query
+        assert "Hồ Chí Minh" in query
+        assert limit == 3
+        return [{
+            "url": "https://upload.wikimedia.org/example.jpg",
+            "source_url": "https://commons.wikimedia.org/wiki/File:Example.jpg",
+            "title": "Example.jpg",
+            "author": "Example Author",
+            "license": "CC BY-SA 4.0",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        }]
+
+    monkeypatch.setattr("routers.location_router.search_wikimedia_commons_images", fake_search)
+
+    response = client.get(f"/api/v1/locations/{setup_data['location_id']}/external-images")
+
+    assert response.status_code == 200
+    assert response.json()["eligible"] is True
+    assert response.json()["source"] == "Wikimedia Commons"
+    assert response.json()["images"][0]["url"] == "https://upload.wikimedia.org/example.jpg"
+
+
+def test_external_images_are_disabled_for_business_location(
+    client: TestClient,
+    db_session: Session,
+    setup_data,
+    monkeypatch,
+):
+    enterprise = db_session.query(EnterpriseProfiles).first()
+    db_session.add(BusinessLocation(
+        business_id=enterprise.enterprise_id,
+        location_id=setup_data["location_id"],
+    ))
+    db_session.commit()
+
+    async def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("Wikimedia must not be queried for business locations")
+
+    monkeypatch.setattr("routers.location_router.search_wikimedia_commons_images", fail_if_called)
+
+    response = client.get(f"/api/v1/locations/{setup_data['location_id']}/external-images")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "eligible": False,
+        "reason": "business_location",
+        "images": [],
+    }
+
+
+def test_external_images_are_disabled_when_database_image_exists(
+    client: TestClient,
+    db_session: Session,
+    setup_data,
+    monkeypatch,
+):
+    db_session.add(LocationsImage(
+        location_id=setup_data["location_id"],
+        url="https://example.com/database-image.jpg",
+        display_order=1,
+    ))
+    db_session.commit()
+
+    async def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("Wikimedia must not be queried when a DB image exists")
+
+    monkeypatch.setattr("routers.location_router.search_wikimedia_commons_images", fail_if_called)
+
+    response = client.get(f"/api/v1/locations/{setup_data['location_id']}/external-images")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "eligible": False,
+        "reason": "database_images_available",
+        "images": [],
+    }
 
 def test_reviews_ratings_endpoints(client: TestClient, db_session: Session, setup_data):
     loc_id = setup_data["location_id"]

@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Heart, MapPin } from 'lucide-react';
 import { storageGet } from '../../platform/storage';
 import { API_BASE } from '../../config/api';
+import { FAVORITE_LOCATIONS_CHANGED, getFavoriteLocations } from '../../services/locationFavoriteService';
 import './FavoritesScreen.css';
 
-const FavoritesScreen = () => {
+const FavoritesScreen = ({ onOpenLocationDetail }) => {
     const [savedList, setSavedList] = useState([]);
+    const [savedLocations, setSavedLocations] = useState([]);
     const [loadingSaved, setLoadingSaved] = useState(true);
 
     const fetchSavedPosts = async () => {
@@ -32,15 +34,47 @@ const FavoritesScreen = () => {
         fetchSavedPosts();
     }, []);
 
+    useEffect(() => {
+        const loadLocations = () => getFavoriteLocations().then(setSavedLocations);
+        loadLocations();
+        window.addEventListener(FAVORITE_LOCATIONS_CHANGED, loadLocations);
+        return () => window.removeEventListener(FAVORITE_LOCATIONS_CHANGED, loadLocations);
+    }, []);
+
     return (
         <div className="favorites-screen-wrapper" style={{ padding: '16px', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '950', color: 'var(--st-text)', marginBottom: '16px', textShadow: '1.5px 1.5px 0 var(--st-bg)' }}>Yêu Thích Đã Lưu</h2>
+            {savedLocations.length > 0 && (
+                <div className="favorite-location-list">
+                    <h3>Địa điểm yêu thích</h3>
+                    {savedLocations.map((location) => (
+                        <button
+                            type="button"
+                            key={location.location_id}
+                            className="favorite-location-card"
+                            onClick={() => onOpenLocationDetail?.(location)}
+                        >
+                            <div
+                                className="favorite-location-image"
+                                style={location.image_url ? { backgroundImage: `url(${location.image_url})` } : undefined}
+                            >
+                                {!location.image_url && <MapPin size={24} />}
+                            </div>
+                            <span>
+                                <strong>{location.location_name}</strong>
+                                <small><MapPin size={11} /> {location.address}</small>
+                            </span>
+                            <Heart size={18} fill="currentColor" />
+                        </button>
+                    ))}
+                </div>
+            )}
             {loadingSaved ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>
                     <div className="loader-hud" style={{ margin: '0 auto 12px' }}></div>
                     <p style={{ fontWeight: 'bold', color: 'var(--st-text-muted)' }}>Đang tải danh mục đã lưu...</p>
                 </div>
-            ) : savedList.length === 0 ? (
+            ) : savedList.length === 0 && savedLocations.length === 0 ? (
                 <div className="cartoon-card" style={{ padding: '32px', textAlign: 'center', color: 'var(--st-text-muted)', fontWeight: 'bold' }}>
                     <Heart size={48} style={{ color: '#ff4757', marginBottom: '12px' }} />
                     <p>Danh sách trống!</p>
