@@ -787,8 +787,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     return (
         <div className="trip-detail-screen">
-            <div className="detail-header">
-                <button className="btn-back-icon" onClick={onBack} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="trip-overview-header">
+                <button className="trip-overview-back-btn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
                     <ArrowLeft size={20} />
                 </button>
                 <h2>{tripDetail.name || "Chi tiết chuyến đi"}</h2>

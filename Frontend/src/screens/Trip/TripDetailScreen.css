@@ -1247,3 +1247,85 @@ body.dark-theme .budget-warning-banner {
     border: 1px solid rgba(230, 126, 34, 0.3);
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
 }
+
+/* ===== Trip overview header ===== */
+.trip-detail-screen > .trip-overview-header {
+    margin: 16px 16px 12px;
+    padding: 8px 10px;
+    min-height: 62px;
+    background: var(--st-surface);
+    border: 3px solid var(--game-border-color);
+    border-radius: 18px;
+    box-shadow: 0 4px 0 var(--game-border-color);
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+    align-items: center;
+}
+
+.trip-detail-screen > .trip-overview-header::after {
+    content: '';
+    width: 44px;
+}
+
+.trip-overview-header h2 {
+    min-width: 0;
+    margin: 0;
+    color: var(--st-text);
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1.25;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.trip-overview-back-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 2.5px solid var(--game-border-color);
+    border-radius: 12px;
+    background: var(--game-yellow);
+    color: #2c3e50;
+    box-shadow: 0 3px 0 var(--game-border-color);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.trip-overview-back-btn:hover {
+    background: #ffdf55;
+}
+
+.trip-overview-back-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 var(--game-border-color);
+}
+
+.trip-detail-screen > .trip-action-section {
+    margin: 4px 16px 16px;
+    padding: 0;
+    gap: 10px;
+}
+
+.trip-detail-screen > .trip-action-section .btn-complete-trip,
+.trip-detail-screen > .trip-action-section .btn-cancel-trip {
+    padding: 10px 8px;
+    font-size: 13px;
+}
+
+body.dark-theme .trip-detail-screen > .trip-overview-header {
+    border-color: var(--st-border);
+}
+
+body.dark-theme .trip-overview-header h2 {
+    color: #ffffff;
+}
+
+@media (max-width: 360px) {
+    .trip-detail-screen > .trip-action-section {
+        flex-direction: column;
+    }
+}

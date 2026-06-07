@@ -29,18 +29,18 @@ const HistoryDetail = ({ itineraryId, onBack }) => {
     }, [itineraryId]);
 
     if (loading) return (
-        <div className="trip-detail-screen loading">
-            <div className="spinner"></div>
+        <div className="history-detail-screen loading">
+            <div className="history-detail-spinner"></div>
             <p>Đang tải chi tiết...</p>
         </div>
     );
 
     if (error) return (
-        <div className="trip-detail-screen error">
+        <div className="history-detail-screen error">
             <h3>Lỗi</h3>
             <p>{error}</p>
-            <button className="btn-back" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ArrowLeft size={16} /> Quay lại
+            <button className="history-detail-back-btn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
+                <ArrowLeft size={20} />
             </button>
         </div>
     );
@@ -62,20 +62,22 @@ const HistoryDetail = ({ itineraryId, onBack }) => {
     };
 
     return (
-        <div className="trip-detail-screen">
-            <div className="detail-header">
-                <button className="btn-back-icon" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ArrowLeft size={16} /> Quay lại
+        <div className="history-detail-screen">
+            <div className="history-detail-header">
+                <button className="history-detail-back-btn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
+                    <ArrowLeft size={20} />
                 </button>
-                <h2>{tripDetail.name || "Chi tiết hành trình"}</h2>
-                <div className="status-badge-history" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {tripDetail.status === 'COMPLETED' ? (
-                        <><CheckCircle2 size={14} /> Hoàn thành</>
-                    ) : tripDetail.status === 'CANCELLED' ? (
-                        <><XCircle size={14} /> Đã hủy</>
-                    ) : (
-                        <><RefreshCw size={14} /> Đang diễn ra</>
-                    )}
+                <div className="history-detail-title-group">
+                    <h2>{tripDetail.name || "Chi tiết hành trình"}</h2>
+                    <div className="status-badge-history" data-status={tripDetail.status}>
+                        {tripDetail.status === 'COMPLETED' ? (
+                            <><CheckCircle2 size={14} /> Hoàn thành</>
+                        ) : tripDetail.status === 'CANCELLED' ? (
+                            <><XCircle size={14} /> Đã hủy</>
+                        ) : (
+                            <><RefreshCw size={14} /> Đang diễn ra</>
+                        )}
+                    </div>
                 </div>
             </div>
 
