@@ -248,6 +248,23 @@
   margin: 0;
 }
 
+.qa-option-button {
+  text-align: left;
+  padding: 12px 15px;
+  border: 1px solid var(--st-border);
+  border-radius: 12px;
+  background: var(--st-surface-muted);
+  color: var(--st-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.qa-option-button.selected {
+  border: 2px solid #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+
 .camera-dash-upload {
   border: 2px dashed var(--st-border);
   border-radius: 18px;

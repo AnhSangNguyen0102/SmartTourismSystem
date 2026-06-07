@@ -420,11 +420,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
                   <button
                     key={opt}
                     onClick={() => setSelectedOption(opt)}
-                    style={{
-                      textAlign: 'left', padding: '12px 15px', borderRadius: '12px', color: '#fff', fontSize: '13px', cursor: 'pointer',
-                      border: isSelected ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.08)',
-                      background: isSelected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.02)'
-                    }}
+                    className={`qa-option-button ${isSelected ? 'selected' : ''}`}
                   >
                     <strong>{opt}.</strong> {optText}
                   </button>

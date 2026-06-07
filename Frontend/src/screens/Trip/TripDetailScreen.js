@@ -851,10 +851,17 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     itineraryId={itineraryId}
                     userId={userId}
                     tasks={locationTasksMap[selectedLocationForTasks.location_id] || []}
-                    loading={tasksLoadingMap[selectedLocationForTasks.location_id]}
+                    loading={
+                        tasksLoadingMap[selectedLocationForTasks.location_id]
+                        ?? !locationTasksMap[selectedLocationForTasks.location_id]
+                    }
                     onClose={() => setSelectedLocationForTasks(null)}
                     onSelectTask={(task) => {
-                        setSelectedTaskForExecution(task);
+                        setSelectedTaskForExecution({
+                            ...task,
+                            location_id: task.location_id || selectedLocationForTasks.location_id,
+                            location_name: task.location_name || selectedLocationForTasks.location_name
+                        });
                         setSelectedLocationForTasks(null); // Close task drawer when opening detail
                     }}
                 />
@@ -895,6 +902,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         });
                         // Refresh details to update points/levels in UI
                         handleRefresh(true);
+                        fetchTasksForLocation(locId, true);
                     }}
                 />
             )}

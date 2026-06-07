@@ -34,8 +34,9 @@ export const LocationTasks = ({ locationId, locationName, itineraryId, userId, o
   const [internalLoading, setInternalLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const tasks = propsTasks !== undefined ? propsTasks : internalTasks;
-  const loading = propsLoading !== undefined ? propsLoading : internalLoading;
+  const isControlled = propsTasks !== undefined;
+  const tasks = isControlled ? propsTasks : internalTasks;
+  const loading = isControlled ? Boolean(propsLoading) : internalLoading;
 
   const locationMeta = LOCATION_MOCK_METADATA[locationName] || DEFAULT_METADATA;
 
