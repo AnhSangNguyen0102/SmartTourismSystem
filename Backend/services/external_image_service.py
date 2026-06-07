@@ -4,14 +4,20 @@ from __future__ import annotations
 
 from html import unescape
 from html.parser import HTMLParser
+import logging
 from typing import Any
 
 import httpx
 
 
 WIKIMEDIA_COMMONS_API = "https://commons.wikimedia.org/w/api.php"
-WIKIMEDIA_USER_AGENT = "SmartTourismSystem/1.0 (location image fallback)"
+WIKIMEDIA_USER_AGENT = (
+    "SmartTourismSystem/1.0 "
+    "(https://github.com/phantiendung-fr/SmartTourismSystem; location image fallback)"
+)
 SUPPORTED_IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+
+logger = logging.getLogger(__name__)
 
 
 class _TextExtractor(HTMLParser):
@@ -104,7 +110,11 @@ async def search_wikimedia_commons_images(
     }
 
     async def request(active_client: httpx.AsyncClient) -> list[dict[str, str | None]]:
-        response = await active_client.get(WIKIMEDIA_COMMONS_API, params=params)
+        response = await active_client.get(
+            WIKIMEDIA_COMMONS_API,
+            params=params,
+            headers={"User-Agent": WIKIMEDIA_USER_AGENT},
+        )
         response.raise_for_status()
         return _parse_commons_pages(response.json(), limit)
 
@@ -113,9 +123,9 @@ async def search_wikimedia_commons_images(
             return await request(client)
 
         async with httpx.AsyncClient(
-            headers={"User-Agent": WIKIMEDIA_USER_AGENT},
             timeout=8.0,
         ) as active_client:
             return await request(active_client)
-    except (httpx.HTTPError, ValueError, TypeError):
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        logger.warning("Wikimedia Commons image search failed for %r: %s", query, exc)
         return []

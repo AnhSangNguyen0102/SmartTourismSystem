@@ -2,7 +2,7 @@ import asyncio
 
 import httpx
 
-from services.external_image_service import search_wikimedia_commons_images
+from services.external_image_service import WIKIMEDIA_USER_AGENT, search_wikimedia_commons_images
 
 
 def test_search_wikimedia_commons_images_parses_reusable_bitmap_metadata():
@@ -41,6 +41,8 @@ def test_search_wikimedia_commons_images_parses_reusable_bitmap_metadata():
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.params["gsrnamespace"] == "6"
+        assert request.headers["User-Agent"] == WIKIMEDIA_USER_AGENT
+        assert "https://github.com/phantiendung-fr/SmartTourismSystem" in WIKIMEDIA_USER_AGENT
         return httpx.Response(200, json=payload)
 
     async def run_search():
@@ -61,7 +63,7 @@ def test_search_wikimedia_commons_images_parses_reusable_bitmap_metadata():
     ]
 
 
-def test_search_wikimedia_commons_images_returns_empty_on_http_error():
+def test_search_wikimedia_commons_images_returns_empty_and_logs_http_error(caplog):
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(503)
 
@@ -69,6 +71,8 @@ def test_search_wikimedia_commons_images_returns_empty_on_http_error():
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
             return await search_wikimedia_commons_images("Ben Thanh Market", client=client)
 
+    caplog.set_level("WARNING", logger="services.external_image_service")
     images = asyncio.run(run_search())
 
     assert images == []
+    assert "Wikimedia Commons image search failed" in caplog.text
