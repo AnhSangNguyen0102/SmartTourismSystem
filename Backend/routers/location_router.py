@@ -12,14 +12,19 @@ from schemas import LocationCreate, LocationRegisterResponse
 from services.location_service import register_location
 from models import (
     BusinessLocation,
+    Categories,
     Cities,
+    LocationCategories,
     LocationReviews,
     Locations,
     LocationsImage,
     UserProfiles,
     Users,
 )
-from services.external_image_service import search_wikimedia_commons_images
+from services.external_image_service import (
+    is_external_image_category_eligible,
+    search_wikimedia_commons_images,
+)
 
 router = APIRouter()
 
@@ -68,7 +73,8 @@ async def get_external_location_images(
     db: Session = Depends(get_session),
 ):
     """
-    Search Wikimedia Commons only for system-managed locations without DB images.
+    Search Wikimedia Commons only for eligible system-managed sightseeing locations
+    without DB images.
 
     Enterprise locations must keep using images supplied by their owners.
     """
@@ -87,6 +93,14 @@ async def get_external_location_images(
     ).first()
     if business_location is not None:
         return {"eligible": False, "reason": "business_location", "images": []}
+
+    category_names = db.exec(
+        select(Categories.category_name)
+        .join(LocationCategories, LocationCategories.category_id == Categories.category_id)
+        .where(LocationCategories.location_id == location_id)
+    ).all()
+    if not is_external_image_category_eligible(category_names):
+        return {"eligible": False, "reason": "unsupported_location_category", "images": []}
 
     city = db.get(Cities, location.city_id)
     query_parts = [location.location_name]

@@ -2,7 +2,21 @@ import asyncio
 
 import httpx
 
-from services.external_image_service import WIKIMEDIA_USER_AGENT, search_wikimedia_commons_images
+from services.external_image_service import (
+    WIKIMEDIA_USER_AGENT,
+    is_external_image_category_eligible,
+    search_wikimedia_commons_images,
+)
+
+
+def test_external_image_category_eligibility_is_limited_to_sightseeing_and_history():
+    assert is_external_image_category_eligible(["Điểm tham quan"])
+    assert is_external_image_category_eligible(["Danh lam thắng cảnh"])
+    assert is_external_image_category_eligible(["Di tích lịch sử"])
+    assert is_external_image_category_eligible(["Cultural heritage"])
+    assert not is_external_image_category_eligible(["Quán ăn"])
+    assert not is_external_image_category_eligible(["Nơi lưu trú"])
+    assert not is_external_image_category_eligible([])
 
 
 def test_search_wikimedia_commons_images_parses_reusable_bitmap_metadata():

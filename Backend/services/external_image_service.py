@@ -5,7 +5,8 @@ from __future__ import annotations
 from html import unescape
 from html.parser import HTMLParser
 import logging
-from typing import Any
+import unicodedata
+from typing import Any, Iterable
 
 import httpx
 
@@ -16,8 +17,38 @@ WIKIMEDIA_USER_AGENT = (
     "(https://github.com/phantiendung-fr/SmartTourismSystem; location image fallback)"
 )
 SUPPORTED_IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ELIGIBLE_LOCATION_CATEGORY_TERMS = {
+    "diem tham quan",
+    "danh lam",
+    "thang canh",
+    "di tich",
+    "lich su",
+    "di san",
+    "tourist attraction",
+    "landmark",
+    "historic",
+    "historical",
+    "heritage",
+    "scenic",
+}
 
 logger = logging.getLogger(__name__)
+
+
+def _normalized_text(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value.casefold().replace("đ", "d"))
+    return " ".join(
+        "".join(character for character in text if not unicodedata.combining(character)).split()
+    )
+
+
+def is_external_image_category_eligible(category_names: Iterable[str]) -> bool:
+    """Allow Commons fallback only for sightseeing and historical categories."""
+    return any(
+        term in _normalized_text(category_name)
+        for category_name in category_names
+        for term in ELIGIBLE_LOCATION_CATEGORY_TERMS
+    )
 
 
 class _TextExtractor(HTMLParser):

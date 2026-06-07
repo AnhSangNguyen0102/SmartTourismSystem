@@ -120,29 +120,38 @@ function App() {
 
     const navigateTo = useCallback((nextScreen, options = {}) => {
         const { resetHistory = false } = options;
-        setCurrentScreen((prevScreen) => {
-            if (resetHistory) {
-                screenHistoryRef.current = [];
-                return nextScreen;
-            }
+        const previousScreen = currentScreenRef.current;
 
-            if (prevScreen !== nextScreen) {
-                screenHistoryRef.current.push(prevScreen);
+        if (resetHistory) {
+            screenHistoryRef.current = [];
+        } else if (previousScreen !== nextScreen) {
+            const history = screenHistoryRef.current;
+            if (history[history.length - 1] !== previousScreen) {
+                history.push(previousScreen);
             }
+        }
 
-            return nextScreen;
-        });
+        currentScreenRef.current = nextScreen;
+        setCurrentScreen(nextScreen);
     }, []);
 
     const goBackFromHistory = useCallback((fallbackScreen = 'main') => {
-        const previousScreen = screenHistoryRef.current.pop();
+        const activeScreen = currentScreenRef.current;
+        let previousScreen = screenHistoryRef.current.pop();
+
+        // Skip duplicate entries left by older navigation updates.
+        while (previousScreen === activeScreen) {
+            previousScreen = screenHistoryRef.current.pop();
+        }
 
         if (previousScreen) {
+            currentScreenRef.current = previousScreen;
             setCurrentScreen(previousScreen);
             return true;
         }
 
-        if (currentScreenRef.current !== fallbackScreen) {
+        if (activeScreen !== fallbackScreen) {
+            currentScreenRef.current = fallbackScreen;
             setCurrentScreen(fallbackScreen);
             return true;
         }

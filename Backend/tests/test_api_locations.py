@@ -7,8 +7,8 @@ from sqlmodel import Session
 
 from models import (
     Users, UserProfiles, UserRole, UserStatus, RegisterType,
-    BusinessLocation, Cities, Locations, LocationsImage, LocationReviews,
-    EnterpriseProfiles, EnterpriseStatus, LocationSubmissions
+    BusinessLocation, Categories, Cities, LocationCategories, Locations, LocationsImage,
+    LocationReviews, EnterpriseProfiles, EnterpriseStatus, LocationSubmissions
 )
 from core.security import create_access_token
 
@@ -83,6 +83,15 @@ def setup_data_fixture(db_session: Session):
         is_active=True
     )
     db_session.add(location)
+    db_session.commit()
+
+    attraction_category = Categories(category_name="Điểm tham quan")
+    db_session.add(attraction_category)
+    db_session.commit()
+    db_session.add(LocationCategories(
+        location_id=loc_id,
+        category_id=attraction_category.category_id,
+    ))
     db_session.commit()
 
     return {
@@ -234,6 +243,50 @@ def test_external_images_are_disabled_when_database_image_exists(
         "reason": "database_images_available",
         "images": [],
     }
+
+
+def test_external_images_are_disabled_for_unsupported_location_category(
+    client: TestClient,
+    db_session: Session,
+    setup_data,
+    monkeypatch,
+):
+    restaurant = Locations(
+        location_name="Quán ăn thử nghiệm",
+        address="Quận 1, TPHCM",
+        latitude=Decimal("10.7720"),
+        longitude=Decimal("106.6984"),
+        city_id=setup_data["city_id"],
+        open_time=time(7, 0, 0),
+        close_time=time(19, 0, 0),
+        min_price=Decimal("0"),
+        max_price=Decimal("100000"),
+        is_active=True,
+    )
+    restaurant_category = Categories(category_name="Quán ăn")
+    db_session.add(restaurant)
+    db_session.add(restaurant_category)
+    db_session.commit()
+    db_session.add(LocationCategories(
+        location_id=restaurant.location_id,
+        category_id=restaurant_category.category_id,
+    ))
+    db_session.commit()
+
+    async def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("Wikimedia must not be queried for unsupported categories")
+
+    monkeypatch.setattr("routers.location_router.search_wikimedia_commons_images", fail_if_called)
+
+    response = client.get(f"/api/v1/locations/{restaurant.location_id}/external-images")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "eligible": False,
+        "reason": "unsupported_location_category",
+        "images": [],
+    }
+
 
 def test_reviews_ratings_endpoints(client: TestClient, db_session: Session, setup_data):
     loc_id = setup_data["location_id"]
