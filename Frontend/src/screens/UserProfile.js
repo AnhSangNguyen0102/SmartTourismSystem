@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE } from '../config/api';
 import { storageGet } from '../platform/storage';
-import { ArrowLeft, Edit2, Award, Camera, Save } from 'lucide-react';
+import { ArrowLeft, Edit2, Award, Camera, Save, WalletCards, ChevronRight } from 'lucide-react';
 import { showAlert } from '../platform/dialog';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import VoucherWallet from '../components/Voucher/VoucherWallet';
@@ -21,6 +21,7 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
 
     useEffect(() => {
         if (userInfo) {
@@ -216,83 +217,86 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                 {isEnterprise ? "Cấu hình Doanh nghiệp" : "Hồ sơ của tôi"}
             </h2>
 
+            {/* Avatar Section */}
+            {!showWallet && (
+                <div className="user-profile-avatar-section">
+                    <div className="user-profile-avatar-wrapper">
+                        <img
+                            src={getSafeAvatarSrc(profileData.avatar_url, profileData.full_name || profileData.business_name)}
+                            alt="Avatar"
+                            className="user-profile-avatar-img"
+                            onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = createInitialAvatarDataUrl(profileData.full_name || profileData.business_name);
+                            }}
+                        />
+                        {isEditing && (
+                            <>
+                                <button 
+                                    type="button" 
+                                    onClick={handleAvatarClick} 
+                                    className="user-profile-avatar-edit-btn" 
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <Camera size={14} />
+                                </button>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    onChange={handleAvatarChange} 
+                                    accept="image/*" 
+                                    style={{ display: 'none' }} 
+                                />
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* HIỂN THỊ ĐIỂM THƯỞNG VÀ VÍ VOUCHER (Nếu không phải doanh nghiệp) */}
             {!isEnterprise && !showWallet && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
                     <div className="user-profile-points-card">
                         <div className="user-profile-points-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Award size={20} style={{ color: '#f1c40f' }} />
                         </div>
                         <div>
-                        <div className="user-profile-points-label">Điểm thưởng tích lũy</div>
-                        <div className="user-profile-points-value">
+                            <div className="user-profile-points-label">Điểm thưởng tích lũy</div>
+                            <div className="user-profile-points-value">
                                 {(userInfo?.points_balance || 0) + (userInfo?.total_points || 0)} <span className="user-profile-points-unit">điểm</span>
-                        </div>
+                            </div>
                         </div>
                     </div>
                     
                     <button 
                         onClick={() => setShowWallet(true)}
-                        className="squishy-btn yellow"
-                        style={{ margin: '0 20px', padding: '12px' }}
+                        className="user-profile-wallet-btn"
                         type="button"
                     >
-                        Khám phá Ví Voucher
+                        <span className="user-profile-wallet-btn-icon"><WalletCards size={22} /></span>
+                        <span>
+                            <strong>Ví Voucher</strong>
+                            <small>Xem và sử dụng ưu đãi đã đổi</small>
+                        </span>
+                        <ChevronRight size={20} />
                     </button>
                 </div>
             )}
             
             {showWallet && (
-                <div style={{ padding: '0 20px' }}>
+                <div className="user-profile-wallet-view">
                     <button 
                         onClick={() => setShowWallet(false)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', color: '#64748b', fontWeight: 'bold', cursor: 'pointer', marginBottom: '10px' }}
+                        className="user-profile-wallet-back"
                     >
-                        <ArrowLeft size={16} /> Đóng Ví
+                        <ArrowLeft size={16} /> Quay lại hồ sơ
                     </button>
-                    <div style={{ background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                        <VoucherWallet />
-                    </div>
+                    <VoucherWallet />
                 </div>
             )}
 
-            {/* Avatar Section & Cập nhật Form */}
             {!showWallet && (
-                <> 
-                    <div className="user-profile-avatar-section">
-                        <div className="user-profile-avatar-wrapper">
-                            <img
-                                src={getSafeAvatarSrc(profileData.avatar_url, profileData.full_name || profileData.business_name)}
-                                alt="Avatar"
-                                className="user-profile-avatar-img"
-                                onError={(event) => {
-                                    event.currentTarget.onerror = null;
-                                    event.currentTarget.src = createInitialAvatarDataUrl(profileData.full_name || profileData.business_name);
-                                }}
-                            />
-                            {isEditing && (
-                                <>
-                                    <button 
-                                        type="button" 
-                                        onClick={handleAvatarClick} 
-                                        className="user-profile-avatar-edit-btn" 
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                    >
-                                        <Camera size={14} />
-                                    </button>
-                                    <input 
-                                        type="file" 
-                                        ref={fileInputRef} 
-                                        onChange={handleAvatarChange} 
-                                        accept="image/*" 
-                                        style={{ display: 'none' }} 
-                                    />
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleSaveProfile} className="user-profile-form">
+                <form onSubmit={handleSaveProfile} className="user-profile-form">
                         {isEnterprise ? (
                             /* --- TRƯỜNG CHO DOANH NGHIỆP --- */
                             <>
@@ -387,24 +391,14 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                                     <button
                                         type="button"
                                         onClick={() => setIsEditing(true)}
-                                        style={{
-                                            background: '#1e90ff',
-                                            color: '#ffffff',
-                                            border: '1.5px solid #2c3e50',
-                                            borderRadius: '8px',
-                                            padding: '4px 10px',
-                                            fontSize: '11px',
-                                            fontWeight: 'bold',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 2px 0 #2c3e50',
-                                            marginLeft: '10px'
-                                        }}
+                                        className="user-profile-change-pw-btn"
                                     >
                                         {userInfo?.has_password ? "Đổi mật khẩu" : "Thêm mật khẩu"}
                                     </button>
                                 </div>
                             </div>
                         )}
+
 
                         {/* Các nút bấm chỉ hiện khi ở chế độ Edit */}
                         {isEditing && (
@@ -418,7 +412,6 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
                             </div>
                         )}
                     </form>
-                </>
             )}
         </div>
     );

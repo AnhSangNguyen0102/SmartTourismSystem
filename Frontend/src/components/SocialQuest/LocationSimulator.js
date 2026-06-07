@@ -12,11 +12,23 @@ const LocationSimulator = () => {
     const [lat, setLat] = useState(10.772461);
     const [lng, setLng] = useState(106.698055);
 
+    const handleClose = () => {
+        setIsOpen(false);
+        window.isMockGpsActive = false;
+        window.mockLatitude = null;
+        window.mockLongitude = null;
+        window.dispatchEvent(new CustomEvent('mock_location_disabled'));
+    };
+
     const handleSend = () => {
+        window.isMockGpsActive = true;
+        window.mockLatitude = lat;
+        window.mockLongitude = lng;
         if (sendLocation) {
             sendLocation(lat, lng);
             console.log(`📍 Đã bắn tọa độ lên Server: ${lat}, ${lng}`);
         }
+        window.dispatchEvent(new CustomEvent('mock_location_update', { detail: { lat, lng } }));
     };
 
     // ==========================================
@@ -71,7 +83,7 @@ const LocationSimulator = () => {
                     <Radio size={14} /> MOCK GPS
                 </h4>
                 <button 
-                    onClick={() => setIsOpen(false)}
+                    onClick={handleClose}
                     style={{ background: 'none', border: 'none', color: '#ff7675', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
                 >
                     ✕

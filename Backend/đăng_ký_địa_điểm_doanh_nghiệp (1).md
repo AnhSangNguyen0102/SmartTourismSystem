@@ -33,7 +33,7 @@ Doanh nghiệp nhập thông tin địa điểm
   → max_price >= min_price?
   → Địa điểm đã tồn tại trong thành phố chưa?
             ↓
-[_geocode_address] Google Maps Geocoding API
+[_resolve_coordinates] Bộ xác định tọa độ cục bộ cho môi trường POC
   → Địa chỉ text → latitude, longitude
             ↓
 [Transaction] INSERT 4 bảng cùng lúc
@@ -51,7 +51,7 @@ Trả về thông tin địa điểm + thông báo chờ Admin duyệt
 
 ### `services/location_service.py`
 Tầng Service xử lý toàn bộ logic nghiệp vụ:
-- Gọi **Google Maps Geocoding API** để lấy tọa độ từ địa chỉ text
+- Xác định tọa độ tạm từ địa chỉ text trong môi trường POC
 - Validate nghiệp vụ: giờ mở/đóng cửa, giá, trùng tên địa điểm
 - Thực hiện **multi-table transaction** — INSERT 4 bảng trong một lần, rollback toàn bộ nếu lỗi
 
@@ -182,7 +182,6 @@ DATABASE_URL=postgresql://...
 SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-GOOGLE_API_KEY=your-google-maps-api-key
 ```
 
 ### 3. Chạy server
@@ -261,19 +260,16 @@ python test_location_register.py
 | `SECRET_KEY` | Khóa bí mật ký JWT token | ✅ |
 | `ALGORITHM` | Thuật toán JWT (mặc định: HS256) | ✅ |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Thời hạn access token (phút) | ✅ |
-| `GOOGLE_API_KEY` | Google Maps Geocoding API key | ✅ |
 
 ---
 
 ## ⚠️ Lưu ý & Known Issues
 
-### 1. Google Maps API — Bypass cho POC
-Hiện tại `_geocode_address()` trong `location_service.py` đang dùng tọa độ mặc định thay vì gọi Google API thật (do chưa có API key):
+### 1. Bộ xác định tọa độ cho POC
+Hiện tại `_resolve_coordinates()` trong `location_service.py` dùng tọa độ theo thành phố kèm độ lệch nhỏ:
 ```python
-# TODO: Thay bằng Google Maps API thật khi có key
 return 10.776797, 106.700981  # Mặc định HCM
 ```
-Khi có `GOOGLE_API_KEY` thật → uncomment code gọi API và xóa đoạn bypass.
 
 ### 2. Địa điểm sau khi đăng ký ở trạng thái PENDING
 Admin cần duyệt địa điểm trước khi hiển thị cho user. Chức năng duyệt địa điểm của Admin chưa được implement trong sprint này.
@@ -282,7 +278,7 @@ Admin cần duyệt địa điểm trước khi hiển thị cho user. Chức n�
 Token giả mạo trước đây trả về HTTP 500 — đã được fix bằng cách bổ sung `except Exception:` vào `verify_token()` trong `core/security.py`. Hiện tại trả về HTTP 401 đúng chuẩn.
 
 ### 4. Unique constraint tọa độ
-Ràng buộc `UQ_LOCATION_COORD` đảm bảo không có 2 địa điểm trùng tọa độ. Khi bypass Google Maps bằng tọa độ mặc định, các test case chạy liên tiếp có thể bị conflict — đây là hành vi bình thường khi test với bypass.
+Ràng buộc `UQ_LOCATION_COORD` đảm bảo không có 2 địa điểm trùng tọa độ. Bộ xác định tọa độ POC thêm độ lệch nhỏ để hạn chế xung đột khi test.
 
 ---
 

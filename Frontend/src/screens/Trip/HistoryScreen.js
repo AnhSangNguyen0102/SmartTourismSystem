@@ -3,7 +3,7 @@ import { getTripHistory } from '../../services/tripService';
 import { storageGet } from '../../platform/storage';
 import { 
     ArrowLeft, Filter, Calendar, Search, CheckCircle2, 
-    XCircle, RefreshCw, MapPin, Wallet 
+    XCircle, RefreshCw, Wallet
 } from 'lucide-react';
 import HistoryDetail from './HistoryDetail';
 import './HistoryScreen.css';
@@ -151,9 +151,6 @@ const HistoryScreen = ({ onBack }) => {
                                     <Calendar size={14} /> {formatDate(item.create_at)}
                                 </p>
                                 <div className="card-stats">
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <MapPin size={14} /> {item.total_distance} km
-                                    </span>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <Wallet size={14} /> {new Intl.NumberFormat('vi-VN').format(item.total_budget)} đ
                                     </span>

@@ -457,3 +457,50 @@
         gap: 6px;
     }
 }
+
+/* ===== Dark theme ===== */
+body.dark-theme .history-container {
+    background: var(--st-bg);
+    color: var(--st-text);
+}
+
+body.dark-theme .history-header,
+body.dark-theme .filter-bar,
+body.dark-theme .history-card,
+body.dark-theme .loading-state,
+body.dark-theme .empty-state {
+    background: var(--st-surface);
+    border-color: var(--st-border);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+
+body.dark-theme .history-header h1,
+body.dark-theme .filter-group label,
+body.dark-theme .history-card .card-info h3 {
+    color: var(--st-text);
+}
+
+body.dark-theme .filter-select,
+body.dark-theme .filter-date,
+body.dark-theme .clear-date {
+    background-color: var(--st-surface-muted);
+    border-color: var(--st-border);
+    color: var(--st-text);
+    color-scheme: dark;
+}
+
+body.dark-theme .filter-select:focus,
+body.dark-theme .filter-date:focus {
+    background-color: var(--st-surface);
+}
+
+body.dark-theme .history-card .card-date,
+body.dark-theme .history-card .card-stats span,
+body.dark-theme .history-container .loading-state,
+body.dark-theme .history-container .empty-state {
+    color: var(--st-text-muted);
+}
+
+body.dark-theme .history-card .card-status {
+    border-color: var(--st-border);
+}

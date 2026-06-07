@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPlanningSession, getRecommendations } from '../../services/planService';
 import { createTrip } from '../../services/tripService';
 import { API_BASE } from '../../config/api';
-import { getCurrentPosition } from '../../platform/location';
 import { showAlert } from '../../platform/dialog';
 import { storageGet } from '../../platform/storage';
 import { ArrowLeft, ArrowRight, CheckCircle, Circle, AlertCircle } from 'lucide-react';
@@ -167,30 +166,13 @@ const PlanRecommendScreen = ({ planPayload, onBack, onTripCreated, onOpenLocatio
         setCreatingTrip(true);
         try {
             const token = await storageGet('access_token');
-            const basePayload = {
+            const tripPayload = {
                 session_id: sessionData.session_id,
                 name: planPayload.city_name ? `Lộ trình ${planPayload.city_name}` : `Lộ trình ${planPayload.start_day || 'mới'}`,
                 location_ids: selectedLocations,
                 start_date: planPayload.start_day,
                 end_date: planPayload.end_day,
             };
-
-            let tripPayload = basePayload;
-            try {
-                const position = await getCurrentPosition({
-                    enableHighAccuracy: false,
-                    timeout: 5000,
-                    maximumAge: 10000,
-                });
-
-                tripPayload = {
-                    ...basePayload,
-                    start_lat: position.latitude,
-                    start_lon: position.longitude,
-                };
-            } catch (geoError) {
-                console.warn('Không lấy được GPS, tiếp tục tạo lộ trình không có điểm xuất phát:', geoError);
-            }
 
             const result = await createTrip(tripPayload, token);
             onTripCreated(result.itinerary_id);

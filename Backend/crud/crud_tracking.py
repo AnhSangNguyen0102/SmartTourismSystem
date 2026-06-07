@@ -11,6 +11,7 @@
  Q5  SELECT  ITINERARY_DAYS, ITINERARY_STOPS           verify_stop_in_itinerary
  Q6  SELECT  CHECKIN_PROGRESS                          get_checkin_by_stop
  Q7  SELECT  ITINERARY_STOPS, LOCATIONS                get_stop_with_radius
+ Q8  SELECT  ITINERARY_STOPS, LOCATIONS, ITINERARIES  get_stop_with_ownership
 ================================================================================
 """
 
@@ -300,8 +301,9 @@ def get_stop_with_radius(db: Session, stop_id: int):
         .where(ItineraryStops.stop_id == stop_id)
     )
     return db.exec(statement).first()
+
 # ---------------------------------------------------------------------------
-# Q8b – Gộp: Kiểm tra quyền sở hữu + Lấy dữ liệu trạm (1 query thay vì 2)
+# Q8 – Kiểm tra quyền sở hữu + Lấy dữ liệu trạm
 # ---------------------------------------------------------------------------
 
 def get_stop_with_ownership(
@@ -310,7 +312,6 @@ def get_stop_with_ownership(
     stop_id: int,
 ):
     """
-    Gộp ``verify_stop_ownership`` + ``get_stop_with_radius`` thành 1 query duy nhất.
     Trả về dữ liệu trạm nếu user sở hữu, ``None`` nếu không.
     """
     statement = (

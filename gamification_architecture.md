@@ -12,7 +12,7 @@ Hệ thống hoạt động theo một vòng lặp khép kín (Gamification Loop
 ```mermaid
 graph TD
     A[Du khách di chuyển thực tế] --> B{GPS trong Bán kính?}
-    B -- Ngoài Bán kính --> C[Xem thông tin nhiệm vụ & Chỉ đường]
+    B -- Ngoài Bán kính --> C[Xem thông tin nhiệm vụ & Bản đồ]
     B -- Trong Bán kính --> D[Mở khóa nút Bắt đầu / Chụp ảnh]
     D --> E[Chụp ảnh trực tiếp / Tải ảnh từ thư viện]
     E --> F[Tải ảnh lên Supabase Storage]
@@ -45,8 +45,8 @@ graph TD
     *   **Độ khó (Difficulty)**: Gồm 3 cấp độ (Dễ - 🟢 | Trung bình - 🟡 | Khó - 🔴).
     *   **Hướng dẫn chi tiết**: Hướng dẫn du khách góc chụp lý tưởng (ví dụ: *"Chụp toàn cảnh mặt trước của tượng Chúa dang tay, lấy được cả nền trời xanh"*).
 *   **Thành phần Bản đồ & GPS (Mini Map)**:
-    *   Bản đồ nhỏ chiếm 30% chiều cao màn hình (sử dụng Mapbox hoặc Google Maps gọn nhẹ).
-    *   Đường nét đứt màu xanh nối từ chấm tròn của User (nhấp nháy) đến biểu tượng Flag/Pin của địa điểm du lịch.
+    *   Bản đồ nhỏ chiếm 30% chiều cao màn hình (sử dụng Leaflet và OpenStreetMap).
+    *   Hiển thị vị trí User và biểu tượng Flag/Pin của địa điểm du lịch.
     *   Thanh trạng thái GPS thời gian thực: `📡 Độ chính xác: Cao (~4m) | Khoảng cách: 12m (Trong bán kính hợp lệ)`.
 *   **Khu vực Tương tác (Camera & Upload)**:
     *   Nếu ngoài bán kính: Nút "Chụp ảnh" bị vô hiệu hóa (disabled), hiển thị thông điệp gợi ý *"Hãy di chuyển lại gần thêm 35m để mở khóa camera"*.
@@ -803,12 +803,12 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onBack, onSuccess 
 
           {/* HÀNH ĐỘNG DẪN ĐƯỜNG */}
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${task.target_latitude},${task.target_longitude}`}
+            href={`https://www.openstreetmap.org/?mlat=${task.target_latitude}&mlon=${task.target_longitude}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 py-2.5 w-full bg-slate-800 hover:bg-slate-700 active:scale-95 transition text-xs font-semibold text-slate-300 rounded-xl border border-white/5"
           >
-            <Navigation className="w-3.5 h-3.5" /> Dẫn đường bằng Google Maps
+            <Navigation className="w-3.5 h-3.5" /> Mở OpenStreetMap
           </a>
         </div>
 

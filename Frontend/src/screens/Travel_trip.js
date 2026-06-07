@@ -21,7 +21,7 @@ import {
     Check
 } from 'lucide-react';
 import Mascot from '../components/Mascot/Mascot';
-import { SHOW_MASCOT } from '../config/uiFlags';
+import { isMascotEnabled } from '../config/uiFlags';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../utils/avatar';
 import { showAlert } from '../platform/dialog';
 import './Travel_trip.css';
@@ -47,6 +47,15 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
     const [loadingCheckIn, setLoadingCheckIn] = useState(false);
     const [loadingChest, setLoadingChest] = useState(false);
     const [loadingQuests, setLoadingQuests] = useState(false);
+    const [showMascot, setShowMascot] = useState(isMascotEnabled());
+
+    useEffect(() => {
+        const handleMascotChange = () => {
+            setShowMascot(isMascotEnabled());
+        };
+        window.addEventListener('mascotSettingsChanged', handleMascotChange);
+        return () => window.removeEventListener('mascotSettingsChanged', handleMascotChange);
+    }, []);
 
     // Lấy icon tương ứng với loại nhiệm vụ
     const getQuestIcon = (type) => {
@@ -356,9 +365,6 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                                             <p className="ongoing-trip-meta">Ngày kích hoạt: {formatDate(trip.create_at)}</p>
                                             <div className="ongoing-trip-stats">
                                                 <span className="ongoing-stat-item">
-                                                    <Map size={13} className="stat-icon" /> {trip.total_distance} km
-                                                </span>
-                                                <span className="ongoing-stat-item">
                                                     <Coins size={13} className="stat-icon" /> {new Intl.NumberFormat('vi-VN').format(trip.total_budget)} đ
                                                 </span>
                                             </div>
@@ -375,10 +381,10 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                             <div className="ongoing-empty-card" style={{ 
                                 padding: '24px 16px', 
                                 textAlign: 'center', 
-                                background: 'rgba(255, 255, 255, 0.6)', 
-                                border: '2.5px dashed #2c3e50', 
+                                background: 'var(--st-surface-muted)', 
+                                border: '2.5px dashed var(--game-border-color)', 
                                 borderRadius: '16px', 
-                                color: '#7f8c8d',
+                                color: 'var(--st-text-muted)',
                                 fontWeight: 'bold',
                                 fontSize: '13px',
                                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
@@ -655,7 +661,7 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                 </div>
             </div>
 
-            {SHOW_MASCOT && <Mascot message={mascotMessage} />}
+            {showMascot && <Mascot message={mascotMessage} />}
         </div>
     );
 };

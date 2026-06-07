@@ -4,7 +4,7 @@ import IslandMap from '../../components/IslandMap/IslandMap';
 import LocationTasks from './LocationTasks';
 import TaskDetail from './TaskDetail';
 import './TripDetailScreen.css';
-import RouteMap from '../../components/RouteMap/RouteMap';
+import LocationDetailMap from '../../components/LocationDetailMap/LocationDetailMap';
 import Mascot from '../../components/Mascot/Mascot';
 import TreasureOverlay from '../../components/TreasureOverlay/TreasureOverlay';
 // Hidden Quest imports
@@ -13,9 +13,10 @@ import { useSocialQuest } from '../../components/SocialQuest/SocialQuestProvider
 import ChestOpeningAnimation from '../../components/HiddenQuest/ChestOpeningAnimation';
 import QuestQrScanner from '../../components/QuestQrScanner';
 import { storageGet } from '../../platform/storage';
+import { API_BASE } from '../../config/api';
 import { showAlert, showConfirm, showToast } from '../../platform/dialog';
 import { getCurrentPosition, startWatchingPosition } from '../../platform/location';
-import { SHOW_MASCOT } from '../../config/uiFlags';
+import { isMascotEnabled } from '../../config/uiFlags';
 import { playSound } from '../../utils/soundUtils';
 import { 
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, 
@@ -32,9 +33,11 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     // Gamification state variables
     const [selectedLocationForTasks, setSelectedLocationForTasks] = useState(null);
+    const [locationTasksMap, setLocationTasksMap] = useState({});
+    const [tasksLoadingMap, setTasksLoadingMap] = useState({});
 
     // Hidden Quest states
-    const [hiddenTasks, setHiddenTasks] = useState([]);
+    const [, setHiddenTasks] = useState([]);
     const [selectedHiddenTask, setSelectedHiddenTask] = useState(null);
     const [showChestAnimation, setShowChestAnimation] = useState(false);
     const [showQuestModal, setShowQuestModal] = useState(false);
@@ -45,17 +48,70 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     const [questLoading, setQuestLoading] = useState(false);
     const [questError, setQuestError] = useState('');
     const [questSuccess, setQuestSuccess] = useState(null);
+    const [showMascot, setShowMascot] = useState(isMascotEnabled());
+
+    useEffect(() => {
+        const handleMascotChange = () => {
+            setShowMascot(isMascotEnabled());
+        };
+        window.addEventListener('mascotSettingsChanged', handleMascotChange);
+        return () => window.removeEventListener('mascotSettingsChanged', handleMascotChange);
+    }, []);
 
     // States for Public Campaigns
-    const [campaigns, setCampaigns] = useState([]);
-    const [selectedCampaign, setSelectedCampaign] = useState(null);
+    const [, setCampaigns] = useState([]);
+    const [selectedCampaign] = useState(null);
     const [showCampaignModal, setShowCampaignModal] = useState(false);
 
     // Fetch active campaigns list
-    const fetchActiveCampaigns = async (locationOverride = null) => {
+    const fetchActiveCampaigns = async (locationOverride = null, force = false) => {
+        const loc = locationOverride || userLocationRef.current;
+        if (!loc || typeof loc.lat === 'undefined' || typeof loc.lng === 'undefined') {
+            return;
+        }
+
+        const now = Date.now();
+        const lastLoc = lastFetchedLocationRef.current;
+        const lastTime = lastFetchedTimeRef.current;
+
+        if (!force && lastLoc) {
+            const timeElapsed = now - lastTime;
+            
+            // 1. Hard limit: never fetch more than once every 10 seconds unless forced
+            if (timeElapsed < 10000) {
+                return;
+            }
+
+            // 2. Soft limit: if less than 60 seconds, only fetch if moved >= 10 meters
+            if (timeElapsed < 60000) {
+                const lat1 = lastLoc.lat;
+                const lon1 = lastLoc.lng;
+                const lat2 = loc.lat;
+                const lon2 = loc.lng;
+                
+                const R = 6371000; // meters
+                const dLat = ((lat2 - lat1) * Math.PI) / 180;
+                const dLon = ((lon2 - lon1) * Math.PI) / 180;
+                const a =
+                  Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos((lat1 * Math.PI) / 180) *
+                    Math.cos((lat2 * Math.PI) / 180) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distance = R * c;
+
+                if (distance < 10) {
+                    return;
+                }
+            }
+        }
+
         try {
-            const activeCampaigns = await getActiveCampaigns(locationOverride || userLocationRef.current);
+            const activeCampaigns = await getActiveCampaigns(loc);
             setCampaigns(activeCampaigns);
+            lastFetchedLocationRef.current = loc;
+            lastFetchedTimeRef.current = now;
         } catch (err) {
             console.error('Lỗi lấy chiến dịch hoạt động:', err);
         }
@@ -82,7 +138,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             );
             playSound('success.mp3');
             setQuestSuccess(res);
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
         } catch (err) {
             playSound('error.mp3');
             setQuestError(err.message || 'Xác thực thất bại');
@@ -156,6 +212,41 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         }, 500);
     };
 
+    const fetchTasksForLocation = async (locId, silent = false) => {
+        if (!locId || !itineraryId || !userId) return;
+        try {
+            if (!silent) {
+                setTasksLoadingMap(prev => ({ ...prev, [locId]: true }));
+            }
+            const token = await storageGet('access_token');
+            const response = await fetch(
+                `${API_BASE}/api/gamification/locations/${locId}/tasks?itinerary_id=${itineraryId}&user_id=${userId}`,
+                {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }
+            );
+            if (response.ok) {
+                const data = await response.json();
+                setLocationTasksMap(prev => ({ ...prev, [locId]: data }));
+            }
+        } catch (err) {
+            console.error('Lỗi lấy nhiệm vụ của địa điểm:', err);
+        } finally {
+            if (!silent) {
+                setTasksLoadingMap(prev => ({ ...prev, [locId]: false }));
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (selectedLocationForTasks && selectedLocationForTasks.location_id) {
+            const locId = selectedLocationForTasks.location_id;
+            const hasCached = !!locationTasksMap[locId];
+            fetchTasksForLocation(locId, hasCached);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedLocationForTasks?.location_id]);
+
     const fetchDetail = async (silent = false) => {
         try {
             if (!silent) setLoading(true);
@@ -189,16 +280,6 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         }
     };
 
-    // Handle hidden task click from map marker
-    const handleHiddenTaskClick = (task) => {
-        setSelectedHiddenTask(task);
-        if (task.task_type === 'CHEST') {
-            setShowChestAnimation(true);
-        } else if (task.task_type === 'DYNAMIC_QUEST') {
-            setShowQuestModal(true);
-        }
-    };
-
     // Verify / Complete a dynamic quest
     const handleVerifyQuest = async (extraData = {}) => {
         if (!selectedHiddenTask || !userLocation) {
@@ -227,7 +308,45 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
     };
 
     const userLocationRef = useRef(userLocation);
+    const lastFetchedLocationRef = useRef(null);
+    const lastFetchedTimeRef = useRef(0);
     useEffect(() => { userLocationRef.current = userLocation; }, [userLocation]);
+
+    // Lắng nghe sự kiện Mock GPS thủ công
+    useEffect(() => {
+        const handleMockLocationUpdate = (e) => {
+            const loc = e.detail;
+            setUserLocation(loc);
+            sendLocation(loc.lat, loc.lng);
+            fetchActiveCampaigns(loc, true);
+        };
+
+        const handleMockLocationDisabled = () => {
+            getCurrentPosition({
+                enableHighAccuracy: false,
+                timeout: 5000,
+                maximumAge: 10000
+            })
+                .then((position) => {
+                    const loc = {
+                        lat: position.latitude,
+                        lng: position.longitude
+                    };
+                    setUserLocation(loc);
+                    sendLocation(loc.lat, loc.lng);
+                    fetchActiveCampaigns(loc, true);
+                })
+                .catch((err) => console.warn("Lỗi khôi phục định vị thật:", err));
+        };
+
+        window.addEventListener('mock_location_update', handleMockLocationUpdate);
+        window.addEventListener('mock_location_disabled', handleMockLocationDisabled);
+        return () => {
+            window.removeEventListener('mock_location_update', handleMockLocationUpdate);
+            window.removeEventListener('mock_location_disabled', handleMockLocationDisabled);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         // Reset trạng thái check-in khi chuyển trip (tránh khóa nút từ trip cũ)
@@ -237,14 +356,14 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         if (itineraryId) {
             fetchDetail();
             fetchHiddenTasks();
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
         }
 
         // Lắng nghe sự kiện chiến dịch mới từ doanh nghiệp
         const handleNewCampaignEvent = (event) => {
             const data = event.detail;
             void showAlert(`[Chiến dịch mới] "${data.title}" vừa được tạo gần bạn! Hãy khám phá trên bản đồ để check-in và nhận quà nhé!`);
-            fetchActiveCampaigns();
+            fetchActiveCampaigns(null, true);
         };
 
         window.addEventListener('new_campaign', handleNewCampaignEvent);
@@ -252,6 +371,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         // Theo dõi vị trí hiện tại của người dùng
         const stopWatching = startWatchingPosition({
             onSuccess: (position) => {
+                if (window.isMockGpsActive) return; // Skip updating if mock GPS is active
+
                 const loc = {
                     lat: position.latitude,
                     lng: position.longitude
@@ -468,15 +589,25 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         // 1. Lấy vị trí thực tế
         (async () => {
             try {
-                const position = await getCurrentPosition({
-                    enableHighAccuracy: false,
-                    timeout: 8000,
-                    maximumAge: 10000
-                });
+                let checkinLat = null;
+                let checkinLng = null;
 
-                setUserLocation({ lat: position.latitude, lng: position.longitude });
-                sendLocation(position.latitude, position.longitude);
-                executeCheckinAPI(position.latitude, position.longitude);
+                if (window.isMockGpsActive && userLocation) {
+                    checkinLat = userLocation.lat;
+                    checkinLng = userLocation.lng;
+                } else {
+                    const position = await getCurrentPosition({
+                        enableHighAccuracy: false,
+                        timeout: 8000,
+                        maximumAge: 10000
+                    });
+                    checkinLat = position.latitude;
+                    checkinLng = position.longitude;
+                    setUserLocation({ lat: checkinLat, lng: checkinLng });
+                    sendLocation(checkinLat, checkinLng);
+                }
+
+                executeCheckinAPI(checkinLat, checkinLng);
             } catch (error) {
                 // FALLBACK: Khi lỗi vị trí (như timeout trên máy tính), cho phép check-in không cần tọa độ
                 console.warn("Lỗi lấy vị trí:", error?.message || error);
@@ -502,24 +633,41 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     const renderContent = () => {
         if (selectedStop) {
-            const isCheckedIn = selectedStop.status === 'COMPLETED';
+            const stopInDetail = tripDetail.stops?.find(s => s.stop_id === selectedStop.stop_id) || selectedStop;
+            const isCheckedIn = stopInDetail.status === 'COMPLETED';
 
             return (
                 <div className="trip-detail-screen location-detail-mode">
-                    <div className="detail-header">
-                        <button className="btn-back-icon" onClick={handleCloseDetail} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <ArrowLeft size={18} />
-                        </button>
-                        <h2>{selectedStop.location_name}</h2>
-                    </div>
-                    
-                    <div className="location-detail-content">
+                    <div className="location-detail-content" style={{ marginTop: 0 }}>
                         {/* Ảnh bìa địa điểm — ưu tiên ảnh thực từ API, fallback về ảnh bản đồ */}
                         <div className="location-cover-image" style={{ 
-                            backgroundImage: `url(${selectedStop.image_url || selectedStop.cover_image || '/assets/island/map-dao.png'})`,
+                            backgroundImage: `url(${stopInDetail.image_url || stopInDetail.cover_image || '/assets/island/map-dao.png'})`,
                             backgroundSize: 'cover',
-                            backgroundPosition: 'center'
+                            backgroundPosition: 'center',
+                            position: 'relative'
                         }}>
+                            <button 
+                                onClick={handleCloseDetail} 
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    left: '16px',
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                    border: '1.5px solid #2c3e50',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: '#2c3e50',
+                                    zIndex: 10
+                                }}
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
                             {isCheckedIn && (
                                 <div className="status-badge checked-in-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <CheckCircle2 size={14} /> Đã Check-in
@@ -529,75 +677,61 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
                         <div className="location-info-card">
                             <div className="location-title-row">
-                                <h3>{selectedStop.location_name}</h3>
-                                {selectedStop.score != null && (
+                                <h3>{stopInDetail.location_name}</h3>
+                                {stopInDetail.score != null && (
                                     <div className="rating-mock" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <Star size={14} fill="#f1c40f" color="#f1c40f" />
-                                        {Number(selectedStop.score).toFixed(1)}
+                                        {Number(stopInDetail.score).toFixed(1)}
                                     </div>
                                 )}
                             </div>
 
                             {/* Mô tả địa điểm — dùng data thực nếu có, không thì ẩn */}
-                            {selectedStop.description ? (
-                                <p className="location-desc-mock">{selectedStop.description}</p>
-                            ) : selectedStop.category_name ? (
+                            {stopInDetail.description ? (
+                                <p className="location-desc-mock">{stopInDetail.description}</p>
+                            ) : stopInDetail.category_name ? (
                                 <p className="location-desc-mock" style={{ fontStyle: 'italic', color: '#a0aab4' }}>
-                                    📍 Loại hình: {selectedStop.category_name}
+                                    📍 Loại hình: {stopInDetail.category_name}
                                 </p>
                             ) : null}
 
                             <div className="location-meta">
                                 {/* Giờ mở cửa từ dữ liệu thực */}
-                                {(selectedStop.open_time || selectedStop.close_time) ? (
+                                {(stopInDetail.open_time || stopInDetail.close_time) ? (
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <Clock size={14} /> Mở cửa: {selectedStop.open_time
-                                            ? selectedStop.open_time.substring(0, 5)
+                                        <Clock size={14} /> Mở cửa: {stopInDetail.open_time
+                                            ? stopInDetail.open_time.substring(0, 5)
                                             : '?'}
                                         {' - '}
-                                        {selectedStop.close_time
-                                            ? selectedStop.close_time.substring(0, 5)
+                                        {stopInDetail.close_time
+                                            ? stopInDetail.close_time.substring(0, 5)
                                             : '?'}
                                     </span>
                                 ) : null}
                                 {/* Giá vé từ dữ liệu thực */}
-                                {selectedStop.min_price != null ? (
+                                {stopInDetail.min_price != null ? (
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <Ticket size={14} />
-                                        {Number(selectedStop.min_price) === 0 && Number(selectedStop.max_price) === 0
+                                        {Number(stopInDetail.min_price) === 0 && Number(stopInDetail.max_price) === 0
                                             ? 'Vé: Miễn phí'
-                                            : `Giá: ${Number(selectedStop.min_price).toLocaleString('vi-VN')}đ${selectedStop.max_price && Number(selectedStop.max_price) > 0 ? ` - ${Number(selectedStop.max_price).toLocaleString('vi-VN')}đ` : ''}`
+                                            : `Giá: ${Number(stopInDetail.min_price).toLocaleString('vi-VN')}đ${stopInDetail.max_price && Number(stopInDetail.max_price) > 0 ? ` - ${Number(stopInDetail.max_price).toLocaleString('vi-VN')}đ` : ''}`
                                         }
                                     </span>
                                 ) : null}
                                 {/* Địa chỉ nếu có */}
-                                {selectedStop.address && (
+                                {stopInDetail.address && (
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <MapPin size={14} /> {selectedStop.address}
+                                        <MapPin size={14} /> {stopInDetail.address}
                                     </span>
                                 )}
                             </div>
                         </div>
 
                         <div className="location-map-section">
-                            <h4>Bản đồ & Chỉ đường</h4>
-                            <RouteMap 
-                                stops={[selectedStop]} 
-                                routes={[]} 
-                                hiddenTasks={[]}
-                                campaigns={[]}
-                                onCampaignClick={(campaign) => {
-                                    setSelectedCampaign(campaign);
-                                    setShowCampaignModal(true);
-                                }}
+                            <h4>Bản đồ địa điểm</h4>
+                            <LocationDetailMap
+                                stop={stopInDetail}
                                 userLocation={userLocation}
-                                user={user}
-                                nextStop={selectedStop}
-                                onStopClick={setSelectedStop}
-                                onHiddenTaskClick={(task) => {
-                                    setSelectedHiddenTask(task);
-                                    setShowChestAnimation(true);
-                                }}
                             />
                         </div>
                         
@@ -605,27 +739,29 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                             <div style={{ display: 'flex', flexDirection: 'row', gap: '15px', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
                                 {isCheckedIn ? (
                                     <button disabled style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'not-allowed', opacity: 0.6, flex: 1, display: 'flex', justifyContent: 'center', boxShadow: 'none', outline: 'none' }}>
-                                        <img src="/assets/island/btn_checkin.png" alt="Đã Check-in" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
+                                        <img src="/assets/island/btn_checkin.png" alt="Đã Check-in" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain', filter: 'grayscale(100%)' }} />
+                                    </button>
+                                ) : isTripOngoing ? (
+                                    <button 
+                                        className="image-btn-effect"
+                                        onClick={() => handleCheckin(stopInDetail)}
+                                        disabled={checkinLoading}
+                                        style={{ background: 'transparent', border: 'none', padding: 0, cursor: checkinLoading ? 'not-allowed' : 'pointer', flex: 1, opacity: checkinLoading ? 0.7 : 1, display: 'flex', justifyContent: 'center', boxShadow: 'none', outline: 'none' }}
+                                    >
+                                        <img src="/assets/island/btn_checkin.png" alt="Xác nhận Check-in" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
                                     </button>
                                 ) : (
-                                    isTripOngoing && (
-                                        <button 
-                                            className="image-btn-effect"
-                                            onClick={() => handleCheckin(selectedStop)}
-                                            disabled={checkinLoading}
-                                            style={{ background: 'transparent', border: 'none', padding: 0, cursor: checkinLoading ? 'not-allowed' : 'pointer', flex: 1, opacity: checkinLoading ? 0.7 : 1, display: 'flex', justifyContent: 'center', boxShadow: 'none', outline: 'none' }}
-                                        >
-                                            <img src="/assets/island/btn_checkin.png" alt="Xác nhận Check-in" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
-                                        </button>
-                                    )
+                                    <button disabled style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'not-allowed', opacity: 0.5, flex: 1, display: 'flex', justifyContent: 'center', boxShadow: 'none', outline: 'none' }}>
+                                        <img src="/assets/island/btn_checkin.png" alt="Không thể Check-in" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain', filter: 'grayscale(100%)' }} />
+                                    </button>
                                 )}
                                 <button
                                     className="image-btn-effect"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedLocationForTasks({
-                                            location_id: selectedStop.location_id,
-                                            location_name: selectedStop.location_name
+                                            location_id: stopInDetail.location_id,
+                                            location_name: stopInDetail.location_name
                                         });
                                     }}
                                     style={{
@@ -651,8 +787,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
 
     return (
         <div className="trip-detail-screen">
-            <div className="detail-header">
-                <button className="btn-back-icon" onClick={onBack} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="trip-overview-header">
+                <button className="trip-overview-back-btn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
                     <ArrowLeft size={20} />
                 </button>
                 <h2>{tripDetail.name || "Chi tiết chuyến đi"}</h2>
@@ -680,7 +816,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 </div>
             )}
 
-            {/* Bản đồ Đảo (Island Map) thay thế RouteMap */}
+            {/* Bản đồ đảo dùng để chọn địa điểm trong chuyến đi */}
             <div className="island-map-section" style={{ position: 'relative' }}>
                 <IslandMap
                     stops={allStops}
@@ -688,7 +824,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 />
                 
                 {/* Mascot Layer */}
-                {SHOW_MASCOT && <Mascot message={mascotMessage} />}
+                {showMascot && <Mascot message={mascotMessage} />}
             </div>
         </div>
         );
@@ -714,9 +850,18 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     locationName={selectedLocationForTasks.location_name}
                     itineraryId={itineraryId}
                     userId={userId}
+                    tasks={locationTasksMap[selectedLocationForTasks.location_id] || []}
+                    loading={
+                        tasksLoadingMap[selectedLocationForTasks.location_id]
+                        ?? !locationTasksMap[selectedLocationForTasks.location_id]
+                    }
                     onClose={() => setSelectedLocationForTasks(null)}
                     onSelectTask={(task) => {
-                        setSelectedTaskForExecution(task);
+                        setSelectedTaskForExecution({
+                            ...task,
+                            location_id: task.location_id || selectedLocationForTasks.location_id,
+                            location_name: task.location_name || selectedLocationForTasks.location_name
+                        });
                         setSelectedLocationForTasks(null); // Close task drawer when opening detail
                     }}
                 />
@@ -736,13 +881,28 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                         });
                     }}
                     onCompleteSuccess={() => {
+                        const taskId = selectedTaskForExecution.task_id;
+                        const locId = selectedTaskForExecution.location_id;
+                        
+                        // Optimistically update status to COMPLETED
+                        setLocationTasksMap(prev => {
+                            const tasks = prev[locId] || [];
+                            return {
+                                ...prev,
+                                [locId]: tasks.map(t =>
+                                    t.task_id === taskId ? { ...t, status: 'COMPLETED' } : t
+                                )
+                            };
+                        });
+
                         setSelectedTaskForExecution(null);
                         setSelectedLocationForTasks({
-                            location_id: selectedTaskForExecution.location_id,
+                            location_id: locId,
                             location_name: selectedTaskForExecution.location_name || 'Địa điểm'
                         });
                         // Refresh details to update points/levels in UI
                         handleRefresh(true);
+                        fetchTasksForLocation(locId, true);
                     }}
                 />
             )}

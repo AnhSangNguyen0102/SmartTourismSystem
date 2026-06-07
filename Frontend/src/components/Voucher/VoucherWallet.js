@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { voucherService } from '../../services/voucherService';
-import { Ticket, QrCode, Clock } from 'lucide-react';
+import { showToast } from '../../platform/dialog';
+import { Ticket, QrCode, Clock, WalletCards, CheckCircle2, Gift } from 'lucide-react';
 import './VouchersList.css';
 
 const VoucherWallet = () => {
@@ -27,41 +28,45 @@ const VoucherWallet = () => {
     };
 
     const handleUse = async (userVoucherId) => {
-        if (!window.confirm('Bạn có chắc muốn sử dụng voucher này không? Nhân viên sẽ kiểm tra mã này.')) return;
-        
         try {
             await voucherService.useVoucher(userVoucherId);
-            alert('Đã sử dụng thành công!');
+            showToast('Đã sử dụng voucher thành công.', 'success');
             setSelectedMyVoucher(null); // Đóng popup
             loadMyVouchers(); // Tải lại danh sách
         } catch (err) {
-            alert(err.message || 'Lỗi khi sử dụng voucher');
+            showToast(err.message || 'Lỗi khi sử dụng voucher', 'error');
         }
     };
 
-    if (loading) return <div className="p-4 text-center">Đang tải kho voucher...</div>;
+    if (loading) return <div className="voucher-state-card">Đang tải ví voucher...</div>;
 
     const activeVouchers = myVouchers.filter(v => v.status === 'COLLECTED');
     const usedVouchers = myVouchers.filter(v => v.status === 'USED');
 
     return (
-        <div className="voucher-wallet p-4">
-            <h2 className="section-title text-xl font-bold mb-4 text-slate-800 flex items-center gap-2">
-                <Ticket className="text-orange-500" />
-                Ví Voucher của tôi
-            </h2>
+        <div className="voucher-wallet">
+            <div className="voucher-wallet-hero">
+                <div className="voucher-wallet-hero-icon"><WalletCards size={28} /></div>
+                <div>
+                    <span>Ưu đãi của bạn</span>
+                    <h2>Ví Voucher</h2>
+                    <p>{activeVouchers.length} voucher sẵn sàng sử dụng</p>
+                </div>
+            </div>
             
             {activeVouchers.length === 0 && usedVouchers.length === 0 && (
-                <div className="text-center text-slate-500 p-8 cartoon-card">
-                    Chưa có voucher nào. Hãy khám phá các địa điểm để thu thập nhé!
+                <div className="voucher-empty-state">
+                    <Gift size={34} />
+                    <strong>Ví đang trống</strong>
+                    <span>Đổi ưu đãi trong cửa hàng để voucher xuất hiện tại đây.</span>
                 </div>
             )}
 
             {/* VOUCHER SẴN SÀNG SỬ DỤNG */}
             {activeVouchers.length > 0 && (
-                <div className="mb-6">
-                    <h3 className="font-bold text-slate-700 mb-3 text-sm uppercase">Sẵn sàng sử dụng</h3>
-                    <div className="flex flex-col">
+                <div className="voucher-wallet-section">
+                    <h3><Ticket size={16} /> Sẵn sàng sử dụng <span>{activeVouchers.length}</span></h3>
+                    <div>
                         {activeVouchers.map((item) => (
                             <div 
                                 key={item.user_voucher_id} 
@@ -121,9 +126,9 @@ const VoucherWallet = () => {
 
             {/* VOUCHER ĐÃ SỬ DỤNG */}
             {usedVouchers.length > 0 && (
-                <div>
-                    <h3 className="font-bold text-slate-500 mb-3 text-sm uppercase">Đã sử dụng</h3>
-                    <div className="flex flex-col">
+                <div className="voucher-wallet-section voucher-wallet-section--used">
+                    <h3><CheckCircle2 size={16} /> Đã sử dụng <span>{usedVouchers.length}</span></h3>
+                    <div>
                         {usedVouchers.map((item) => (
                             <div key={item.user_voucher_id} className="voucher-item-card disabled">
                                 
@@ -168,7 +173,7 @@ const VoucherWallet = () => {
                     <div className="quest-modal-content" style={{maxWidth: '380px'}}>
                         <div className="quest-modal-header" style={{borderBottom: 'none', paddingBottom: '10px'}}>
                             <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: '900', textTransform: 'uppercase', color: '#000'}}>
-                                <Ticket size={28} /> VOUCHER CỦA BẠN
+                                <Ticket size={24} /> Voucher của bạn
                             </h3>
                             <button className="quest-close-btn" onClick={() => setSelectedMyVoucher(null)}>✕</button>
                         </div>
@@ -179,7 +184,8 @@ const VoucherWallet = () => {
                                 <div className="voucher-detail-desc">{selectedMyVoucher.voucher.description || 'Vui lòng đưa mã này cho nhân viên tại quầy để được áp dụng ưu đãi.'}</div>
                                 
                                 <div className="voucher-detail-discount" style={{color: '#e67e22'}}>
-                                    MÃ ƯU ĐÃI: {selectedMyVoucher.voucher.code}
+                                    <span className="voucher-code-label">Mã ưu đãi</span>
+                                    {selectedMyVoucher.voucher.code}
                                 </div>
                                 
                                 <div className="voucher-detail-meta">

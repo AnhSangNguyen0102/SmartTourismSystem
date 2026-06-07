@@ -110,26 +110,22 @@
 | Q1 | `create_itinerary` | INSERT | `itineraries` | Lưu thông tin tổng quan chuyến đi (tổng ngân sách, thời gian...) |
 | Q2 | `create_itinerary_days` | INSERT | `itinerary_days` | Tạo lịch trình từng ngày (Ngày 1, Ngày 2...) |
 | Q3 | `create_itinerary_stops` | INSERT | `itinerary_stops` | Lưu từng điểm dừng (trạm) trong một ngày |
-| Q4 | `create_itinerary_routes` | INSERT | `itinerary_routes` | Lưu thông tin tuyến đường giữa 2 trạm (khoảng cách, polyline) |
-| Q5 | `get_itinerary_full` | SELECT | `itineraries`, `itinerary_days`, `itinerary_stops` | Lấy toàn bộ dữ liệu lộ trình: Chuyến đi → Ngày → Điểm dừng |
-| Q6 | `update_itinerary_status` | UPDATE | `itineraries` | Cập nhật trạng thái lộ trình (DRAFT → CONFIRMED → COMPLETED) |
-| Q7 | `get_itinerary_history` | SELECT | `itineraries` | Lấy lịch sử các chuyến đi của user |
-| Q8 | `get_itinerary_stops_with_locations` | SELECT | `itinerary_days`, `itinerary_stops`, `locations` | Lấy danh sách điểm dừng kèm tọa độ địa lý (phục vụ màn hình bản đồ) |
+| Q4 | `get_itinerary_full` | SELECT | `itineraries`, `itinerary_days`, `itinerary_stops` | Lấy toàn bộ dữ liệu chuyến đi: Chuyến đi → Ngày → Điểm dừng |
+| Q5 | `update_itinerary_status` | UPDATE | `itineraries` | Cập nhật trạng thái chuyến đi (DRAFT → CONFIRMED → COMPLETED) |
+| Q6 | `get_itinerary_history` | SELECT | `itineraries` | Lấy lịch sử các chuyến đi của user |
+| Q7 | `get_itinerary_stops_with_locations` | SELECT | `itinerary_days`, `itinerary_stops`, `locations` | Lấy danh sách điểm dừng kèm tọa độ địa lý (phục vụ màn hình bản đồ) |
 
 ---
 
 ## 🎯 Module 8 – `crud/crud_tracking.py`
-**Use Case: Tracking hành trình & Check-in**
+**Use Case: Check-in địa điểm**
 
 | # | Hàm | Thao tác | Bảng | Mô tả |
 |---|-----|----------|------|-------|
 | Q1 | `create_checkin_progress` | INSERT | `checkin_progress` | Tạo bản ghi check-in mới tại một điểm dừng |
 | Q2 | `update_checkin_status` | UPDATE | `checkin_progress`, `itinerary_stops` | Đánh dấu check-in hoàn tất, cập nhật trạng thái stop → COMPLETED |
-| Q3 | `create_gps_log` | INSERT | `gps_tracking_logs` | Ghi nhận tọa độ GPS real-time của user trong hành trình |
-| Q4 | `create_deviation_log` | INSERT | `deviation_logs` | Ghi lại cảnh báo khi user đi chệch quá xa so với lộ trình |
-| Q5 | `verify_stop_in_itinerary` | SELECT | `itinerary_days`, `itinerary_stops` | Xác minh điểm dừng có thuộc chuyến đi hiện tại không |
-| Q6 | `get_checkin_by_stop` | SELECT | `checkin_progress` | Kiểm tra user đã check-in tại điểm dừng này trước đó chưa |
-| Q7 | `get_stop_with_radius` | SELECT | `itinerary_stops`, `locations` | Lấy tọa độ và bán kính cho phép check-in của một điểm dừng |
+| Q3 | `get_checkin_by_stop` | SELECT | `checkin_progress` | Kiểm tra user đã check-in tại điểm dừng này trước đó chưa |
+| Q4 | `get_stop_with_ownership` | SELECT | `itinerary_stops`, `locations`, `itineraries` | Lấy điểm dừng nếu thuộc chuyến đi của user |
 
 ---
 

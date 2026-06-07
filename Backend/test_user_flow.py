@@ -113,29 +113,8 @@ def main():
     
     print(f"Target Stop ID: {stop_id}, Lat: {target_lat}, Lon: {target_lon}")
     
-    # 6. Tracking
-    print_step(6, "Tracking (Correct location)")
-    tracking_payload = {
-        "itinerary_id": itinerary_id,
-        "current_stop_id": stop_id,
-        "latitude": target_lat,
-        "longitude": target_lon
-    }
-    resp = session.post(f"{BASE_URL}/api/trips/tracking", json=tracking_payload)
-    print(resp.status_code, resp.text)
-    
-    print_step(6.1, "Tracking (Deviated location)")
-    deviated_payload = {
-        "itinerary_id": itinerary_id,
-        "current_stop_id": stop_id,
-        "latitude": target_lat + 0.1,  # roughly 11km away
-        "longitude": target_lon + 0.1
-    }
-    resp = session.post(f"{BASE_URL}/api/trips/tracking", json=deviated_payload)
-    print(resp.status_code, resp.text)
-    
-    # 7. Check-in
-    print_step(7, "Check-in")
+    # 6. Check-in
+    print_step(6, "Check-in")
     checkin_payload = {
         "latitude": target_lat,
         "longitude": target_lon

@@ -129,6 +129,57 @@
 }
 
 /* Kỹ năng thám hiểm (Preferences) */
+.budget-preset-group {
+    margin-top: 10px;
+}
+
+.budget-preset-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #2c3e50;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.budget-preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.budget-preset-btn {
+    min-width: 0;
+    min-height: 36px;
+    padding: 6px 2px;
+    border: 2px solid #2c3e50;
+    border-radius: 11px;
+    color: #2c3e50;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #2c3e50;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+}
+
+.budget-preset-btn.add {
+    background-color: #dff9fb;
+}
+
+.budget-preset-btn.set {
+    background-color: #ffffff;
+}
+
+.budget-preset-btn.set.selected {
+    background-color: #ff9f1a;
+    color: #ffffff;
+}
+
+.budget-preset-btn:active {
+    transform: translateY(3px);
+    box-shadow: none;
+}
+
 .tags-container {
     display: flex;
     flex-wrap: wrap;
@@ -190,3 +241,110 @@
 .btn-back {
     box-shadow: 0 4px 0 #2c3e50 !important;
 }
+
+/* ============================================================
+   DARK THEME OVERRIDES FOR TripInputForm
+   ============================================================ */
+body.dark-theme .trip-plan-screen {
+    background: var(--st-bg);
+    color: var(--st-text);
+}
+
+body.dark-theme .wizard-container {
+    background-color: var(--st-bg);
+}
+
+body.dark-theme .back-wizard-btn {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+
+body.dark-theme .back-wizard-btn:active {
+    box-shadow: 0 0 0 var(--game-border-color);
+}
+
+body.dark-theme .wizard-title {
+    color: var(--st-text);
+    -webkit-text-stroke: 0.5px var(--st-text);
+}
+
+body.dark-theme .input-group label {
+    color: var(--st-text);
+}
+
+body.dark-theme .cartoon-input, 
+body.dark-theme .cartoon-input-select {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--game-border-color);
+}
+
+body.dark-theme .cartoon-input:focus, 
+body.dark-theme .cartoon-input-select:focus {
+    border-color: var(--st-primary);
+}
+
+/* For calendar picker icon in dark mode */
+body.dark-theme .cartoon-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+body.dark-theme .cartoon-helper-text {
+    color: var(--st-text-muted);
+}
+
+body.dark-theme .budget-preset-label {
+    color: var(--st-text);
+}
+
+body.dark-theme .budget-preset-btn {
+    color: var(--st-text);
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+
+body.dark-theme .budget-preset-btn.add,
+body.dark-theme .budget-preset-btn.set {
+    background-color: var(--st-surface);
+}
+
+body.dark-theme .budget-preset-btn.set.selected {
+    background-color: var(--game-orange);
+    color: #ffffff;
+}
+
+body.dark-theme .budget-preset-btn:active {
+    box-shadow: none;
+}
+
+body.dark-theme .tag-btn-cartoon {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+
+body.dark-theme .tag-btn-cartoon.selected {
+    background-color: var(--game-orange);
+    color: #ffffff;
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+
+body.dark-theme .tag-btn-cartoon:active {
+    box-shadow: 0 0 0 var(--game-border-color);
+}
+
+body.dark-theme .loading-tags {
+    color: var(--st-text-muted);
+}
+
+body.dark-theme .btn-next {
+    box-shadow: 0 4px 0 var(--game-border-color) !important;
+}
+
+body.dark-theme .btn-back {
+    box-shadow: 0 4px 0 var(--game-border-color) !important;
+}
+

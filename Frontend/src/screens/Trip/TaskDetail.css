@@ -1,11 +1,12 @@
 .task-detail-screen-gami {
   position: absolute;
   inset: 0;
-  background-color: #0b0f19;
+  background-color: var(--st-bg);
   z-index: 1001;
   display: flex;
   flex-direction: column;
-  color: #fff;
+  color: var(--st-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Header */
@@ -13,9 +14,10 @@
   display: flex;
   align-items: center;
   padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 18px;
-  background: rgba(15, 23, 42, 0.7);
+  background: var(--st-surface);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--st-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .btn-back-gami {
@@ -36,7 +38,7 @@
   margin-left: 20px;
   font-size: 13px;
   font-weight: 800;
-  color: #94a3b8;
+  color: var(--st-text-muted);
   letter-spacing: 0.1em;
 }
 
@@ -53,12 +55,13 @@
 
 /* Target card */
 .task-target-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--st-surface);
+  border: 1px solid var(--st-border);
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--st-shadow);
   flex-shrink: 0; /* Prevent card from shrinking under flex pressure */
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .target-img-container {
@@ -92,8 +95,8 @@
 .diff-badge {
   font-size: 10px;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--st-surface-muted);
+  border: 1px solid var(--st-border);
   padding: 2px 6px;
   border-radius: 6px;
   display: inline-block;
@@ -104,26 +107,27 @@
   font-size: 18px;
   font-weight: 800;
   margin: 0 0 6px;
-  color: #fff;
+  color: var(--st-text);
 }
 
 .task-desc {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--st-text-muted);
   margin: 0;
   line-height: 1.4;
 }
 
 /* GPS Status Box */
 .gps-status-box {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--st-surface);
+  border: 1px solid var(--st-border);
   border-radius: 24px;
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 15px;
   flex-shrink: 0; /* Prevent shrinking */
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .gps-status-header {
@@ -135,7 +139,7 @@
 .gps-status-header h4 {
   font-size: 11px;
   font-weight: 800;
-  color: #64748b;
+  color: var(--st-text-muted);
   letter-spacing: 0.05em;
   margin: 0;
 }
@@ -169,18 +173,19 @@
 }
 
 .gps-stat-item {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--st-surface-muted);
+  border: 1px solid var(--st-border);
   border-radius: 14px;
   padding: 12px;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .stat-label {
   font-size: 9px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--st-text-muted);
   text-transform: uppercase;
   margin-bottom: 2px;
 }
@@ -188,7 +193,7 @@
 .stat-value {
   font-size: 18px;
   font-weight: 900;
-  color: #fff;
+  color: var(--st-text);
   margin-bottom: 2px;
 }
 
@@ -197,7 +202,7 @@
 
 .stat-hint {
   font-size: 9px;
-  color: #475569;
+  color: var(--st-text-muted);
 }
 
 .btn-navigate-gps {
@@ -205,9 +210,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
+  background: var(--st-surface-muted);
+  border: 1px solid var(--st-border);
+  color: var(--st-text);
   font-size: 11px;
   font-weight: 700;
   padding: 10px 0;
@@ -218,32 +223,50 @@
 }
 
 .btn-navigate-gps:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--st-surface);
+  color: var(--st-text);
 }
 
 /* Camera Interaction */
 .camera-interact-box {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--st-surface);
+  border: 1px solid var(--st-border);
   border-radius: 24px;
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 15px;
   flex-shrink: 0; /* Prevent shrinking */
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .camera-interact-box h4 {
   font-size: 11px;
   font-weight: 800;
-  color: #64748b;
+  color: var(--st-text-muted);
   letter-spacing: 0.05em;
   margin: 0;
 }
 
+.qa-option-button {
+  text-align: left;
+  padding: 12px 15px;
+  border: 1px solid var(--st-border);
+  border-radius: 12px;
+  background: var(--st-surface-muted);
+  color: var(--st-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.qa-option-button.selected {
+  border: 2px solid #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+
 .camera-dash-upload {
-  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border: 2px dashed var(--st-border);
   border-radius: 18px;
   padding: 30px 15px;
   text-align: center;
@@ -283,7 +306,7 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--st-surface-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -300,11 +323,12 @@
   font-size: 14px;
   font-weight: 800;
   margin: 0 0 4px;
+  color: var(--st-text);
 }
 
 .camera-upload-label p {
   font-size: 11px;
-  color: #64748b;
+  color: var(--st-text-muted);
   margin: 0;
   line-height: 1.4;
   max-width: 80%;
@@ -315,7 +339,7 @@
   position: relative;
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--st-border);
   height: 200px;
 }
 
@@ -409,7 +433,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(9, 13, 22, 0.95);
+  background: rgba(9, 13, 22, 0.85);
   backdrop-filter: blur(6px);
 }
 
@@ -418,12 +442,12 @@
   z-index: 10;
   width: 100%;
   max-width: 340px;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: var(--st-surface);
+  border: 1px solid var(--st-border);
   border-radius: 30px;
   padding: 25px;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 40px rgba(251, 191, 36, 0.05);
+  box-shadow: var(--st-shadow);
   animation: bounceIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -462,7 +486,7 @@
 
 .success-congrats-msg {
   font-size: 13px;
-  color: #cbd5e1;
+  color: var(--st-text);
   line-height: 1.5;
   margin: 0 0 20px;
 }
@@ -475,8 +499,8 @@
 
 .reward-score-pill {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--st-surface-muted);
+  border: 1px solid var(--st-border);
   border-radius: 16px;
   padding: 10px;
   display: flex;
@@ -486,7 +510,7 @@
 .score-label {
   font-size: 8px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--st-text-muted);
   text-transform: uppercase;
   margin-bottom: 2px;
 }
@@ -499,8 +523,8 @@
 
 /* Progression bar */
 .level-progression-bar {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--st-surface-muted);
+  border: 1px solid var(--st-border);
   border-radius: 18px;
   padding: 12px;
   margin-bottom: 22px;
@@ -512,7 +536,7 @@
   justify-content: space-between;
   font-size: 10px;
   font-weight: 800;
-  color: #cbd5e1;
+  color: var(--st-text);
   margin-bottom: 6px;
 }
 
@@ -534,7 +558,7 @@
 .lvl-exp-detail {
   display: block;
   font-size: 8px;
-  color: #64748b;
+  color: var(--st-text-muted);
 }
 
 .btn-close-modal-gami {
@@ -578,8 +602,8 @@
 /* Cancel Task Button */
 .btn-cancel-task-body-gami {
   margin-top: 12px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   color: #f87171;
   font-size: 11px;
   font-weight: 700;

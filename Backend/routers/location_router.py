@@ -10,7 +10,21 @@ from core.dependencies import require_enterprise_active
 from core.security import verify_token
 from schemas import LocationCreate, LocationRegisterResponse
 from services.location_service import register_location
-from models import LocationReviews, Users, UserProfiles, LocationsImage
+from models import (
+    BusinessLocation,
+    Categories,
+    Cities,
+    LocationCategories,
+    LocationReviews,
+    Locations,
+    LocationsImage,
+    UserProfiles,
+    Users,
+)
+from services.external_image_service import (
+    is_external_image_category_eligible,
+    search_wikimedia_commons_images,
+)
 
 router = APIRouter()
 
@@ -47,6 +61,62 @@ def get_location_images(location_id: UUID, db: Session = Depends(get_session)):
         .order_by(LocationsImage.display_order)
     ).all()
     return [{"image_id": img.image_id, "url": img.url, "display_order": img.display_order} for img in images]
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/locations/{location_id}/external-images
+# ---------------------------------------------------------------------------
+
+@router.get("/locations/{location_id}/external-images", tags=["Locations"])
+async def get_external_location_images(
+    location_id: UUID,
+    db: Session = Depends(get_session),
+):
+    """
+    Search Wikimedia Commons only for eligible system-managed sightseeing locations
+    without DB images.
+
+    Enterprise locations must keep using images supplied by their owners.
+    """
+    location = db.get(Locations, location_id)
+    if location is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Location not found")
+
+    has_database_image = db.exec(
+        select(LocationsImage.image_id).where(LocationsImage.location_id == location_id)
+    ).first()
+    if has_database_image is not None:
+        return {"eligible": False, "reason": "database_images_available", "images": []}
+
+    business_location = db.exec(
+        select(BusinessLocation).where(BusinessLocation.location_id == location_id)
+    ).first()
+    if business_location is not None:
+        return {"eligible": False, "reason": "business_location", "images": []}
+
+    category_names = db.exec(
+        select(Categories.category_name)
+        .join(LocationCategories, LocationCategories.category_id == Categories.category_id)
+        .where(LocationCategories.location_id == location_id)
+    ).all()
+    if not is_external_image_category_eligible(category_names):
+        return {"eligible": False, "reason": "unsupported_location_category", "images": []}
+
+    city = db.get(Cities, location.city_id)
+    query_parts = [location.location_name]
+    if city is not None:
+        query_parts.append(city.city_name)
+    query_parts.append("Vietnam")
+
+    images = await search_wikimedia_commons_images(" ".join(query_parts), limit=3)
+    if not images:
+        images = await search_wikimedia_commons_images(location.location_name, limit=3)
+    return {
+        "eligible": True,
+        "reason": None if images else "no_results",
+        "source": "Wikimedia Commons",
+        "images": images,
+    }
 
 
 # ---------------------------------------------------------------------------

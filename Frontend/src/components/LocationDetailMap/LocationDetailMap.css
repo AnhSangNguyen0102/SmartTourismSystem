@@ -110,11 +110,6 @@
     animation: detail-user-pulse 1.45s ease-in-out infinite;
 }
 
-.detail-quest-line {
-    animation: detail-quest-dash 1.05s linear infinite;
-    filter: drop-shadow(0 3px 0 rgba(44, 62, 80, 0.45)) drop-shadow(0 0 7px rgba(255, 211, 45, 0.65));
-}
-
 .detail-game-popup .leaflet-popup-content-wrapper {
     background: #fff9dd !important;
     border: 2px solid #2c3e50 !important;
@@ -190,11 +185,5 @@
 
     50% {
         transform: scale(1.18);
-    }
-}
-
-@keyframes detail-quest-dash {
-    to {
-        stroke-dashoffset: -20;
     }
 }

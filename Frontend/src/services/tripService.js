@@ -1,4 +1,4 @@
-// Gọi API lấy gợi ý, lưu lộ trình.
+// Gọi API quản lý chuyến đi và check-in.
 import { API_BASE } from '../config/api';
 const API_URL = `${API_BASE}/api/trips`;
 
@@ -124,27 +124,6 @@ export const getTripDetail = async (itineraryId, token) => {
     }
 };
 
-export const sendTracking = async (payload, token) => {
-    try {
-        const response = await fetch(`${API_URL}/tracking`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(formatError(err, "Lỗi khi gửi tracking"));
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-};
-
 export const checkinStop = async (stopId, payload, token) => {
     try {
         const response = await fetch(`${API_URL}/${stopId}/checkin`, {
@@ -158,25 +137,6 @@ export const checkinStop = async (stopId, payload, token) => {
         if (!response.ok) {
             const err = await response.json();
             throw new Error(formatError(err, "Lỗi khi check-in"));
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-};
-
-export const getDeviationStatus = async (itineraryId, token) => {
-    try {
-        const response = await fetch(`${API_URL}/${itineraryId}/deviation-status`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        if (!response.ok) {
-            throw new Error("Lỗi khi lấy trạng thái lệch hướng");
         }
         return await response.json();
     } catch (error) {

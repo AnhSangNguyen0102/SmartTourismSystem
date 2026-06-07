@@ -9,9 +9,9 @@
  Q3  INSERT  ITINERARY_STOPS                               create_itinerary_stops
  Q4  INSERT  ITINERARY_ROUTES                              create_itinerary_routes
  Q5  SELECT  ITINERARIES, ITINERARY_DAYS, ITINERARY_STOPS  get_itinerary_full
- Q6  UPDATE  ITINERARIES                                   update_itinerary_status
- Q7  SELECT  ITINERARIES                                   get_itinerary_history
- Q8  SELECT  ITINERARY_DAYS, ITINERARY_STOPS, LOCATIONS    get_itinerary_stops_with_locations
+ Q5  UPDATE  ITINERARIES                                   update_itinerary_status
+ Q6  SELECT  ITINERARIES                                   get_itinerary_history
+ Q7  SELECT  ITINERARY_DAYS, ITINERARY_STOPS, LOCATIONS    get_itinerary_stops_with_locations
 ================================================================================
 """
 
@@ -318,7 +318,7 @@ def get_itinerary_history(db: Session, user_id: UUID) -> list:
 def get_itinerary_stops_with_locations(db: Session, itinerary_id: UUID) -> list:
     """
     Lấy toàn bộ các trạm trong lộ trình kèm thông tin địa điểm tương ứng.
-    Dùng cho màn hình bản đồ tracking để vẽ markers và route.
+    Dùng cho màn hình bản đồ tracking để vẽ markers.
 
     Columns trả về:
         day_id, day_order, travel_date,
@@ -405,4 +405,3 @@ def auto_cancel_expired_trips(db: Session, user_id: Optional[UUID] = None) -> li
             db.refresh(itinerary)
             
     return cancelled_trips
-
