@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getTripDetail } from '../../services/tripService';
 import { storageGet } from '../../platform/storage';
 import { 
-    ArrowLeft, CheckCircle2, XCircle, RefreshCw, Clock, 
+    ArrowLeft, CheckCircle2, XCircle, RefreshCw, 
     Circle
 } from 'lucide-react';
-import './TripDetailScreen.css';
+import './HistoryDetail.css';
 
 const HistoryDetail = ({ itineraryId, onBack }) => {
     const [loading, setLoading] = useState(true);
@@ -79,17 +79,6 @@ const HistoryDetail = ({ itineraryId, onBack }) => {
                 </div>
             </div>
 
-            <div className="trip-summary">
-                <div className="summary-item">
-                    <span className="icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Clock size={20} style={{ color: '#0abde3' }} />
-                    </span>
-                    <div>
-                        <small>Tổng thời gian</small>
-                        <strong>{tripDetail.total_travel_time} phút</strong>
-                    </div>
-                </div>
-            </div>
 
             <div className="trip-itinerary">
                 <h3>Chi tiết các điểm dừng</h3>

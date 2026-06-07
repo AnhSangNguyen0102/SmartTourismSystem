@@ -2,7 +2,8 @@
     padding: 20px;
     padding-top: calc(20px + env(safe-area-inset-top, 0px));
     background-color: var(--st-bg, #e0f2fe);
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     box-sizing: border-box;
     font-family: 'Be Vietnam Pro', sans-serif;
@@ -267,4 +268,125 @@
     color: #2c3e50;
     margin: 0 0 14px 0;
     text-transform: uppercase;
+}
+
+/* Dark Mode overrides for UserProfile */
+body.dark-theme .user-profile-form {
+    background-color: var(--st-surface);
+    border-color: var(--st-border);
+}
+body.dark-theme .user-profile-field label {
+    color: var(--st-text);
+}
+body.dark-theme .user-profile-field .view-value {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .user-profile-field input,
+body.dark-theme .user-profile-field select,
+body.dark-theme .user-profile-field textarea {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .user-profile-section-title {
+    color: var(--st-text);
+}
+.user-profile-change-pw-btn {
+    background: #1e90ff;
+    color: #ffffff;
+    border: 1.5px solid #2c3e50;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #2c3e50;
+    margin-left: 10px;
+}
+.user-profile-change-pw-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #2c3e50;
+}
+body.dark-theme .user-profile-back-btn {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-back-btn:active {
+    box-shadow: 0 1px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-edit-btn {
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-edit-btn:active {
+    box-shadow: 0 1px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-avatar-img {
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-avatar-edit-btn {
+    border-color: var(--game-border-color);
+    box-shadow: 0 2px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-avatar-edit-btn:active {
+    box-shadow: 0 1px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-form {
+    border-color: var(--game-border-color);
+    box-shadow: 0 6px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-field .view-value {
+    border-color: var(--game-border-color);
+}
+body.dark-theme .user-profile-field input,
+body.dark-theme .user-profile-field select,
+body.dark-theme .user-profile-field textarea {
+    border-color: var(--game-border-color);
+}
+body.dark-theme .user-profile-save-btn,
+body.dark-theme .user-profile-cancel-btn {
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-save-btn:active,
+body.dark-theme .user-profile-cancel-btn:active {
+    box-shadow: 0 2px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-section-divider {
+    background-color: var(--game-border-color);
+}
+body.dark-theme .user-profile-change-pw-btn {
+    border-color: var(--game-border-color);
+    box-shadow: 0 2px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-change-pw-btn:active {
+    box-shadow: 0 1px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-points-card {
+    background-color: var(--podium-1-bg);
+    border-color: var(--game-yellow, #ffd32d);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-points-icon {
+    background-color: var(--game-yellow, #ffd32d);
+    border-color: var(--game-yellow, #ffd32d);
+    box-shadow: 0 2px 0 var(--game-border-color);
+}
+body.dark-theme .user-profile-points-label {
+    color: var(--game-yellow, #ffd32d);
+}
+body.dark-theme .user-profile-points-value {
+    color: var(--st-text);
+}
+body.dark-theme .user-profile-points-unit {
+    color: #d8c290;
+}
+body.dark-theme .user-profile-field input::placeholder,
+body.dark-theme .user-profile-field textarea::placeholder {
+    color: var(--st-text-muted);
 }

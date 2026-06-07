@@ -381,10 +381,10 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                             <div className="ongoing-empty-card" style={{ 
                                 padding: '24px 16px', 
                                 textAlign: 'center', 
-                                background: 'rgba(255, 255, 255, 0.6)', 
-                                border: '2.5px dashed #2c3e50', 
+                                background: 'var(--st-surface-muted)', 
+                                border: '2.5px dashed var(--game-border-color)', 
                                 borderRadius: '16px', 
-                                color: '#7f8c8d',
+                                color: 'var(--st-text-muted)',
                                 fontWeight: 'bold',
                                 fontSize: '13px',
                                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'

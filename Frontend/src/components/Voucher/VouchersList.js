@@ -100,7 +100,7 @@ const VouchersList = ({ locationId, onVoucherClaimed }) => {
                 <div className="quest-modal-overlay">
                     <div className="quest-modal-content" style={{maxWidth: '380px'}}>
                         <div className="quest-modal-header" style={{borderBottom: 'none', paddingBottom: '10px'}}>
-                            <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: '900', textTransform: 'uppercase', color: '#000'}}>
+                            <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: '900', textTransform: 'uppercase', color: '#ffffff'}}>
                                 <Ticket size={28} /> VOUCHER TRẠM DỪNG
                             </h3>
                             <button className="quest-close-btn" onClick={() => setSelectedVoucher(null)}>✕</button>
@@ -125,10 +125,10 @@ const VouchersList = ({ locationId, onVoucherClaimed }) => {
                                 </div>
                                 
                                 <div className="voucher-detail-meta">
-                                    <Clock size={20} style={{ color: '#000' }} /> Còn lại: {selectedVoucher.remaining_quantity}
+                                    <Clock size={20} style={{ color: 'var(--st-text)' }} /> Còn lại: {selectedVoucher.remaining_quantity}
                                 </div>
                                 <div className="voucher-detail-meta">
-                                    <Star size={20} style={{ color: '#000' }} /> {selectedVoucher.point_cost} điểm
+                                    <Star size={20} style={{ color: 'var(--st-text)' }} /> {selectedVoucher.point_cost} điểm
                                 </div>
 
                                 <button 

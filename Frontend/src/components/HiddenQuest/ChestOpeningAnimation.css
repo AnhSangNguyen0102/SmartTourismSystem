@@ -14,7 +14,7 @@
     z-index: 9999;
     opacity: 0;
     animation: fadeIn 0.4s forwards cubic-bezier(0.25, 0.8, 0.25, 1);
-    color: #ffffff;
+    color: var(--st-text);
     font-family: 'Outfit', 'Inter', sans-serif;
     user-select: none;
     padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
@@ -30,18 +30,19 @@
     width: 90%;
     max-width: 450px;
     max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 20px);
-    background: rgba(20, 25, 45, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--st-surface);
+    border: 1px solid var(--st-border);
     border-radius: 28px;
     padding: 30px;
     text-align: center;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    box-shadow: var(--st-shadow);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     overflow-y: auto;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Glowing background behind chest */
@@ -163,7 +164,7 @@
     font-size: 24px;
     font-weight: 800;
     margin: 5px 0 10px;
-    background: linear-gradient(to right, #fff, #b2bec3);
+    background: linear-gradient(to right, var(--st-text), var(--st-text-muted));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     z-index: 5;
@@ -171,7 +172,7 @@
 
 .chest-subtitle {
     font-size: 14px;
-    color: #a4b0be;
+    color: var(--st-text-muted);
     margin-bottom: 20px;
     line-height: 1.5;
     max-width: 320px;
@@ -215,9 +216,9 @@
 
 /* Card Front: Mystery back of the card */
 .card-front {
-    background: linear-gradient(135deg, #1e272e 0%, #0f141c 100%);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    color: white;
+    background: var(--st-surface-muted);
+    border: 2px solid var(--st-border);
+    color: var(--st-text);
 }
 
 .card-front-content {
@@ -291,7 +292,8 @@
     align-items: center;
     gap: 15px;
     margin: 12px 0;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--st-surface-muted);
+    border: 1.5px solid var(--st-border);
     padding: 10px 20px;
     border-radius: 14px;
     width: 80%;
@@ -315,7 +317,7 @@
 
 .chest-reward-label {
     font-size: 11px;
-    color: rgba(255,255,255,0.6);
+    color: var(--st-text-muted);
 }
 
 .multiplier-tag {

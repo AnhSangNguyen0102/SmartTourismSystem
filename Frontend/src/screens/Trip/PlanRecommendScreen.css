@@ -316,3 +316,94 @@
     color: #09a1c1;
     text-decoration: underline;
 }
+
+/* Dark Mode overrides for PlanRecommendScreen */
+body.dark-theme .recommend-screen {
+    background-color: var(--st-bg);
+    color: var(--st-text);
+}
+body.dark-theme .recommend-header {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .recommend-header h2 {
+    color: var(--st-text);
+}
+body.dark-theme .btn-back-icon {
+    color: var(--st-text);
+}
+body.dark-theme .recommend-subtitle {
+    color: var(--st-text-muted);
+}
+body.dark-theme .location-card {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .location-card.selected {
+    background-color: rgba(46, 213, 115, 0.12); /* semi-transparent game-green */
+    border-color: var(--game-green); /* vibrant green border */
+    box-shadow: 0 4px 0 var(--game-border-color), 0 0 10px rgba(46, 213, 115, 0.2); /* subtle green glow */
+}
+body.dark-theme .loc-info h4 {
+    color: var(--st-text);
+}
+body.dark-theme .loc-price {
+    color: var(--st-text-muted);
+}
+body.dark-theme .loc-nights-control span {
+    color: var(--st-text) !important;
+}
+body.dark-theme .loc-nights-control button {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .recommend-footer {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .budget-info {
+    color: var(--st-text);
+}
+body.dark-theme .selected-count {
+    color: var(--st-text-muted);
+}
+body.dark-theme .btn-create-trip {
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+    color: #2c3e50; /* Keep text dark/legible on green background */
+}
+body.dark-theme .btn-create-trip:active:not(:disabled) {
+    box-shadow: 0 1px 0 var(--game-border-color);
+}
+body.dark-theme .plan-creating-card {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    box-shadow: 0 6px 0 var(--game-border-color);
+}
+body.dark-theme .plan-creating-card h3 {
+    color: var(--st-text);
+}
+body.dark-theme .plan-creating-card p {
+    color: var(--st-text-muted);
+}
+body.dark-theme .status-ok {
+    background-color: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+body.dark-theme .status-over {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+body.dark-theme .budget-bar-container {
+    background-color: var(--st-surface-muted);
+}
+
+body.dark-theme .loc-view-detail {
+    color: var(--game-sky);
+}
+
+

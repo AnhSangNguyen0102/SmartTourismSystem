@@ -169,21 +169,13 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
                 {/* Thumbnail strip nếu có nhiều ảnh */}
                 {allImages.length > 1 && (
-                    <div style={{
-                        position: 'absolute', bottom: 8, left: 0, right: 0,
-                        display: 'flex', justifyContent: 'center', gap: 6, padding: '0 12px'
-                    }}>
+                    <div className="thumbnail-strip">
                         {allImages.map((url, idx) => (
                             <div
                                 key={idx}
                                 onClick={() => setCoverIdx(idx)}
-                                style={{
-                                    width: 42, height: 42, borderRadius: 8,
-                                    backgroundImage: `url(${url})`,
-                                    backgroundSize: 'cover', backgroundPosition: 'center',
-                                    border: idx === coverIdx ? '2px solid #fff' : '1px solid rgba(255,255,255,0.5)',
-                                    cursor: 'pointer', flexShrink: 0,
-                                }}
+                                className={`thumbnail-item ${idx === coverIdx ? 'active' : ''}`}
+                                style={{ backgroundImage: `url(${url})` }}
                             />
                         ))}
                     </div>
@@ -202,10 +194,10 @@ const LocationDetailScreen = ({ location, onBack }) => {
                         </span>
                         {avgRating != null && (
                             <span className="loc-rating">
-                                <span style={{ color: '#f39c12', marginRight: 4 }}>★</span>
+                                <span className="loc-rating-star">★</span>
                                 {Number(avgRating).toFixed(1)}
                                 {totalReviews > 0 && (
-                                    <span style={{ fontSize: 12, color: '#888', marginLeft: 4 }}>
+                                    <span className="loc-rating-count">
                                         ({totalReviews})
                                     </span>
                                 )}
@@ -216,16 +208,16 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
                 {/* Giá & giờ */}
                 {(priceText || openTime) && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12, fontSize: 13, color: '#636e72' }}>
+                    <div className="loc-info-row">
                         {openTime && (
                             <span>
-                                <i className="fas fa-clock" style={{ color: '#0abde3', marginRight: 6 }}></i>
+                                <i className="fas fa-clock loc-info-icon loc-info-icon--blue"></i>
                                 Mở cửa: {openTime}{closeTime ? ` – ${closeTime}` : ''}
                             </span>
                         )}
                         {priceText && (
                             <span>
-                                <i className="fas fa-tag" style={{ color: '#00b894', marginRight: 6 }}></i>
+                                <i className="fas fa-tag loc-info-icon loc-info-icon--green"></i>
                                 Giá vé: {priceText}
                             </span>
                         )}
@@ -244,38 +236,31 @@ const LocationDetailScreen = ({ location, onBack }) => {
                 </button>
 
                 {/* ── Đại sứ địa phương ── */}
-                <div className="section" style={{
-                    border: '2.5px solid #2c3e50', borderRadius: 16, padding: 12,
-                    backgroundColor: '#f8fafc', boxShadow: '0 4px 0 #2c3e50', marginBottom: 20
-                }}>
-                    <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 'bold', margin: '0 0 10px', color: '#2c3e50' }}>
+                <div className="section ambassador-section">
+                    <h3 className="section-title ambassador-title">
                         👑 Đại sứ địa phương
                     </h3>
                     {loadingAmbassadors ? (
-                        <div style={{ fontSize: 12, color: '#7f8c8d', textAlign: 'center', padding: 10 }}>Đang tải...</div>
+                        <div className="section-loading-text">Đang tải...</div>
                     ) : ambassadors.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '12px 0', color: '#747d8c', fontSize: 12, fontWeight: 'bold' }}>
+                        <div className="section-empty-text">
                             <span>Chưa có Đại sứ địa phương ở đây! 🗺️</span>
-                            <p style={{ fontSize: 10, color: '#95a5a6', fontWeight: 'normal', marginTop: 4 }}>
+                            <p className="section-empty-sub">
                                 Hãy là người check-in đầu tiên để chiếm lĩnh danh hiệu này!
                             </p>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div className="ambassador-list">
                             {ambassadors.map((amb, index) => {
                                 const medals = ['🥇', '🥈', '🥉', '🎖️', '🎖️'];
                                 return (
-                                    <div key={amb.user_id} style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '8px 10px', backgroundColor: '#fff',
-                                        border: '2px solid #2c3e50', borderRadius: 12, boxShadow: '0 2px 0 #2c3e50'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <span style={{ fontSize: 16, fontWeight: 'bold' }}>{medals[index] || '🎖️'}</span>
-                                            <img src={amb.avatar} alt={amb.name} style={{ width: 32, height: 32, borderRadius: '50%', border: '1.5px solid #2c3e50' }} />
-                                            <span style={{ fontSize: 13, fontWeight: 'bold', color: '#2c3e50' }}>{amb.name}</span>
+                                    <div key={amb.user_id} className="ambassador-item">
+                                        <div className="ambassador-item-left">
+                                            <span className="ambassador-medal">{medals[index] || '🎖️'}</span>
+                                            <img src={amb.avatar} alt={amb.name} className="ambassador-avatar" />
+                                            <span className="ambassador-name">{amb.name}</span>
                                         </div>
-                                        <span style={{ fontSize: 11, fontWeight: 'bold', color: '#3498db', backgroundColor: '#eaf2f8', padding: '3px 8px', borderRadius: 8, border: '1px solid #a9cce3' }}>
+                                        <span className="ambassador-count">
                                             {amb.checkin_count} check-in
                                         </span>
                                     </div>
@@ -287,39 +272,34 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
 
                 {/* ── Rating & Reviews ── */}
-                <div className="section" style={{ paddingBottom: 80 }}>
+                <div className="section section--reviews">
                     <h3 className="section-title">Rating &amp; Reviews</h3>
 
                     {/* Rating tổng */}
                     {ratingSummary && ratingSummary.total_reviews > 0 && (
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: 16,
-                            background: 'linear-gradient(135deg, #fff9f0, #fff3e0)',
-                            borderRadius: 16, padding: '14px 18px', marginBottom: 16,
-                            border: '1px solid #ffe0b2'
-                        }}>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 36, fontWeight: 900, color: '#f39c12', lineHeight: 1 }}>
+                        <div className="rating-summary-box">
+                            <div className="rating-summary-left">
+                                <div className="rating-big-number">
                                     {Number(ratingSummary.average_rating).toFixed(1)}
                                 </div>
                                 <StarBar value={ratingSummary.average_rating} size={18} />
-                                <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
+                                <div className="rating-count-label">
                                     {ratingSummary.total_reviews} đánh giá
                                 </div>
                             </div>
-                            <div style={{ flex: 1 }}>
+                            <div className="rating-bars">
                                 {[5, 4, 3, 2, 1].map(star => {
                                     const count = ratingSummary.distribution?.[star] ?? 0;
                                     const pct = ratingSummary.total_reviews > 0
                                         ? (count / ratingSummary.total_reviews) * 100 : 0;
                                     return (
-                                        <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                                            <span style={{ fontSize: 11, width: 8, color: '#888' }}>{star}</span>
-                                            <span style={{ fontSize: 11, color: '#f39c12' }}>★</span>
-                                            <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#f0f0f0', overflow: 'hidden' }}>
-                                                <div style={{ width: `${pct}%`, height: '100%', background: '#f39c12', borderRadius: 3 }} />
+                                        <div key={star} className="rating-bar-row">
+                                            <span className="rating-bar-label">{star}</span>
+                                            <span className="rating-bar-star">★</span>
+                                            <div className="rating-bar-track">
+                                                <div className="rating-bar-fill" style={{ width: `${pct}%` }} />
                                             </div>
-                                            <span style={{ fontSize: 10, color: '#888', width: 16 }}>{count}</span>
+                                            <span className="rating-bar-count">{count}</span>
                                         </div>
                                     );
                                 })}
@@ -329,14 +309,14 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
                     {/* Danh sách reviews */}
                     {loadingReviews ? (
-                        <div style={{ textAlign: 'center', color: '#888', padding: 12, fontSize: 13 }}>Đang tải đánh giá...</div>
+                        <div className="section-loading-text">Đang tải đánh giá...</div>
                     ) : reviews.length === 0 ? (
-                        <div style={{ textAlign: 'center', color: '#a0aab4', padding: '16px 0', fontSize: 13 }}>
+                        <div className="section-empty-text">
                             <p style={{ margin: 0 }}>Chưa có đánh giá nào.</p>
-                            <p style={{ margin: '4px 0 0', fontSize: 11 }}>Hãy là người đầu tiên đánh giá địa điểm này!</p>
+                            <p className="section-empty-sub" style={{ margin: '4px 0 0' }}>Hãy là người đầu tiên đánh giá địa điểm này!</p>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div className="reviews-list">
                             {reviews.map(rev => (
                                 <div key={rev.review_id} className="review-card">
                                     <div className="review-header">
@@ -364,7 +344,7 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
                     {/* Thông báo sau submit */}
                     {submitMsg && (
-                        <p style={{ textAlign: 'center', fontSize: 13, marginTop: 8, color: submitMsg.startsWith('✅') ? '#00b894' : '#e17055' }}>
+                        <p className={`submit-msg ${submitMsg.startsWith('✅') ? 'submit-msg--success' : 'submit-msg--error'}`}>
                             {submitMsg}
                         </p>
                     )}
@@ -373,28 +353,17 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
             {/* ── Write Review Modal / Overlay ── */}
             {showReviewForm && (
-                <div style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-                    zIndex: 100, display: 'flex', alignItems: 'flex-end'
-                }}>
-                    <div style={{
-                        background: '#fff', width: '100%', borderRadius: '20px 20px 0 0',
-                        padding: '24px 20px 32px', boxSizing: 'border-box'
-                    }}>
-                        <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 800 }}>Viết đánh giá</h3>
+                <div className="review-modal-overlay">
+                    <div className="review-modal-sheet">
+                        <h3 className="review-modal-title">Viết đánh giá</h3>
 
                         {/* Chọn sao */}
-                        <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'center' }}>
+                        <div className="star-picker">
                             {[1, 2, 3, 4, 5].map(s => (
                                 <button
                                     key={s}
                                     onClick={() => setMyRating(s)}
-                                    style={{
-                                        fontSize: 32, background: 'none', border: 'none',
-                                        cursor: 'pointer', padding: 4,
-                                        opacity: s <= myRating ? 1 : 0.3,
-                                        color: '#f39c12', transition: 'opacity 0.15s'
-                                    }}
+                                    className={`star-picker-btn ${s <= myRating ? 'active' : ''}`}
                                 >★</button>
                             ))}
                         </div>
@@ -405,33 +374,18 @@ const LocationDetailScreen = ({ location, onBack }) => {
                             value={myComment}
                             onChange={e => setMyComment(e.target.value)}
                             rows={4}
-                            style={{
-                                width: '100%', borderRadius: 12, border: '1.5px solid #e0e0e0',
-                                padding: '10px 12px', fontSize: 14, resize: 'none',
-                                boxSizing: 'border-box', fontFamily: 'inherit',
-                                outline: 'none', marginBottom: 12
-                            }}
+                            className="review-textarea"
                         />
 
-                        <div style={{ display: 'flex', gap: 10 }}>
+                        <div className="modal-actions">
                             <button
                                 onClick={() => { setShowReviewForm(false); setSubmitMsg(''); }}
-                                style={{
-                                    flex: 1, padding: '12px 0', borderRadius: 12,
-                                    border: '1.5px solid #ddd', background: '#f5f5f5',
-                                    fontSize: 15, fontWeight: 600, cursor: 'pointer'
-                                }}
+                                className="btn-modal-cancel"
                             >Huỷ</button>
                             <button
                                 onClick={handleSubmitReview}
                                 disabled={submitting}
-                                style={{
-                                    flex: 2, padding: '12px 0', borderRadius: 12,
-                                    border: 'none', background: '#00bcd4',
-                                    color: '#fff', fontSize: 15, fontWeight: 700,
-                                    cursor: submitting ? 'not-allowed' : 'pointer',
-                                    opacity: submitting ? 0.7 : 1
-                                }}
+                                className="btn-modal-submit"
                             >
                                 {submitting ? 'Đang lưu...' : 'Gửi đánh giá'}
                             </button>

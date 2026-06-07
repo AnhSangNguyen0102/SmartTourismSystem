@@ -479,3 +479,61 @@
 .password-toggle-btn:active {
     transform: translateY(-50%) scale(0.9);
 }
+
+/* ============================================================
+   DARK THEME OVERRIDES FOR LoginScreen & Auth forms
+   ============================================================ */
+body.dark-theme .login-container form {
+    border-color: var(--game-border-color);
+    box-shadow: 0 6px 0 var(--game-border-color);
+}
+body.dark-theme .login-input {
+    background: var(--st-surface-muted);
+    border-color: var(--game-border-color);
+}
+body.dark-theme .login-button {
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .auth-back {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+body.dark-theme .password-toggle-btn {
+    color: var(--st-text-muted);
+}
+body.dark-theme .auth-success-dialog {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    box-shadow: 0 8px 0 var(--game-border-color);
+}
+body.dark-theme .auth-success-close {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    color: var(--st-text);
+    box-shadow: 0 2px 0 var(--game-border-color);
+}
+body.dark-theme .auth-success-primary {
+    border-color: var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .role-toggle-btn.inactive {
+    background-color: var(--st-surface);
+    border-color: var(--game-border-color);
+    color: var(--st-text);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+body.dark-theme .role-toggle-btn:not(.inactive) {
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+body.dark-theme .enterprise-profile-fields {
+    background-color: var(--st-surface-muted);
+    border-color: var(--game-border-color);
+}
+body.dark-theme .login-error-alert {
+    background: linear-gradient(135deg, #2a1b1b 0%, #3d1c1c 100%);
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}

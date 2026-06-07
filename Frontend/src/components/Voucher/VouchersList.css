@@ -1,36 +1,30 @@
-/*
-.vouchers-container {
-  background-color: var(--st-surface-muted, #f8fafc);
-  border-radius: var(--st-radius, 16px);
-  padding: 16px;
-  border: 2px dashed var(--st-border, #cbd5e1);
-}
-*/
+/* src/components/Voucher/VouchersList.css */
 /* === STARBUCKS STYLE LIST CARD === */
 .voucher-item-card {
-  border: 3px solid #2c3e50;
+  border: 3px solid var(--game-border-color);
   border-radius: 20px;
   padding: 12px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 0 #2c3e50;
+  background-color: var(--st-surface);
+  box-shadow: 0 4px 0 var(--game-border-color);
+  color: var(--st-text);
   display: flex;
   gap: 14px;
   align-items: center;
   margin-bottom: 14px;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .voucher-item-card:active {
   transform: translateY(4px);
-  box-shadow: 0 0 0 #2c3e50;
+  box-shadow: 0 0 0 var(--game-border-color);
 }
 
 .voucher-item-card.disabled {
   opacity: 0.6;
-  background-color: #f1f2f6;
-  box-shadow: 0 4px 0 #a4b0be;
-  border-color: #a4b0be;
+  background-color: var(--st-surface-muted);
+  box-shadow: 0 4px 0 var(--st-border);
+  border-color: var(--st-border);
   cursor: not-allowed;
 }
 
@@ -38,10 +32,10 @@
   width: 80px;
   height: 80px;
   border-radius: 16px;
-  border: 3px solid #2c3e50;
+  border: 3px solid var(--game-border-color);
   overflow: hidden;
   flex-shrink: 0;
-  background-color: #f8fafc;
+  background-color: var(--st-surface-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,7 +57,7 @@
 .voucher-brand {
   font-size: 11px;
   font-weight: 900;
-  color: #747d8c;
+  color: var(--st-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -71,13 +65,13 @@
 .voucher-title {
   font-size: 16px;
   font-weight: 900;
-  color: #2c3e50;
+  color: var(--st-text);
   line-height: 1.2;
 }
 
 .voucher-cost {
   font-size: 13px;
-  color: #747d8c;
+  color: var(--st-text-muted);
   font-weight: 600;
 }
 
@@ -95,17 +89,17 @@
 
 /* === VOUCHER DETAIL MODAL === */
 .voucher-detail-box {
-  border: 4px solid #2c3e50;
+  border: 4px solid var(--game-border-color);
   border-radius: 24px;
   padding: 20px;
-  background-color: #ffffff;
+  background-color: var(--st-surface);
   text-align: left;
 }
 
 .voucher-detail-title {
   font-size: 22px;
   font-weight: 900;
-  color: #000;
+  color: var(--st-text);
   margin-bottom: 8px;
   line-height: 1.3;
 }
@@ -113,14 +107,14 @@
 .voucher-detail-desc {
   font-size: 15px;
   font-weight: 500;
-  color: #000;
+  color: var(--st-text);
   margin-bottom: 12px;
 }
 
 .voucher-detail-discount {
   font-size: 24px;
   font-weight: 500;
-  color: #000;
+  color: var(--st-text);
   margin-bottom: 12px;
 }
 
@@ -130,6 +124,6 @@
   gap: 6px;
   font-size: 18px;
   font-weight: 500;
-  color: #000;
+  color: var(--st-text);
   margin-bottom: 6px;
 }

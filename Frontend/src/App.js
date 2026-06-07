@@ -83,6 +83,18 @@ function App() {
     }, [isWorkMode]);
 
     useEffect(() => {
+        const initTheme = async () => {
+            const isDark = await storageGet('dark_mode');
+            if (isDark === 'true') {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+        };
+        initTheme();
+    }, []);
+
+    useEffect(() => {
         const handleGlobalClick = (e) => {
             if (workModeRef.current) return;
 

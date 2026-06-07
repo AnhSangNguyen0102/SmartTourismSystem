@@ -28,14 +28,14 @@
 .history-link-btn {
     border: 1.5px solid #2c3e50;
     background: #ffffff;
-    border-radius: 10px;
-    padding: 4px 8px;
-    font-size: 10px;
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 12px;
     font-weight: 800;
     color: #2c3e50;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     cursor: pointer;
 }
 
@@ -817,5 +817,104 @@
     80% { transform: translate(-1px, -1px) rotate(4deg); }
     90% { transform: translate(2px, 2px) rotate(-2deg); }
     100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Dark Mode overrides for Travel_trip */
+body.dark-theme .ongoing-trip-card {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+}
+body.dark-theme .ongoing-trip-title {
+    color: var(--st-text);
+}
+body.dark-theme .ongoing-trip-stats {
+    color: var(--st-text-muted);
+}
+body.dark-theme .history-link-btn {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+}
+body.dark-theme .daily-quests-card {
+    background-color: var(--st-surface);
+}
+body.dark-theme .quest-item-row {
+    background-color: var(--st-surface-muted);
+}
+body.dark-theme .quest-item-row.quest-done {
+    background-color: var(--st-bg);
+}
+body.dark-theme .quest-label {
+    color: var(--st-text);
+}
+body.dark-theme .checkbox-cartoon {
+    background-color: var(--st-surface);
+}
+body.dark-theme .mini-leaderboard-card {
+    background-color: var(--st-surface);
+}
+body.dark-theme .podium-row.place-1 {
+    background-color: var(--podium-1-bg);
+}
+body.dark-theme .podium-row.place-2 {
+    background-color: var(--podium-2-bg);
+}
+body.dark-theme .podium-row.place-3 {
+    background-color: var(--podium-3-bg);
+}
+body.dark-theme .player-podium-name {
+    color: var(--st-text);
+}
+body.dark-theme .tour-card {
+    background-color: var(--st-surface);
+}
+body.dark-theme .tour-title {
+    color: var(--st-text);
+}
+body.dark-theme .tour-rating {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+}
+body.dark-theme .daily-attendance-card {
+    background-color: var(--st-surface);
+}
+body.dark-theme .attendance-streak-header {
+    color: var(--st-text);
+}
+body.dark-theme .attendance-day-box {
+    background-color: var(--st-surface-muted);
+}
+body.dark-theme .chest-rewards-section {
+    background-color: var(--st-surface-muted);
+}
+body.dark-theme .chest-icon-wrapper {
+    background-color: var(--st-surface);
+}
+body.dark-theme .chest-info-meta h4 {
+    color: var(--st-text);
+}
+body.dark-theme .section-title {
+    color: var(--st-text);
+}
+body.dark-theme .ongoing-trip-card {
+    border-color: var(--game-border-color);
+    box-shadow: 0 6px 0 var(--game-border-color);
+}
+body.dark-theme .ongoing-trip-card:hover {
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .enter-btn {
+    border-color: var(--game-border-color) !important;
+    box-shadow: 0 3px 0 var(--game-border-color) !important;
+}
+body.dark-theme .enter-btn:hover {
+    box-shadow: 0 2px 0 var(--game-border-color) !important;
+}
+body.dark-theme .plan-banner {
+    border-color: var(--game-border-color);
+    box-shadow: 0 6px 0 var(--game-border-color);
+}
+body.dark-theme .plan-banner h3 {
+    text-shadow: 1.5px 1.5px 0 var(--game-border-color);
+    -webkit-text-stroke: 0.5px var(--game-border-color);
 }
 
