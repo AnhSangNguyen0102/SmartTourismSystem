@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE } from '../../config/api';
 import { storageGet } from '../../platform/storage';
+import { showToast } from '../../platform/dialog';
+import { isFavoriteLocation, toggleFavoriteLocation } from '../../services/locationFavoriteService';
 import LocationDetailMap from '../../components/LocationDetailMap/LocationDetailMap';
 import './LocationDetailScreen.css';
 
 // ── Helper ──────────────────────────────────────────────────────────────────
-const fallbackImage = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
 const defaultAvatar = 'https://ui-avatars.com/api/?background=0abde3&color=fff&name=';
 
 const formatTime = (t) => (t ? t.substring(0, 5) : null);
@@ -33,6 +34,9 @@ const LocationDetailScreen = ({ location, onBack }) => {
     const [ambassadors, setAmbassadors] = useState([]);
     const [loadingAmbassadors, setLoadingAmbassadors] = useState(false);
     const [images, setImages] = useState([]);          // ảnh từ DB
+    const [externalImages, setExternalImages] = useState([]);
+    const [loadingExternalImages, setLoadingExternalImages] = useState(false);
+    const [failedImageUrls, setFailedImageUrls] = useState([]);
     const [coverIdx, setCoverIdx] = useState(0);       // ảnh đang hiển thị
     const [ratingSummary, setRatingSummary] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -47,6 +51,8 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
     // Map overlay
     const [showMap, setShowMap] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
 
     // ── Fetch helpers ──────────────────────────────────────────────────────
     const fetchReviews = useCallback(async () => {
@@ -68,12 +74,52 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
     useEffect(() => {
         if (!location?.location_id) return;
+        let active = true;
+        setImages([]);
+        setExternalImages([]);
+        setLoadingExternalImages(false);
+        setFailedImageUrls([]);
+        setCoverIdx(0);
+        setRatingSummary(null);
+        setReviews([]);
 
-        // Ảnh từ DB
-        fetch(`${API_BASE}/api/v1/locations/${location.location_id}/images`)
-            .then(r => r.ok ? r.json() : [])
-            .then(data => { if (data.length > 0) setImages(data); })
-            .catch(() => {});
+        const providedImageExists = [
+            location.image_url,
+            location.cover_image,
+            location.image,
+            location.thumbnail_url,
+        ].some(Boolean);
+
+        const loadImages = async () => {
+            let databaseImages = [];
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/locations/${location.location_id}/images`);
+                if (response.ok) databaseImages = await response.json();
+            } catch (error) {
+                console.error('Lỗi tải ảnh địa điểm:', error);
+            }
+
+            if (!active) return;
+            if (databaseImages.length > 0) {
+                setImages(databaseImages);
+                return;
+            }
+            if (providedImageExists) return;
+
+            setLoadingExternalImages(true);
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/locations/${location.location_id}/external-images`);
+                const data = response.ok ? await response.json() : null;
+                if (active && data?.eligible && data.images?.length > 0) {
+                    setExternalImages(data.images);
+                }
+            } catch (error) {
+                console.error('Lỗi tìm ảnh Wikimedia Commons:', error);
+            } finally {
+                if (active) setLoadingExternalImages(false);
+            }
+        };
+        loadImages();
 
         // Đại sứ
         setLoadingAmbassadors(true);
@@ -85,7 +131,38 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
         // Reviews
         fetchReviews();
-    }, [location?.location_id, fetchReviews]);
+
+        return () => { active = false; };
+    }, [
+        location?.location_id,
+        location?.image_url,
+        location?.cover_image,
+        location?.image,
+        location?.thumbnail_url,
+        fetchReviews,
+    ]);
+
+    useEffect(() => {
+        let active = true;
+        isFavoriteLocation(location).then((saved) => {
+            if (active) setIsFavorite(saved);
+        });
+        return () => { active = false; };
+    }, [location]);
+
+    const handleToggleFavorite = async () => {
+        if (favoriteLoading) return;
+        setFavoriteLoading(true);
+        try {
+            const saved = await toggleFavoriteLocation(location);
+            setIsFavorite(saved);
+            showToast(saved ? 'Đã thêm địa điểm vào Yêu thích.' : 'Đã bỏ địa điểm khỏi Yêu thích.', 'success');
+        } catch (error) {
+            showToast(error.message || 'Không thể cập nhật địa điểm yêu thích.', 'error');
+        } finally {
+            setFavoriteLoading(false);
+        }
+    };
 
     // ── Guard ──────────────────────────────────────────────────────────────
     if (!location) {
@@ -99,10 +176,25 @@ const LocationDetailScreen = ({ location, onBack }) => {
 
     // ── Derived display values ─────────────────────────────────────────────
     const dbImages = images.map(i => i.url);
-    const allImages = dbImages.length > 0
+    const providedImages = [
+        location.image_url,
+        location.cover_image,
+        location.image,
+        location.thumbnail_url,
+    ].filter(Boolean);
+    const externalImageUrls = externalImages.map(image => image.url).filter(Boolean);
+    const usingExternalImages = dbImages.length === 0 && providedImages.length === 0;
+    const candidateImages = dbImages.length > 0
         ? dbImages
-        : [location.image_url || location.cover_image || fallbackImage];
-    const bannerUrl = allImages[coverIdx] || fallbackImage;
+        : providedImages.length > 0
+            ? providedImages
+            : externalImageUrls;
+    const allImages = candidateImages.filter(url => !failedImageUrls.includes(url));
+    const bannerIdx = allImages[coverIdx] ? coverIdx : 0;
+    const bannerUrl = allImages[bannerIdx] || null;
+    const activeExternalImage = usingExternalImages && bannerUrl
+        ? externalImages.find(image => image.url === bannerUrl)
+        : null;
 
     const displayLocation = location.address || location.city_name || 'Việt Nam';
     const displayDesc = location.description || null;
@@ -117,9 +209,14 @@ const LocationDetailScreen = ({ location, onBack }) => {
             ? 'Miễn phí'
             : `${minPrice.toLocaleString('vi-VN')}đ${maxPrice && maxPrice > 0 ? ` - ${maxPrice.toLocaleString('vi-VN')}đ` : ''}`;
 
-    // Rating hiển thị: ưu tiên từ Supabase reviews, fallback về score từ API
-    const avgRating = ratingSummary?.average_rating ?? (location.score ? Number(location.score) : null);
+    const avgRating = ratingSummary?.total_reviews > 0 ? ratingSummary.average_rating : null;
     const totalReviews = ratingSummary?.total_reviews ?? 0;
+    const matchScore = location.score != null ? Number(location.score) : null;
+    const matchScoreText = matchScore == null
+        ? null
+        : matchScore <= 1
+            ? `${Math.round(matchScore * 100)}% phù hợp`
+            : `${matchScore.toFixed(1)} điểm phù hợp`;
 
     // ── Submit review ──────────────────────────────────────────────────────
     const handleSubmitReview = async () => {
@@ -155,15 +252,48 @@ const LocationDetailScreen = ({ location, onBack }) => {
         <div className="location-detail-container">
             {/* ── Image Banner ── */}
             <div
-                className="detail-banner"
-                style={{ backgroundImage: `url(${bannerUrl})` }}
+                className={`detail-banner ${bannerUrl ? '' : 'detail-banner--empty'}`}
             >
+                {bannerUrl && (
+                    <img
+                        className="detail-banner-image"
+                        src={bannerUrl}
+                        alt={location.location_name}
+                        onError={() => setFailedImageUrls(current => (
+                            current.includes(bannerUrl) ? current : [...current, bannerUrl]
+                        ))}
+                    />
+                )}
+                {!bannerUrl && (
+                    <div className="detail-banner-placeholder">
+                        <i className="fas fa-map-marker-alt"></i>
+                        <strong>{location.location_name}</strong>
+                        <span>{loadingExternalImages ? 'Đang tìm ảnh địa điểm...' : 'Địa điểm chưa có ảnh'}</span>
+                    </div>
+                )}
+                {activeExternalImage && (
+                    <a
+                        className={`external-image-credit ${allImages.length > 1 ? 'with-thumbnails' : ''}`}
+                        href={activeExternalImage.source_url}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Ảnh: {activeExternalImage.author || 'Wikimedia Commons'}
+                        {activeExternalImage.license ? ` · ${activeExternalImage.license}` : ''}
+                    </a>
+                )}
                 <div className="banner-overlay">
-                    <button className="banner-btn back-btn" onClick={onBack}>
+                    <button type="button" className="banner-btn back-btn" onClick={onBack} aria-label="Quay lại">
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <button className="banner-btn fav-btn">
-                        <i className="far fa-heart"></i>
+                    <button
+                        type="button"
+                        className={`banner-btn fav-btn ${isFavorite ? 'active' : ''}`}
+                        onClick={handleToggleFavorite}
+                        disabled={favoriteLoading}
+                        aria-label={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+                    >
+                        <i className={`${isFavorite ? 'fas' : 'far'} fa-heart`}></i>
                     </button>
                 </div>
 
@@ -174,7 +304,7 @@ const LocationDetailScreen = ({ location, onBack }) => {
                             <div
                                 key={idx}
                                 onClick={() => setCoverIdx(idx)}
-                                className={`thumbnail-item ${idx === coverIdx ? 'active' : ''}`}
+                                className={`thumbnail-item ${idx === bannerIdx ? 'active' : ''}`}
                                 style={{ backgroundImage: `url(${url})` }}
                             />
                         ))}
@@ -201,6 +331,11 @@ const LocationDetailScreen = ({ location, onBack }) => {
                                         ({totalReviews})
                                     </span>
                                 )}
+                            </span>
+                        )}
+                        {matchScoreText && (
+                            <span className="loc-match-score">
+                                <i className="fas fa-bullseye"></i> {matchScoreText}
                             </span>
                         )}
                     </div>
