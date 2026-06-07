@@ -180,12 +180,6 @@
     margin: 0;
 }
 
-.active-friend-status {
-    font-size: 9px;
-    color: var(--game-green, #2ed573);
-    font-weight: 800;
-}
-
 .chat-clear-btn {
     background: none;
     border: none;
