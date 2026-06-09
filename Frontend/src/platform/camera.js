@@ -59,7 +59,7 @@ const photoToFile = async (photo) => {
     throw new Error('Không đọc được dữ liệu ảnh từ camera.');
 };
 
-export const capturePhotoFile = async ({ quality = 70 } = {}) => {
+export const capturePhotoFile = async ({ quality = 70, useFrontCamera = false } = {}) => {
     if (Capacitor.isNativePlatform()) {
         try {
             const photo = await Camera.getPhoto({
@@ -67,6 +67,7 @@ export const capturePhotoFile = async ({ quality = 70 } = {}) => {
                 width: 800, // Nén ảnh, giới hạn chiều rộng 800px để gửi qua AI nhanh hơn
                 resultType: 'dataUrl',
                 source: 'CAMERA',
+                direction: useFrontCamera ? 'FRONT' : 'REAR',
                 saveToGallery: false,
                 correctOrientation: true,
             });

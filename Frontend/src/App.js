@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import './App.css';
 import SplashScreen from './screens/SplashScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
@@ -92,6 +93,45 @@ function App() {
             }
         };
         initTheme();
+    }, []);
+
+    // Thiết lập thông báo hằng ngày lúc 0h
+    useEffect(() => {
+        const setupDailyNotifications = async () => {
+            if (!Capacitor.isNativePlatform()) return;
+            try {
+                let permStatus = await LocalNotifications.checkPermissions();
+                if (permStatus.display !== 'granted') {
+                    permStatus = await LocalNotifications.requestPermissions();
+                }
+                
+                if (permStatus.display === 'granted') {
+                    // Huỷ bỏ lịch cũ để tránh trùng lặp
+                    const pending = await LocalNotifications.getPending();
+                    if (pending.notifications.find(n => n.id === 1)) {
+                        await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
+                    }
+                    
+                    // Lên lịch mới lúc 0h00
+                    await LocalNotifications.schedule({
+                        notifications: [
+                            {
+                                id: 1,
+                                title: "Nhiệm vụ hằng ngày đã được làm mới!",
+                                body: "Vào ứng dụng ngay để hoàn thành nhiệm vụ và nhận điểm thưởng nhé.",
+                                schedule: { 
+                                    on: { hour: 0, minute: 0 },
+                                    allowWhileIdle: true
+                                },
+                            }
+                        ]
+                    });
+                }
+            } catch (error) {
+                console.warn('Lỗi khi thiết lập thông báo:', error);
+            }
+        };
+        setupDailyNotifications();
     }, []);
 
     useEffect(() => {
