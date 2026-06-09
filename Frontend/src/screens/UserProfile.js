@@ -256,14 +256,27 @@ const UserProfile = ({ user, onBack, onUpdateSuccess }) => {
             {/* HIỂN THỊ ĐIỂM THƯỞNG VÀ VÍ VOUCHER (Nếu không phải doanh nghiệp) */}
             {!isEnterprise && !showWallet && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-                    <div className="user-profile-points-card">
-                        <div className="user-profile-points-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Award size={20} style={{ color: '#f1c40f' }} />
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <div className="user-profile-points-card" style={{ flex: 1 }}>
+                            <div className="user-profile-points-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Award size={20} style={{ color: '#f1c40f' }} />
+                            </div>
+                            <div>
+                                <div className="user-profile-points-label">EXP tích lũy</div>
+                                <div className="user-profile-points-value">
+                                    {userInfo?.total_points || 0} <span className="user-profile-points-unit">điểm</span>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <div className="user-profile-points-label">Điểm thưởng tích lũy</div>
-                            <div className="user-profile-points-value">
-                                {(userInfo?.points_balance || 0) + (userInfo?.total_points || 0)} <span className="user-profile-points-unit">điểm</span>
+                        <div className="user-profile-points-card" style={{ flex: 1 }}>
+                            <div className="user-profile-points-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <WalletCards size={20} style={{ color: '#f1c40f' }} />
+                            </div>
+                            <div>
+                                <div className="user-profile-points-label">Xu tích lũy</div>
+                                <div className="user-profile-points-value">
+                                    {userInfo?.points_balance || 0} <span className="user-profile-points-unit">xu</span>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -88,7 +88,16 @@ def complete_trip(
         raise HTTPException(status_code=403, detail="Lộ trình không tồn tại hoặc không thuộc về bạn")
         
     if trip.status == ItineraryStatus.COMPLETED:
-        raise HTTPException(status_code=400, detail="Chuyến đi này đã được hoàn thành")
+        stmt_prof = select(UserProfiles).where(UserProfiles.user_id == user_id)
+        profile = db.exec(stmt_prof).first()
+        return MessageResponse(
+            detail=f"Chuyến đi này đã được hoàn thành thành công trước đó!",
+            completion_score=trip.score_earned or 0,
+            earned_from_trip=trip.score_earned or 0,
+            total_rewarded=trip.score_earned or 0,
+            new_total_points=profile.total_points if profile else None,
+            new_points_balance=profile.points_balance if profile else None,
+        )
         
     # Tính số trạm đã check-in
     stmt_completed = (
@@ -120,14 +129,16 @@ def complete_trip(
     trip.update_at = datetime.utcnow()
     db.add(trip)
     
-    # Cộng điểm thưởng lộ trình và chuyển điểm hiện tại vào ví
+    # Cộng điểm thưởng lộ trình vào profile (KHÔNG reset total_points)
     stmt_prof = select(UserProfiles).where(UserProfiles.user_id == user_id)
     profile = db.exec(stmt_prof).first()
-    earned_from_trip = 0
+
+    current_points = profile.total_points if profile and profile.total_points else 0
+    current_coins = profile.points_balance if profile and profile.points_balance else 0
+
     if profile:
-        earned_from_trip = profile.total_points
-        profile.points_balance += completion_score + earned_from_trip
-        profile.total_points = 0
+        profile.total_points = current_points + completion_score
+        profile.points_balance = current_coins + completion_score
         db.add(profile)
         
     # Kích hoạt kiểm tra thành tựu
@@ -141,11 +152,16 @@ def complete_trip(
         unlocked_msg = f" 🎉 Bạn đã mở khóa thành tựu mới: {titles}!"
         
     db.commit()
+
+    # Refresh lại profile để lấy dữ liệu chuẩn xác nhất sau khi commit
+    if profile:
+        db.refresh(profile)
+
     return MessageResponse(
-        detail=f"Chúc mừng bạn đã hoàn thành chuyến đi! Bạn nhận được {completion_score} điểm thưởng lộ trình và +{earned_from_trip} điểm đã tích lũy.{unlocked_msg}",
+        detail=f"Chúc mừng bạn đã hoàn thành chuyến đi! Bạn nhận được +{completion_score} EXP và +{completion_score} xu.{unlocked_msg}",
         completion_score=completion_score,
-        earned_from_trip=earned_from_trip,
-        total_rewarded=completion_score + earned_from_trip,
+        earned_from_trip=trip.score_earned,
+        total_rewarded=completion_score,
         new_total_points=profile.total_points if profile else None,
         new_points_balance=profile.points_balance if profile else None,
     )
@@ -170,17 +186,8 @@ def cancel_trip(
         
     update_itinerary_status(db, itinerary_id=itinerary_id, new_status=ItineraryStatus.CANCELLED)
     
-    # Dù hủy, vẫn cộng điểm hiện tại vào ngân sách
-    from models import UserProfiles
-    profile = db.exec(select(UserProfiles).where(UserProfiles.user_id == user_id)).first()
-    if profile and profile.total_points > 0:
-        profile.points_balance += profile.total_points
-        earned = profile.total_points
-        profile.total_points = 0
-        db.add(profile)
-        db.commit()
-        return MessageResponse(detail=f"Chuyến đi đã được hủy. +{earned} điểm đã được cộng vào ngân sách.")
-    
+    # Hủy chuyến đi - KHÔNG chuyển total_points sang points_balance
+    db.commit()
     return MessageResponse(detail="Chuyến đi đã được hủy.")
 
 @router.post("/create", response_model=ItineraryResponse, summary="Tạo chuyến đi mới")
@@ -534,11 +541,10 @@ def checkin_stop(
             trip.update_at = datetime.utcnow()
             db.add(trip)
             
-            # Cộng điểm thưởng lộ trình vào profile và chuyển total_points -> points_balance
+            # Cộng điểm thưởng lộ trình vào profile (KHÔNG reset total_points)
             if profile:
-                earned_from_trip = profile.total_points
-                profile.points_balance += completion_score + earned_from_trip
-                profile.total_points = 0
+                profile.total_points = (profile.total_points or 0) + completion_score
+                profile.points_balance = (profile.points_balance or 0) + completion_score
                 db.add(profile)
                 
             # Kích hoạt các thành tựu hoàn thành lộ trình
@@ -556,17 +562,33 @@ def checkin_stop(
         unlocked_msg = f" 🎉 Thành tựu mới: {titles}!"
 
     if auto_completed:
-        return CheckInResponse(
-            success=True,
-            message=f"✅ Check-in thành công! +{earned_points} điểm. 🎉 Lộ trình hoàn thành! Bạn nhận thêm +{completion_score} điểm tích lũy.{unlocked_msg}",
-            stop_id=stop_id,
-            progress_id=progress_id,
-            earned_points=earned_points
+        # Cập nhật trạng thái trạm hiện tại thành COMPLETED trước khi trả về
+        from sqlalchemy import update as sa_update
+        db.execute(
+            sa_update(ItineraryStops)
+            .where(ItineraryStops.stop_id == stop_id)
+            .values(reward=earned_points, status=StopStatus.COMPLETED)
         )
 
+        return CheckInResponse(
+            success=True,
+            message=f"✅ Check-in thành công! +{earned_points} EXP. 🎉 Lộ trình hoàn thành! Bạn nhận thêm +{completion_score} EXP và +{completion_score} xu.{unlocked_msg}",
+            stop_id=stop_id,
+            progress_id=progress_id,
+            earned_points=earned_points,
+            
+            # --- BỔ SUNG CÁC TRƯỜNG ĐỂ FRONTEND MỞ POPUP NHẬN THƯỞNG ---
+            is_itinerary_completed=True,  # Cờ hiệu báo cho Frontend biết lộ trình đã kết thúc
+            completion_score=completion_score,
+            total_rewarded=completion_score,
+            new_total_points=profile.total_points if profile else None,
+            new_points_balance=profile.points_balance if profile else None,
+        )
+
+    # Trả về kết quả check-in thông thường nếu chưa đi hết các trạm
     return CheckInResponse(
         success=True,
-        message=f"✅ Check-in thành công! Bạn nhận được {earned_points} điểm thưởng.{unlocked_msg}",
+        message=f"✅ Check-in thành công! Bạn nhận được {earned_points} EXP.{unlocked_msg}",
         stop_id=stop_id,
         progress_id=progress_id,
         earned_points=earned_points
