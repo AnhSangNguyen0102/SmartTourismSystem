@@ -147,6 +147,7 @@ export const LocationTasks = ({ locationId, locationName, itineraryId, userId, o
                   <div className="task-item-header">
                     <div className="task-badge-reward" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Award size={12} /> +{task.reward_exp} EXP
+                      {task.reward_coin > 0 && ` | +${task.reward_coin} Xu`}
                     </div>
                     <span style={{
                       fontSize: '10px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '6px',
