@@ -9,6 +9,12 @@
     background: #e0f7fa;
     box-shadow: none;
     border: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .island-background {
@@ -66,7 +72,9 @@
     transform-origin: bottom center;
     /* Làm ảnh sáng hơn, đậm màu hơn để nổi bật trên nền bản đồ tối */
     filter: drop-shadow(0px 8px 10px rgba(0, 0, 0, 0.5)) drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3)) saturate(1.25) contrast(1.15) brightness(1.15);
-    pointer-events: auto;
+    pointer-events: none; /* TRÁNH TRÌNH DUYỆT BẮT SỰ KIỆN LONG PRESS LÊN ẢNH GÂY ĐỨNG APP */
+    -webkit-user-drag: none;
+    user-drag: none;
 }
 
 /* Các địa điểm chưa check-in sẽ phát sáng xung quanh để dễ nhận diện */

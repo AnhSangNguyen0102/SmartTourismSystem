@@ -68,10 +68,17 @@ const LocationDetailScreen = ({ location, onBack }) => {
     useEffect(() => {
         if (!location?.location_id) return;
 
+        // Reset state from previous location
+        setImages([]);
+        setCoverIdx(0);
+        setAmbassadors([]);
+        setRatingSummary(null);
+        setReviews([]);
+
         // Ảnh từ DB
         fetch(`${API_BASE}/api/v1/locations/${location.location_id}/images`)
             .then(r => r.ok ? r.json() : [])
-            .then(data => { if (data.length > 0) setImages(data); })
+            .then(data => { setImages(data.length > 0 ? data : []); })
             .catch(() => {});
 
         // Đại sứ

@@ -314,12 +314,15 @@ const IslandMap = ({ stops = [], onBuildingClick }) => {
                                 onMouseEnter={() => setHoveredStopId(stop.stop_id)}
                                 onMouseLeave={() => setHoveredStopId(null)}
                                 onTouchStart={() => setHoveredStopId(stop.stop_id)}
+                                onTouchEnd={() => setHoveredStopId(null)}
+                                onContextMenu={(e) => { e.preventDefault(); setHoveredStopId(null); }}
                                 title={`Nhấn để xem: ${stop.location_name}`}
                             >
                                 <img 
                                     src={`${process.env.PUBLIC_URL || ''}/assets/island/categories/${getBuildingType(stop)}.png`} 
                                     alt={stop.location_name} 
                                     className="hotspot-image"
+                                    draggable="false"
                                     onError={(e) => {
                                         e.target.style.display = 'none';
                                         e.target.nextSibling.style.display = 'block';

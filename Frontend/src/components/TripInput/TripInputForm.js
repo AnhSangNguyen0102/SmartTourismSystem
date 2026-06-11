@@ -247,6 +247,19 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                             onChange={(e) => handleChange('budget', parseInt(e.target.value) || 0)}
                             className="cartoon-input"
                         />
+                        <div className="budget-suggestions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', marginBottom: '8px' }}>
+                            {[minTotalBudget, ...[1000000, 2000000, 5000000, 10000000, 20000000].filter(b => b > minTotalBudget)].slice(0, 5).map(amount => (
+                                <button
+                                    key={amount}
+                                    type="button"
+                                    className={`tag-btn-cartoon ${tripData.budget === amount ? 'selected' : ''}`}
+                                    onClick={() => handleChange('budget', amount)}
+                                    style={{ padding: '6px 12px', fontSize: '13px', minWidth: 'auto' }}
+                                >
+                                    {amount === minTotalBudget ? `Tối thiểu (${amount.toLocaleString('vi-VN')}đ)` : `${amount.toLocaleString('vi-VN')}đ`}
+                                </button>
+                            ))}
+                        </div>
                         <small className="cartoon-helper-text">
                             Kinh phí tối thiểu cần nhập là {minTotalBudget.toLocaleString('vi-VN')} VNĐ (chưa bao gồm chi phí liên tỉnh).
                         </small>
