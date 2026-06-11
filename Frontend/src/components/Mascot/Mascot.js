@@ -84,7 +84,44 @@ const Mascot = ({ message }) => {
         return () => clearInterval(randomAction);
     }, [isTyping, animationClass]);
 
-    const handleMascotClick = () => {
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const isDragging = useRef(false);
+    const dragStart = useRef({ x: 0, y: 0 });
+    const positionStart = useRef({ x: 0, y: 0 });
+    const hasMoved = useRef(false);
+
+    const handlePointerDown = (e) => {
+        isDragging.current = true;
+        hasMoved.current = false;
+        dragStart.current = { x: e.clientX, y: e.clientY };
+        positionStart.current = { ...position };
+        e.currentTarget.setPointerCapture(e.pointerId);
+        // Prevent default touch behaviors
+        e.preventDefault();
+    };
+
+    const handlePointerMove = (e) => {
+        if (!isDragging.current) return;
+        const dx = e.clientX - dragStart.current.x;
+        const dy = e.clientY - dragStart.current.y;
+        
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            hasMoved.current = true;
+        }
+        
+        setPosition({
+            x: positionStart.current.x + dx,
+            y: positionStart.current.y + dy
+        });
+    };
+
+    const handlePointerUp = (e) => {
+        isDragging.current = false;
+        e.currentTarget.releasePointerCapture(e.pointerId);
+    };
+
+    const handleMascotClick = (e) => {
+        if (hasMoved.current) return; // Không kích hoạt thoại nếu đang kéo thả
         if (!isTyping && msgs.length > 0) {
             setCurrentIndex(0);
             setReplayTrigger(prev => prev + 1);
@@ -92,15 +129,23 @@ const Mascot = ({ message }) => {
     };
 
     return (
-        <div className="mascot-container">
+        <div className="mascot-container" style={{ transform: `translate(${position.x}px, ${position.y}px)` }}>
             {displayedMessage && (
                 <div className="mascot-bubble">
                     {displayedMessage}
                     {isTyping && <span className="typing-cursor">|</span>}
                 </div>
             )}
-            <div className={`mascot-character ${animationClass}`} onClick={handleMascotClick} style={{ cursor: 'pointer' }}>
-                <img src="/mascot.png" alt="Mascot" onError={(e) => {
+            <div 
+                className={`mascot-character ${animationClass}`} 
+                onClick={handleMascotClick}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                style={{ cursor: 'grab', touchAction: 'none' }}
+            >
+                <img src="/mascot.png" alt="Mascot" draggable="false" onError={(e) => {
                     e.target.src = 'https://cdn-icons-png.flaticon.com/512/3069/3069172.png';
                 }} />
             </div>
