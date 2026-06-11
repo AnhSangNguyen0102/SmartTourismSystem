@@ -13,6 +13,7 @@ from jose import jwt, JWTError
 import models
 from core.security import verify_token
 from core.config import settings
+from crud.crud_feedback import create_user_feedback
 from core.algorithms import calculate_hybrid_score
 from services.social_post_service import delete_social_post_with_dependencies
 from routers.gamification import auto_complete_daily_quest
@@ -416,6 +417,32 @@ def report_post(
     db.add(new_report)
     db.commit()
     return {"message": "Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét sớm nhất có thể."}
+
+
+@router.post("/feedback")
+def submit_feedback(
+    feedback_data: dict,
+    current_user: dict = Depends(verify_token),
+    db: Session = Depends(get_session)
+):
+    """Gửi ý kiến đóng góp hoặc báo lỗi hệ thống"""
+    user_id = get_user_uuid(current_user)
+    feedback_type = feedback_data.get("feedback_type", "SUGGESTION")
+    content = feedback_data.get("content", "").strip()
+    
+    if not content:
+        raise HTTPException(status_code=400, detail="Nội dung đóng góp không được để trống")
+        
+    try:
+        fb_type = models.FeedbackType(feedback_type)
+    except ValueError:
+        fb_type = models.FeedbackType.SUGGESTION
+
+    feedback = create_user_feedback(db, user_id, fb_type, content)
+    return {
+        "message": "Cảm ơn ý kiến đóng góp của bạn. Chúng tôi sẽ ghi nhận và phản hồi sớm nhất có thể.",
+        "feedback_id": str(feedback.feedback_id)
+    }
 
 
 # ==============================================================================
@@ -1042,19 +1069,53 @@ def get_my_posts(current_user: dict = Depends(verify_token), db: Session = Depen
 
 
 @router.get("/saved-posts")
-def get_saved_posts(current_user: dict = Depends(verify_token), db: Session = Depends(get_session)):
-    """Lấy danh sách các bài đăng đã lưu"""
+def get_saved_posts(
+    filter_type: str = "saved",
+    current_user: dict = Depends(verify_token),
+    db: Session = Depends(get_session)
+):
+    """Lấy danh sách các bài đăng đã lưu, đã tim hoặc đã bình luận"""
     user_id = get_user_uuid(current_user)
     
-    results = db.exec(
-        select(models.SocialPosts, models.Users, models.UserProfiles).join(
-            models.PostSaves, models.SocialPosts.post_id == models.PostSaves.post_id
-        ).join(
-            models.Users, models.SocialPosts.user_id == models.Users.user_id
-        ).join(
-            models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id, isouter=True
-        ).where(models.PostSaves.user_id == user_id).order_by(models.PostSaves.created_at.desc())
-    ).all()
+    if filter_type == "liked":
+        results = db.exec(
+            select(models.SocialPosts, models.Users, models.UserProfiles).join(
+                models.PostLikes, models.SocialPosts.post_id == models.PostLikes.post_id
+            ).join(
+                models.Users, models.SocialPosts.user_id == models.Users.user_id
+            ).join(
+                models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id, isouter=True
+            ).where(models.PostLikes.user_id == user_id).order_by(models.PostLikes.created_at.desc())
+        ).all()
+    elif filter_type == "commented":
+        subquery = select(
+            models.PostComments.post_id,
+            func.max(models.PostComments.created_at).label("latest_comment")
+        ).where(
+            models.PostComments.user_id == user_id
+        ).group_by(
+            models.PostComments.post_id
+        ).subquery()
+
+        results = db.exec(
+            select(models.SocialPosts, models.Users, models.UserProfiles).join(
+                subquery, models.SocialPosts.post_id == subquery.c.post_id
+            ).join(
+                models.Users, models.SocialPosts.user_id == models.Users.user_id
+            ).join(
+                models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id, isouter=True
+            ).order_by(subquery.c.latest_comment.desc())
+        ).all()
+    else: # default is "saved"
+        results = db.exec(
+            select(models.SocialPosts, models.Users, models.UserProfiles).join(
+                models.PostSaves, models.SocialPosts.post_id == models.PostSaves.post_id
+            ).join(
+                models.Users, models.SocialPosts.user_id == models.Users.user_id
+            ).join(
+                models.UserProfiles, models.SocialPosts.user_id == models.UserProfiles.user_id, isouter=True
+            ).where(models.PostSaves.user_id == user_id).order_by(models.PostSaves.created_at.desc())
+        ).all()
     
     return [
         {

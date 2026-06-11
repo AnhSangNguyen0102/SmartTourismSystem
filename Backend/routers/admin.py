@@ -369,6 +369,59 @@ def get_reports(admin: models.Users = Depends(check_admin_access), db: Session =
     return reports
 
 
+@router.get("/social/feedbacks")
+def get_feedbacks(admin: models.Users = Depends(check_admin_access), db: Session = Depends(get_session)):
+    """Lấy danh sách các phản hồi đóng góp (BUG và SUGGESTION) toàn hệ thống"""
+    feedbacks = db.exec(
+        select(models.UserFeedbacks).where(
+            models.UserFeedbacks.feedback_type != models.FeedbackType.REPORT
+        ).order_by(models.UserFeedbacks.created_at.desc())
+    ).all()
+    
+    result = []
+    for fb in feedbacks:
+        user_info = db.exec(select(models.Users).where(models.Users.user_id == fb.user_id)).first()
+        profile_info = db.exec(select(models.UserProfiles).where(models.UserProfiles.user_id == fb.user_id)).first()
+        result.append({
+            "feedback_id": str(fb.feedback_id),
+            "user_id": str(fb.user_id),
+            "user_name": profile_info.full_name if profile_info else (user_info.full_name if user_info else "Khách"),
+            "user_email": user_info.email if user_info else "",
+            "feedback_type": fb.feedback_type.value if hasattr(fb.feedback_type, 'value') else fb.feedback_type,
+            "content": fb.content,
+            "status": fb.status.value if hasattr(fb.status, 'value') else fb.status,
+            "created_at": fb.created_at
+        })
+    return result
+
+
+@router.patch("/social/feedbacks/{feedback_id}/status")
+def update_feedback_status(
+    feedback_id: UUID,
+    data: dict,
+    admin: models.Users = Depends(check_admin_access),
+    db: Session = Depends(get_session)
+):
+    """Cập nhật trạng thái của phản hồi (PENDING, PROCESSING, RESOLVED)"""
+    feedback = db.exec(select(models.UserFeedbacks).where(models.UserFeedbacks.feedback_id == feedback_id)).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Không tìm thấy phản hồi.")
+
+    new_status_str = data.get("status")
+    if not new_status_str:
+        raise HTTPException(status_code=400, detail="Trạng thái mới không được để trống.")
+
+    try:
+        new_status = models.FeedbackStatus(new_status_str)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Trạng thái không hợp lệ.")
+
+    feedback.status = new_status
+    db.add(feedback)
+    db.commit()
+    return {"message": "Cập nhật trạng thái phản hồi thành công.", "status": feedback.status}
+
+
 @router.get("/stats")
 def get_system_stats(admin: models.Users = Depends(check_admin_access), db: Session = Depends(get_session)):
     """Lấy số liệu thống kê toàn hệ thống"""
