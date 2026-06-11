@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Coins, Trophy, CheckCircle2, AlertTriangle, Star, Settings, 
-    ShieldAlert, Clock, HelpCircle, MessageCircle, LogOut, Sparkles 
+    ShieldAlert, Clock, HelpCircle, MessageCircle, LogOut, Sparkles, X 
 } from 'lucide-react';
 import { getSafeAvatarSrc, createInitialAvatarDataUrl } from '../../utils/avatar';
 import { 
@@ -11,6 +11,8 @@ import {
 } from '../../utils/soundUtils';
 import { isMascotEnabled, setMascotEnabled } from '../../config/uiFlags';
 import { storageGet, storageSet } from '../../platform/storage';
+import { API_BASE } from '../../config/api';
+import { showAlert } from '../../platform/dialog';
 import VouchersList from '../Voucher/VouchersList';
 import './ProfileScreen.css';
 
@@ -44,6 +46,13 @@ const ProfileScreen = ({
     const [bgmVol, setBgmVol] = useState(getBgmVolume());
     const [mascotOn, setMascotOn] = useState(isMascotEnabled());
     const [darkMode, setDarkMode] = useState(false);
+    
+    // Feedback states
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const [feedbackType, setFeedbackType] = useState('SUGGESTION');
+    const [feedbackContent, setFeedbackContent] = useState('');
+    const [submittingFeedback, setSubmittingFeedback] = useState(false);
+    const [showThankYou, setShowThankYou] = useState(false);
 
     useEffect(() => {
         const loadTheme = async () => {
@@ -105,6 +114,43 @@ const ProfileScreen = ({
         const val = parseFloat(e.target.value);
         setBgmVol(val);
         setBgmVolume(val);
+    };
+
+    const handleSubmitFeedback = async (e) => {
+        e.preventDefault();
+        const content = feedbackContent.trim();
+        if (!content) return;
+
+        setSubmittingFeedback(true);
+        try {
+            const token = await storageGet('access_token');
+            const res = await fetch(`${API_BASE}/api/social/feedback`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    feedback_type: feedbackType,
+                    content: content
+                })
+            });
+
+            if (res.ok) {
+                setIsFeedbackOpen(false);
+                setFeedbackContent('');
+                setFeedbackType('SUGGESTION');
+                setShowThankYou(true);
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                void showAlert(errData.detail || 'Gửi đóng góp ý kiến thất bại.');
+            }
+        } catch (err) {
+            console.error('Error submitting feedback:', err);
+            void showAlert('Không thể kết nối tới máy chủ. Vui lòng thử lại sau.');
+        } finally {
+            setSubmittingFeedback(false);
+        }
     };
 
     return (
@@ -491,7 +537,7 @@ const ProfileScreen = ({
                     <span className="profile-menu-label">Trợ giúp và hỗ trợ</span>
                     <span className="menu-btn-arrow">›</span>
                 </button>
-                <button className="profile-menu-btn">
+                <button className="profile-menu-btn" onClick={() => setIsFeedbackOpen(true)}>
                     <span className="menu-btn-icon"><MessageCircle size={18} /></span>
                     <span className="profile-menu-label">Đóng góp ý kiến</span>
                     <span className="menu-btn-arrow">›</span>
@@ -502,6 +548,109 @@ const ProfileScreen = ({
                     <span className="menu-btn-arrow">›</span>
                 </button>
             </div>
+
+            {/* Feedback Modal */}
+            {isFeedbackOpen && (
+                <div className="modal-overlay" style={{ display: 'flex' }}>
+                    <div className="modal-content cartoon-card" style={{ maxWidth: '420px', width: '90%', padding: '24px', borderRadius: '24px', position: 'relative' }}>
+                        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: 'var(--st-text)' }}>Đóng Góp Ý Kiến</h3>
+                            <button 
+                                className="btn-close" 
+                                onClick={() => setIsFeedbackOpen(false)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--st-text)' }}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSubmitFeedback}>
+                            <div className="feedback-field" style={{ marginBottom: '15px', display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                                <label style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--st-text)' }}>Loại đóng góp:</label>
+                                <select 
+                                    value={feedbackType} 
+                                    onChange={(e) => setFeedbackType(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        borderRadius: '10px',
+                                        border: '2.5px solid var(--game-border-color)',
+                                        backgroundColor: 'var(--st-surface)',
+                                        color: 'var(--st-text)',
+                                        fontWeight: 'bold',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="SUGGESTION">💡 Góp ý / Đề xuất tính năng</option>
+                                    <option value="BUG">🐛 Báo lỗi hệ thống (Bug)</option>
+                                </select>
+                            </div>
+
+                            <div className="feedback-field" style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                                <label style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--st-text)' }}>Nội dung chi tiết:</label>
+                                <textarea
+                                    value={feedbackContent}
+                                    onChange={(e) => setFeedbackContent(e.target.value)}
+                                    placeholder="Vui lòng mô tả chi tiết ý kiến hoặc lỗi bạn gặp phải để chúng tôi cải thiện ứng dụng..."
+                                    rows="5"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '10px',
+                                        border: '2.5px solid var(--game-border-color)',
+                                        backgroundColor: 'var(--st-surface)',
+                                        color: 'var(--st-text)',
+                                        outline: 'none',
+                                        resize: 'none',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+
+                            <div className="modal-actions-row" style={{ display: 'flex', gap: '10px' }}>
+                                <button 
+                                    type="button" 
+                                    className="squishy-btn red" 
+                                    onClick={() => setIsFeedbackOpen(false)}
+                                    style={{ flex: 1, padding: '10px', fontWeight: 'bold' }}
+                                >
+                                    Hủy
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="squishy-btn green" 
+                                    disabled={submittingFeedback}
+                                    style={{ flex: 1, padding: '10px', fontWeight: 'bold' }}
+                                >
+                                    {submittingFeedback ? 'Đang gửi...' : 'Gửi góp ý'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Thank You Modal */}
+            {showThankYou && (
+                <div className="modal-overlay" style={{ display: 'flex' }}>
+                    <div className="modal-content cartoon-card text-center" style={{ maxWidth: '380px', width: '90%', padding: '24px', borderRadius: '24px' }}>
+                        <div className="badge-3d-hexagon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto', width: '70px', height: '70px', background: 'var(--game-yellow)', borderRadius: '50%', border: '3px solid var(--game-border-color)', boxShadow: '0 4px 0 var(--game-border-color)' }}>
+                            <Sparkles size={36} style={{ color: '#2c3e50' }} />
+                        </div>
+                        <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '10px', color: 'var(--st-text)' }}>CẢM ƠN BẠN!</h2>
+                        <p style={{ fontSize: '14px', color: 'var(--st-text-muted)', lineHeight: '1.5', marginBottom: '20px' }}>
+                            Ý kiến đóng góp quý báu của bạn đã được ghi nhận. Chúng tôi sẽ nghiên cứu để hoàn thiện ứng dụng tốt hơn!
+                        </p>
+                        <button 
+                            className="squishy-btn green" 
+                            onClick={() => setShowThankYou(false)}
+                            style={{ width: '100%', padding: '12px', fontWeight: 'bold' }}
+                        >
+                            Đồng ý & Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
