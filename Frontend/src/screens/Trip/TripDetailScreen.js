@@ -661,9 +661,9 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
             return (
                 <div className="trip-detail-screen location-detail-mode">
                     <div className="location-detail-content" style={{ marginTop: 0 }}>
-                        {/* Ảnh bìa địa điểm — ưu tiên ảnh thực từ API, fallback về ảnh bản đồ */}
+                        {/* Ảnh bìa địa điểm — ưu tiên ảnh thực từ API, fallback về ảnh placeholder trung tính thay vì ảnh map-dao */}
                         <div className="location-cover-image" style={{ 
-                            backgroundImage: `url(${stopInDetail.image_url || stopInDetail.cover_image || '/assets/island/map-dao.png'})`,
+                            backgroundImage: `url(${stopInDetail.image_url || stopInDetail.cover_image || 'https://placehold.co/600x400/2c3e50/FFF?text=Chưa+có+ảnh+địa+điểm&font=roboto'})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                             position: 'relative'
