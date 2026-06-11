@@ -113,6 +113,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
   const [taskStatus, setTaskStatus] = useState(task.status);
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [useFrontCamera, setUseFrontCamera] = useState(false);
 
   const [selectedOption, setSelectedOption] = useState('');
   const [qrTokenInput, setQrTokenInput] = useState('');
@@ -176,7 +177,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
     setSubmitError(null);
     setPhotoHint('');
     try {
-      const result = await capturePhotoFile({ quality: 85 });
+      const result = await capturePhotoFile({ quality: 85, useFrontCamera });
       updatePhotoSelection(result.file, result.previewUrl);
     } catch (err) {
       setPhotoHint('Nếu camera bị từ chối, hãy cấp quyền Camera trong cài đặt ứng dụng và thử lại.');
@@ -201,7 +202,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
 
     try {
       if (task.task_type === 'PHOTO') {
-        if (!imageFile || latitude === null || longitude === null || !progressId) {
+        if (!imageFile || (!latitude && !task.target_latitude) || !progressId) {
           throw new Error('Vui lòng chụp ảnh và đợi GPS ổn định trước khi gửi.');
         }
         const token = await storageGet('access_token');
@@ -209,8 +210,8 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
 
         const formData = new FormData();
         formData.append('progress_id', progressId);
-        formData.append('latitude', latitude.toString());
-        formData.append('longitude', longitude.toString());
+        formData.append('latitude', (latitude || task.target_latitude).toString());
+        formData.append('longitude', (longitude || task.target_longitude).toString());
         formData.append('photo', imageFile);
 
         const response = await fetch(`${API_BASE}/api/gamification/submissions/submit-photo`, {
@@ -290,7 +291,9 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
     }
   };
 
-  const isWithinRadius = distance !== null && distance <= task.radius_meters;
+  // TẠM THỜI MỞ KHOÁ CAMERA (TEST MODE)
+  // const isWithinRadius = distance !== null && distance <= task.radius_meters;
+  const isWithinRadius = true;
 
   return (
     <div className="task-detail-screen-gami">
@@ -360,6 +363,21 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
                     <h5>Chụp toàn cảnh kiến trúc</h5>
                     <p>Bạn cần ở trong bán kính check-in để mở camera.</p>
                   </div>
+
+                  {isWithinRadius && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setUseFrontCamera(!useFrontCamera)}
+                        disabled={starting}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
+                      >
+                        <RefreshCw size={14} />
+                        {useFrontCamera ? 'Đang dùng: Camera Trước' : 'Đang dùng: Camera Sau'}
+                      </button>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '10px' }}>
                     <button
                       className="btn-submit-verification"
