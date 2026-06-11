@@ -89,6 +89,7 @@ export default function AdminModerationScreen({ onBack }) {
     const [rejectReason, setRejectReason] = useState('');
     const [confirmModal, setConfirmModal] = useState(null);
     const [isViolationMode, setIsViolationMode] = useState(false);
+    const [reportedPostModal, setReportedPostModal] = useState(null);
 
     const loadOverview = useCallback(async () => {
         setOverviewLoading(true);
@@ -619,25 +620,57 @@ export default function AdminModerationScreen({ onBack }) {
 
                     return (
                         <div className="admin-report-row" key={report.feedback_id}>
-                            <div>
+                            <div 
+                                style={{ cursor: postId ? 'pointer' : 'default' }}
+                                onClick={async () => {
+                                    if (postId) {
+                                        try {
+                                            setLoading(true);
+                                            const postDetails = await adminService.getPostDetails(postId);
+                                            setReportedPostModal({ report, postDetails });
+                                        } catch (err) {
+                                            setError('Không thể tải chi tiết bài viết vi phạm.');
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }
+                                }}
+                            >
                                 <strong>Báo cáo vi phạm</strong>
                                 <small>{formatDate(report.created_at)}</small>
                                 <p>{content}</p>
                             </div>
                             <div className="admin-action-row" style={{ marginTop: '6px' }}>
                                 {postId && (
-                                    <button
-                                        type="button"
-                                        className="admin-danger-btn"
-                                        onClick={() => setConfirmModal({
-                                            title: 'Xóa bài viết',
-                                            message: 'Xóa bài viết bị báo cáo khỏi cộng đồng? Lượt thích, bình luận và lượt lưu liên quan cũng sẽ bị xóa.',
-                                            action: () => adminService.deletePost(postId),
-                                            success: 'Đã xóa bài viết vi phạm.',
-                                        })}
-                                    >
-                                        <Trash2 size={16} /> Xóa
-                                    </button>
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="admin-secondary-btn"
+                                            onClick={() => setConfirmModal({
+                                                title: 'Bỏ qua báo cáo',
+                                                message: 'Bạn có chắc muốn bỏ qua báo cáo này? Bài viết sẽ được giữ nguyên.',
+                                                action: () => adminService.dismissReport(report.feedback_id),
+                                                success: 'Đã bỏ qua báo cáo vi phạm.',
+                                            })}
+                                        >
+                                            <X size={16} /> Bỏ qua
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="admin-danger-btn"
+                                            onClick={() => setConfirmModal({
+                                                title: 'Xóa bài viết',
+                                                message: 'Xóa bài viết bị báo cáo khỏi cộng đồng? Lượt thích, bình luận và lượt lưu liên quan cũng sẽ bị xóa.',
+                                                action: async () => {
+                                                    await adminService.deletePost(postId);
+                                                    await adminService.dismissReport(report.feedback_id);
+                                                },
+                                                success: 'Đã xóa bài viết vi phạm.',
+                                            })}
+                                        >
+                                            <Trash2 size={16} /> Xóa bài viết
+                                        </button>
+                                    </>
                                 )}
                                 {targetUserId && (
                                     <button
@@ -645,7 +678,7 @@ export default function AdminModerationScreen({ onBack }) {
                                         className="admin-danger-btn"
                                         onClick={() => handleActionUser(targetUserId)}
                                     >
-                                        <AlertTriangle size={16} /> Xử lý
+                                        <AlertTriangle size={16} /> Xử lý user
                                     </button>
                                 )}
                             </div>
@@ -997,9 +1030,83 @@ export default function AdminModerationScreen({ onBack }) {
                 </div>
             )}
 
+            {reportedPostModal && (
+                <div className="admin-modal-overlay">
+                    <div className="admin-modal" style={{ maxWidth: '400px' }}>
+                        <div className="admin-modal-header">
+                            <h3>Chi tiết bài viết vi phạm</h3>
+                            <button type="button" onClick={() => setReportedPostModal(null)}><X size={18} /></button>
+                        </div>
+                        <div style={{ marginBottom: '16px' }}>
+                            <p style={{ color: '#ef4444', fontWeight: '500', marginBottom: '8px' }}>
+                                Lý do báo cáo: {reportedPostModal.report.content.split('Reason: ')[1] || 'Không rõ'}
+                            </p>
+                            <div className="post-card cartoon-card" style={{ pointerEvents: 'none', transform: 'scale(0.95)', transformOrigin: 'top center' }}>
+                                <div className="post-card-header" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <img 
+                                        src={reportedPostModal.postDetails.author_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${reportedPostModal.postDetails.author_name}`} 
+                                        alt="avatar" 
+                                        style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+                                    />
+                                    <div>
+                                        <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{reportedPostModal.postDetails.author_name}</h4>
+                                        <small style={{ color: '#64748b', fontSize: '0.75rem' }}>{new Date(reportedPostModal.postDetails.created_at).toLocaleDateString('vi-VN')}</small>
+                                    </div>
+                                </div>
+                                <div className="post-card-body" style={{ marginTop: '12px' }}>
+                                    <p style={{ fontSize: '0.9rem', marginBottom: '8px', color: '#334155' }}>{reportedPostModal.postDetails.caption}</p>
+                                    {reportedPostModal.postDetails.image_url && (
+                                        <img 
+                                            src={reportedPostModal.postDetails.image_url.split('|')[0]} 
+                                            alt="post preview" 
+                                            style={{ width: '100%', borderRadius: '8px', maxHeight: '200px', objectFit: 'cover' }} 
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="admin-action-row">
+                            <button 
+                                type="button" 
+                                className="admin-secondary-btn" 
+                                onClick={() => {
+                                    setConfirmModal({
+                                        title: 'Bỏ qua báo cáo',
+                                        message: 'Bạn có chắc muốn bỏ qua báo cáo này? Bài viết sẽ được giữ nguyên.',
+                                        action: () => adminService.dismissReport(reportedPostModal.report.feedback_id),
+                                        success: 'Đã bỏ qua báo cáo vi phạm.',
+                                    });
+                                    setReportedPostModal(null);
+                                }}
+                            >
+                                <X size={16} /> Bỏ qua
+                            </button>
+                            <button 
+                                type="button" 
+                                className="admin-danger-btn" 
+                                onClick={() => {
+                                    setConfirmModal({
+                                        title: 'Xóa bài viết',
+                                        message: 'Xóa bài viết bị báo cáo khỏi cộng đồng? Lượt thích, bình luận và lượt lưu liên quan cũng sẽ bị xóa.',
+                                        action: async () => {
+                                            await adminService.deletePost(reportedPostModal.postDetails.post_id);
+                                            await adminService.dismissReport(reportedPostModal.report.feedback_id);
+                                        },
+                                        success: 'Đã xóa bài viết vi phạm.',
+                                    });
+                                    setReportedPostModal(null);
+                                }}
+                            >
+                                <Trash2 size={16} /> Xóa bài viết
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {confirmModal && (
                 <div className="admin-modal-overlay">
-                    <div className="admin-modal">
+                    <div className="admin-modal admin-confirm-modal">
                         <div className="admin-modal-header">
                             <h3>{confirmModal.title}</h3>
                             <button type="button" onClick={() => setConfirmModal(null)}><X size={18} /></button>

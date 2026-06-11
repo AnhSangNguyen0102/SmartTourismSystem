@@ -871,3 +871,37 @@ def get_all_locations(
         }
         for loc in locs
     ]
+
+
+@router.get("/social/posts/{post_id}")
+def get_single_post(post_id: UUID, admin: models.Users = Depends(check_admin_access), db: Session = Depends(get_session)):
+    """Admin xem chi tiết một bài viết"""
+    post = db.exec(select(models.SocialPosts).where(models.SocialPosts.post_id == post_id)).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài viết.")
+    
+    profile = db.exec(select(models.UserProfiles).where(models.UserProfiles.user_id == post.user_id)).first()
+    
+    return {
+        "post_id": str(post.post_id),
+        "user_id": str(post.user_id),
+        "author_name": profile.full_name if profile else "Unknown",
+        "author_avatar": profile.avatar_url if profile else None,
+        "caption": post.caption,
+        "image_url": post.image_url,
+        "location_name": post.location_name,
+        "created_at": post.created_at,
+        "privacy_status": getattr(post.privacy_status, "value", post.privacy_status) if hasattr(post, 'privacy_status') else "PUBLIC"
+    }
+
+
+@router.delete("/social/reports/{feedback_id}")
+def dismiss_report(feedback_id: UUID, admin: models.Users = Depends(check_admin_access), db: Session = Depends(get_session)):
+    """Admin bỏ qua (xóa) một báo cáo vi phạm"""
+    feedback = db.exec(select(models.UserFeedbacks).where(models.UserFeedbacks.feedback_id == feedback_id)).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Không tìm thấy báo cáo.")
+    
+    db.delete(feedback)
+    db.commit()
+    return {"message": "Đã bỏ qua báo cáo vi phạm."}

@@ -57,7 +57,9 @@ export const adminService = {
         body: JSON.stringify({ role }),
     }),
     getReports: () => request('/api/admin/social/reports'),
+    dismissReport: (feedbackId) => request(`/api/admin/social/reports/${feedbackId}`, { method: 'DELETE' }),
     deletePost: (postId) => request(`/api/admin/social/posts/${postId}`, { method: 'DELETE' }),
+    getPostDetails: (postId) => request(`/api/admin/social/posts/${postId}`),
     getFeedbacks: () => request('/api/admin/social/feedbacks'),
     updateFeedbackStatus: (feedbackId, status) => request(`/api/admin/social/feedbacks/${feedbackId}/status`, {
         method: 'PATCH',
