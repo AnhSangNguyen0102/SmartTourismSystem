@@ -392,12 +392,8 @@ def auto_cancel_expired_trips(db: Session, user_id: Optional[UUID] = None) -> li
         db.add(itinerary)
         cancelled_trips.append(itinerary)
         
-        # Trả lại điểm tích lũy của chuyến đi (total_points) về points_balance của user
-        profile = db.exec(select(UserProfiles).where(UserProfiles.user_id == itinerary.user_id)).first()
-        if profile and profile.total_points > 0:
-            profile.points_balance += profile.total_points
-            profile.total_points = 0
-            db.add(profile)
+        # Khi hủy tự động, KHÔNG chuyển total_points sang points_balance
+        # EXP (total_points) được giữ nguyên vì đó là điểm kinh nghiệm tích lũy vĩnh viễn
             
     if results:
         db.commit()

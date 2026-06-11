@@ -71,7 +71,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
 
     const userInfo = user?.user || user;
     const pointsBalance = localPointsBalance !== null ? localPointsBalance : (userInfo?.points_balance || 0);
-    const totalPoints = isGuest ? 0 : (pointsBalance + (userInfo?.total_points || 0));
+    const totalPoints = isGuest ? 0 : (userInfo?.total_points || 0);
     const level = isGuest ? 1 : (Math.floor(totalPoints / 1000) + 1);
     const currentExp = isGuest ? 0 : (totalPoints % 1000);
     const expPercentage = (currentExp / 1000) * 100;
@@ -537,7 +537,7 @@ const MainTabs = ({ user, isGuest, onLogout, onRequireLogin, onOpenPlan, onOpenL
                     {/* Coin Counter Pill */}
                     <div className="hud-stat-pill coin-pill" title="Xu vàng tích lũy">
                         <div className="pill-icon"><Coins size={15} /></div>
-                        <div className="pill-value">{totalPoints}</div>
+                        <div className="pill-value">{pointsBalance}</div>
                     </div>
 
                     {/* EXP Counter Pill */}

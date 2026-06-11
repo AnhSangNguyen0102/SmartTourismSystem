@@ -171,7 +171,7 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
         const directScore = Number(result?.completion_score ?? result?.score_earned);
         if (Number.isFinite(directScore)) return directScore;
 
-        const match = String(result?.detail || '').match(/(\d+)\s+điểm thưởng lộ trình/);
+        const match = String(result?.detail || '').match(/(\d+)\s+điểm EXP thưởng lộ trình/);
         return match ? Number(match[1]) : null;
     };
 
@@ -520,62 +520,89 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 const token = await storageGet('access_token');
                 const checkedStopId = targetStop.stop_id;
 
-                // Gửi tọa độ lên Backend (có thể null nếu fallback)
+                // Tự động nhận diện xem đây có phải trạm cuối cùng chưa check-in không
+                const isLastStop = tripDetail.stops.filter(s => s.status !== 'COMPLETED').length === 1;
+
+                // Gửi tọa độ lên Backend
                 const result = await checkinStop(checkedStopId, {
                     latitude: lat,
                     longitude: lng
                 }, token);
 
                 clearTimeout(safetyTimer);
-                
-                // Lấy điểm thưởng từ API (nếu có) hoặc từ thông tin trạm
-                const earnedPoints = result.reward_points ?? result.earned_points ?? targetStop.reward ?? 50;
 
+                const isCompleted = result.is_itinerary_completed || isLastStop;
+                
+                // 1. BÓC TÁCH RÕ RÀNG 2 LOẠI ĐIỂM
+                // Điểm check-in trạm (hiển thị bay ra từ rương nhỏ)
+                const earnedPoints = result.reward_points ?? result.earned_points ?? targetStop.reward ?? 10;
+                
+                // Điểm thưởng hoàn thành lộ trình (EXP và Xu)
+                let compScore = result.completion_score;
+                if (!compScore && result.message) {
+                    const match = result.message.match(/nhận thêm \+(\d+)\s*EXP/i);
+                    if (match) compScore = parseInt(match[1], 10);
+                }
+                const completionScore = compScore || 0;
+
+                // 2. BẮT ĐẦU HIỆU ỨNG RƯƠNG CHO TRẠM (Luôn chạy dù là trạm nào)
                 playSound('chest_shake.mp3');
-                // Hiển thị hiệu ứng rương kho báu đang rung
                 setRewardData({ 
-                    points: earnedPoints, 
+                    points: earnedPoints,
+                    coins: 20,
                     locationName: targetStop.location_name, 
                     stage: 'shaking' 
                 });
 
-                // Mở rương sau 1.5 giây
                 checkinInProgress.current = false;
                 setCheckinLoading(false);
 
+                // Mở rương sau 1.5 giây
                 setTimeout(() => {
                     playSound('chest_open.mp3');
                     setRewardData(prev => prev ? { ...prev, stage: 'open' } : null);
                 }, 1500);
 
-                // Đóng hiệu ứng sau 4.5 giây và trở về bản đồ
+                // 3. XỬ LÝ KẾT THÚC SAU KHI RƯƠNG BIẾN MẤT (4.5 giây)
+                // 3. XỬ LÝ KẾT THÚC SAU KHI RƯƠNG BIẾN MẤT (4.5 giây)
                 setTimeout(() => {
                     setRewardData(null);
-                    
-                    setSelectedStop(null); // Trở về map
+                    setSelectedStop(null); 
 
-                    // OPTIMISTIC UPDATE: Cập nhật state local ngay lập tức
+                    // Cập nhật trạng thái cấu trúc state local
                     setTripDetail(prev => {
                         if (!prev) return prev;
                         const updatedStops = prev.stops.map(s =>
-                            s.stop_id === checkedStopId
-                                ? { ...s, status: 'COMPLETED' }
-                                : s
+                            s.stop_id === checkedStopId ? { ...s, status: 'COMPLETED' } : s
                         );
-                        const allDone = updatedStops.every(s => s.status === 'COMPLETED');
-                        return {
-                            ...prev,
+                        return { 
+                            ...prev, 
                             stops: updatedStops,
-                            status: allDone ? 'COMPLETED' : prev.status
+                            status: isCompleted ? 'COMPLETED' : prev.status,
+                            score_earned: isCompleted ? completionScore : prev.score_earned
                         };
                     });
                     
-                    // Mascot chúc mừng
-                    setMascotMessage(`Chúc mừng bạn đã khám phá được địa điểm ${targetStop.location_name} trong hành trình du lịch của mình!`);
+                    if (isCompleted) {
+                        // NẾU HOÀN THÀNH LỘ TRÌNH (Trạm cuối cùng được check-in xong)
+                        playSound('victory.mp3');
+                        
+                        showToast(
+                            `🎉 Lộ trình hoàn thành! Bạn nhận +${earnedPoints} EXP & +20 Xu (tại trạm này), cùng gói thưởng hoàn thành +${completionScore} EXP & Xu!`, 
+                            'success'
+                        );
+                        
+                        setMascotMessage(["Chúc mừng bạn đã hoàn thành trọn vẹn hành trình tuyệt vời này!"]);
+                        
+                        fetchDetail(true);
+                        syncUserPoints();
+                    } else {
+                        // NẾU CHỈ LÀ TRẠM CHECK-IN THÔNG THƯỜNG TRÊN ĐƯỜNG ĐI
+                        showToast(`✅ Khám phá thành công! Bạn nhận +${earnedPoints} EXP và +20 Xu thưởng trạm.`, 'success');
+                        setMascotMessage(`Chúc mừng bạn đã khám phá được địa điểm ${targetStop.location_name}!`);
+                        syncUserPoints();
+                    }
 
-                    checkinInProgress.current = false;
-                    setCheckinLoading(false);
-                    syncUserPoints();
                 }, 4500);
 
             } catch (err) {

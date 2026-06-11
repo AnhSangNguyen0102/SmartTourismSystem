@@ -579,7 +579,7 @@ const HomeTravel = ({ isGuest, onRequireLogin, user, onOpenPlan, onOpenHistory, 
                                             }}
                                         />
                                         <div className="player-podium-name">{player.full_name}</div>
-                                        <div className="player-podium-points">{player.total_points} xu</div>
+                                        <div className="player-podium-points">{player.total_points} EXP</div>
                                     </div>
                                 );
                             })}

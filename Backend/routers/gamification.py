@@ -343,6 +343,7 @@ def get_location_tasks(
                 "description": task.description,
                 "task_type": "PHOTO",
                 "reward_exp": task.reward_exp,
+                "reward_coin": getattr(task, 'reward_coin', 0),
                 "difficulty": task.difficulty.value if hasattr(task.difficulty, 'value') else str(task.difficulty),
                 "radius_meters": task.radius_meters,
                 "status": status,
@@ -373,6 +374,7 @@ def get_location_tasks(
             "description": qa.question,
             "task_type": "QA",
             "reward_exp": qa.reward_exp,
+            "reward_coin": qa.reward_coin,
             "difficulty": qa.difficulty.upper() if qa.difficulty else "EASY",
             "radius_meters": 100,  # Bán kính mặc định bao phủ trạm dừng
             "status": "COMPLETED" if is_completed else "NOT_STARTED",
@@ -396,6 +398,7 @@ def get_location_tasks(
             "description": "Tìm kiếm mã QR được ẩn giấu xung quanh khu vực này để quét mã xác thực sự hiện diện.",
             "task_type": "QR",
             "reward_exp": qr.reward_exp,
+            "reward_coin": qr.reward_coin,
             "difficulty": "MEDIUM",
             "radius_meters": 100,
             "status": "COMPLETED" if is_completed else "NOT_STARTED",
@@ -483,4 +486,4 @@ async def submit_photo_task(
     auto_complete_daily_quest(session, progress.user_id, "AI_PHOTO")
     
     session.commit()
-    return {"status": "SUCCESS", "message": "Hoàn thành nhiệm vụ!", "exp_rewarded": task.reward_exp, "new_itinerary_exp": iti_exp.total_exp, "new_level": iti_exp.current_level, "confidence_score": ai_result["confidence_score"]}
+    return {"status": "SUCCESS", "message": "Hoàn thành nhiệm vụ!", "exp_rewarded": task.reward_exp, "coin_rewarded": getattr(task, 'reward_coin', 0), "new_itinerary_exp": iti_exp.total_exp, "new_level": iti_exp.current_level, "confidence_score": ai_result["confidence_score"]}

@@ -100,7 +100,7 @@ const Leaderboard = () => {
                     <span className="podium-rank-badge">{place}</span>
                 </div>
                 <span className="podium-name" title={player.full_name}>{player.full_name}</span>
-                <span className="podium-pts">{player.total_points} điểm</span>
+                <span className="podium-pts">{player.total_points} EXP</span>
             </div>
         );
     };
@@ -222,7 +222,7 @@ const Leaderboard = () => {
                                             </div>
                                             <div className="item-points">
                                                 <span className="pts-value">{item.total_points}</span>
-                                                <span className="pts-label">điểm</span>
+                                                <span className="pts-label">EXP</span>
                                             </div>
                                         </div>
                                     ))}
@@ -256,7 +256,7 @@ const Leaderboard = () => {
                     </div>
                     <div className="my-rank-points">
                         <div className="my-rank-pts-value">{myRank.total_points}</div>
-                        <div className="my-rank-pts-lbl">điểm</div>
+                        <div className="my-rank-pts-lbl">EXP</div>
                     </div>
                 </div>
             )}
