@@ -39,6 +39,12 @@ const getApiBase = () => {
     const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const hostname = window.location.hostname || 'localhost';
     const inferredUrl = `${protocol}//${hostname}:8000`;
+    
+    // Nếu đang chạy trên web thật (không phải localhost), tự động gọi API từ Render
+    if (!isLocalOrPrivateHost(hostname)) {
+        return 'https://smarttourismsystem-3lq6.onrender.com';
+    }
+    
     assertSecureInternetApiUrl(inferredUrl);
     return inferredUrl;
 };
