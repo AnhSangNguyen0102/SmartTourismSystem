@@ -32,6 +32,7 @@ from models import (
     StopStatus,
     CurrencyEnum,
     Locations,
+    LocationsImage,
 )
 
 
@@ -327,23 +328,25 @@ def get_itinerary_stops_with_locations(db: Session, itinerary_id: UUID) -> list:
 
     Sắp xếp theo day_order ASC, stop_order ASC.
     """
+    image_subquery = (
+        select(LocationsImage.url)
+        .where(LocationsImage.location_id == Locations.location_id)
+        .order_by(LocationsImage.display_order.asc())
+        .limit(1)
+        .scalar_subquery()
+    )
+
     statement = (
         select(
-            ItineraryDays.day_id,
-            ItineraryDays.day_order,
-            ItineraryDays.travel_date,
-            ItineraryStops.stop_id,
-            ItineraryStops.stop_order,
-            ItineraryStops.arrival_time,
-            ItineraryStops.departure_time,
-            ItineraryStops.checkin_radius,
-            ItineraryStops.status,
-            Locations.location_id,
+            ItineraryStops,
+            ItineraryDays,
             Locations.location_name,
+            Locations.address,
             Locations.latitude,
             Locations.longitude,
             Locations.open_time,
             Locations.close_time,
+            image_subquery.label("image_url"),
         )
         .select_from(Itineraries)
         .join(ItineraryDays, Itineraries.itinerary_id == ItineraryDays.itinerary_id)

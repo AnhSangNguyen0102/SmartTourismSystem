@@ -14,6 +14,8 @@ import { storageGet, storageSet } from '../../platform/storage';
 import { API_BASE } from '../../config/api';
 import { showAlert } from '../../platform/dialog';
 import VouchersList from '../Voucher/VouchersList';
+import VoucherWallet from '../Voucher/VoucherWallet';
+import { Ticket } from 'lucide-react';
 import './ProfileScreen.css';
 
 const ProfileScreen = ({
@@ -156,23 +158,44 @@ const ProfileScreen = ({
     return (
         <div className="profile-screen">
             <div className="profile-player-card">
-                <div className="profile-avatar-frame">
-                    <img
-                        src={getSafeAvatarSrc(userInfo?.avatar_url, profileName)}
-                        alt="Avatar"
-                        className="profile-avatar"
-                        onError={(event) => {
-                            event.currentTarget.onerror = null;
-                            event.currentTarget.src = profileAvatarFallback;
-                        }}
-                    />
-                    <div className="profile-level-badge">Lv.{level}</div>
-                </div>
-                <h3 className="profile-player-name">{profileName}</h3>
-                <span className="profile-player-tier profile-tier-row">
-                    <TierIcon size={13} /> {tierMeta.label}
-                </span>
+                <div className="profile-card-top-row" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    
+                    {/* Left Side: Avatar & Name */}
+                    <div className="profile-card-user-info" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div className="profile-avatar-frame">
+                            <img
+                                src={getSafeAvatarSrc(userInfo?.avatar_url, profileName)}
+                                alt="Avatar"
+                                className="profile-avatar"
+                                onError={(event) => {
+                                    event.currentTarget.onerror = null;
+                                    event.currentTarget.src = profileAvatarFallback;
+                                }}
+                            />
+                            <div className="profile-level-badge">Lv.{level}</div>
+                        </div>
+                        <h3 className="profile-player-name">{profileName}</h3>
+                        <span className="profile-player-tier profile-tier-row">
+                            <TierIcon size={13} /> {tierMeta.label}
+                        </span>
+                    </div>
 
+                    {/* Right Side: Stacked Stats */}
+                    <div className="profile-card-stats-stack" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'stretch' }}>
+                        <div className="stat-stack-item" style={{ display: 'flex', gap: '6px' }}>
+                            <Coins size={16} /> {pointsBalance} Xu vàng
+                        </div>
+                        <div className="stat-stack-item" style={{ display: 'flex', gap: '6px' }}>
+                            <Trophy size={16} /> {achievements.filter(a => a.unlocked).length} Huy hiệu
+                        </div>
+                        <div className="stat-stack-item" style={{ fontSize: '13px', lineHeight: '1.3', display: 'flex', gap: '6px' }}>
+                            {userInfo?.kyc_status === 'APPROVED' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                            {userInfo?.kyc_status === 'APPROVED' ? 'Đã xác minh\nbảo mật' : 'Chưa xác minh\nbảo mật'}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom: EXP Bar */}
                 <div className="profile-exp-section">
                     <div className="profile-exp-label">
                         <span className="profile-exp-title"><Star size={13} /> EXP</span>
@@ -181,30 +204,6 @@ const ProfileScreen = ({
                     <div className="profile-exp-bar">
                         <div className="profile-exp-fill" style={{ width: `${expPercentage}%` }}></div>
                     </div>
-                </div>
-            </div>
-
-            <div className="profile-stats-row">
-                <div className="profile-stat-box">
-                    <div className="stat-box-icon"><Coins size={18} /></div>
-                    <div className="stat-box-value">{pointsBalance}</div>
-                    <div className="stat-box-label">Xu vàng</div>
-                </div>
-
-                <div className="profile-stat-box">
-                    <div className="stat-box-icon"><Trophy size={18} /></div>
-                    <div className="stat-box-value">{achievements.filter(a => a.unlocked).length}</div>
-                    <div className="stat-box-label">Huy hiệu</div>
-                </div>
-
-                <div className="profile-stat-box">
-                    <div className="stat-box-icon">
-                        {userInfo?.kyc_status === 'APPROVED' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-                    </div>
-                    <div className="stat-box-value" style={{ fontSize: '12px' }}>
-                        {userInfo?.kyc_status === 'APPROVED' ? 'Đã xác minh' : 'Chưa xác minh'}
-                    </div>
-                    <div className="stat-box-label">Bảo mật</div>
                 </div>
             </div>
 
@@ -220,7 +219,8 @@ const ProfileScreen = ({
                     {[
                         { id: 'badges', label: '🏆 Huy hiệu' },
                         { id: 'quests', label: '⚡ Nhiệm vụ' },
-                        { id: 'shop', label: '🎁 Cửa hàng' }
+                        { id: 'shop', label: '🎁 Cửa hàng' },
+                        { id: 'wallet', label: '🎫 Quà của tôi' }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -231,7 +231,7 @@ const ProfileScreen = ({
                                 fontWeight: 'bold',
                                 fontSize: '13px',
                                 border: 'none',
-                                borderRight: tab.id !== 'shop' ? '2.5px solid var(--game-border-color)' : 'none',
+                                borderRight: tab.id !== 'wallet' ? '2.5px solid var(--game-border-color)' : 'none',
                                 backgroundColor: rewardsTab === tab.id ? 'var(--game-yellow)' : 'transparent',
                                 color: rewardsTab === tab.id ? '#2c3e50' : 'var(--st-text)',
                                 cursor: 'pointer',
@@ -387,6 +387,15 @@ const ProfileScreen = ({
                                 setLocalPointsBalance(newBalance);
                             }
                         }} />
+                    </div>
+                )}
+
+                {rewardsTab === 'wallet' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <h4 className="achievements-title" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 10px 0' }}>
+                            <Ticket size={18} style={{ color: '#ff4757' }} /> Quà tặng đã đổi của tôi
+                        </h4>
+                        <VoucherWallet />
                     </div>
                 )}
             </div>

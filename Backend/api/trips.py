@@ -340,6 +340,8 @@ def create_new_itinerary(
 
 @router.get("/{itinerary_id}", response_model=ItineraryDetailResponse, summary="Xem chi tiết chuyến đi")
 def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
+    from models import ItineraryRoutes, LocationsImage
+
     trip = get_itinerary_by_id(db, itinerary_id)
     if not trip:
         raise HTTPException(status_code=404, detail="Không tìm thấy chuyến đi")
@@ -350,8 +352,16 @@ def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
     db.refresh(trip)
     
     # 1. Viết câu SQL nối bảng (JOIN) để gom toàn bộ Stops, Days và Locations của Lộ trình này
+    image_subquery = (
+        select(LocationsImage.url)
+        .where(LocationsImage.location_id == Locations.location_id)
+        .order_by(LocationsImage.display_order.asc())
+        .limit(1)
+        .scalar_subquery()
+    )
+
     statement = (
-        select(ItineraryStops, ItineraryDays, Locations)
+        select(ItineraryStops, ItineraryDays, Locations, image_subquery.label("image_url"))
         .join(ItineraryDays, ItineraryStops.day_id == ItineraryDays.day_id)
         .join(Locations, ItineraryStops.location_id == Locations.location_id)
         .where(ItineraryDays.itinerary_id == itinerary_id)
@@ -362,7 +372,7 @@ def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
     
     # Lấy categories cho các location
     from models import LocationCategories, Categories
-    location_ids = [loc.location_id for _, _, loc in stops_data]
+    location_ids = [loc.location_id for _, _, loc, _ in stops_data]
     cat_map = {}
     if location_ids:
         cat_statement = (
@@ -379,7 +389,8 @@ def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
     
     # 3. Nhét thêm danh sách stops vào dictionary
     stop_dicts = []
-    for idx, (stop, day, loc) in enumerate(stops_data, start=1):
+    all_stop_ids = []
+    for idx, (stop, day, loc, image_url) in enumerate(stops_data, start=1):
         stop_dict = stop.model_dump()
         stop_dict["stop_order"] = idx
         
@@ -397,6 +408,7 @@ def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
         stop_dict["max_price"] = loc.max_price
         stop_dict["estimated_price"] = stop.estimated_price
         stop_dict["category_name"] = cat_map.get(loc.location_id)
+        stop_dict["image_url"] = image_url
         
         stop_dicts.append(stop_dict)
         

@@ -441,6 +441,7 @@ class LocationOut(BaseModel):
     max_price: Decimal
     score: Optional[float] = None
     tags: list[str] = []
+    image_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -478,6 +479,7 @@ class ItineraryStopResponse(BaseModel):
     max_price: Optional[Decimal] = None
     estimated_price: Optional[Decimal] = None
     category_name: Optional[str] = None
+    image_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

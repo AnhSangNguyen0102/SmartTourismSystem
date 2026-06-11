@@ -115,9 +115,33 @@ const LocationDetailMap = ({ stop, userLocation }) => {
         }
     };
 
+    const handleGetDirections = () => {
+        if (!stop || isNaN(parseFloat(stop.latitude)) || isNaN(parseFloat(stop.longitude))) {
+            showAlert("Không có tọa độ địa điểm để chỉ đường.");
+            return;
+        }
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`;
+        window.open(url, '_blank');
+    };
+
     return (
         <div className="location-detail-map-wrapper">
             <div ref={mapRef} className="location-detail-map" />
+            
+            {/* Nút Chỉ đường */}
+            <button
+                type="button"
+                className="location-detail-directions-btn"
+                onClick={handleGetDirections}
+                aria-label="Chỉ đường"
+                title="Mở Google Maps chỉ đường"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2c3e50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                </svg>
+            </button>
+
+            {/* Nút Vị trí của tôi */}
             {userLocation?.lat && userLocation?.lng && (
                 <button
                     type="button"

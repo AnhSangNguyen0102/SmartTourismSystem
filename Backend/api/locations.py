@@ -31,14 +31,29 @@ def recommend_locations(request: SuggestionRequest, db: Session = Depends(get_se
             visited_location_ids = {str(stop.location_id) for stop in completed_stops}
 
     # 1. Lấy tất cả địa điểm của thành phố
-    locations = get_locations_by_city(db, request.city_id)
+    from models import LocationsImage, Locations, Cities
+    image_subquery = (
+        db.query(LocationsImage.url)
+        .filter(LocationsImage.location_id == Locations.location_id)
+        .order_by(LocationsImage.display_order.asc())
+        .limit(1)
+        .correlate(Locations)
+        .scalar_subquery()
+    )
 
-    if not locations:
+    statement = (
+        db.query(Locations, image_subquery.label("image_url"))
+        .join(Cities, Locations.city_id == Cities.city_id)
+        .filter(Locations.city_id == request.city_id)
+    )
+    locations_with_images = statement.all()
+
+    if not locations_with_images:
         raise HTTPException(status_code=404, detail=f"Không tìm thấy địa điểm nào tại thành phố có ID {request.city_id}")
 
     # 2 & 3. Chấm điểm từng địa điểm
     scored_locations = []
-    for loc in locations:
+    for loc, image_url in locations_with_images:
         # Gọi DB để lấy tag thay vì dùng property (vì models.py chưa khai báo Relationship)
         tags_db = get_location_tags(db, loc.location_id)
         loc_tags = [t.tag_name for t in tags_db]
@@ -61,6 +76,7 @@ def recommend_locations(request: SuggestionRequest, db: Session = Depends(get_se
             loc_out = LocationOut.model_validate(loc)
             loc_out.tags = loc_tags
             loc_out.score = score
+            loc_out.image_url = image_url
             scored_locations.append(loc_out)
 
     # 4. Sắp xếp theo score giảm dần

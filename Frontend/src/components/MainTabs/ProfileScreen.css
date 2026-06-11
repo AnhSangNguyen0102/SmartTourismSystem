@@ -141,6 +141,24 @@
     margin-top: 2px;
 }
 
+/* New Stat Stack Items (Right side of player card) */
+.stat-stack-item {
+    background-color: rgba(52, 152, 219, 0.15); /* Màu xanh nhạt trong suốt */
+    color: #2c3e50;
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    padding: 10px 16px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 14px;
+    width: 100%;
+    box-shadow: 0 3px 0 #2c3e50;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Menu buttons với arrow */
 .profile-menu-btn {
     display: flex;
@@ -642,6 +660,12 @@ body.dark-theme .profile-stat-box .stat-box-value {
 }
 body.dark-theme .profile-stat-box .stat-box-label {
     color: var(--st-text-muted);
+}
+body.dark-theme .stat-stack-item {
+    background-color: rgba(52, 152, 219, 0.25);
+    color: var(--st-text);
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
 }
 body.dark-theme .achievements-card {
     background-color: var(--st-surface);

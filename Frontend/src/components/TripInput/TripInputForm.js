@@ -264,22 +264,7 @@ const TripInputForm = ({ onSubmitPlan, onCancel }) => {
                             className="cartoon-input"
                         />
                         <div className="budget-preset-group">
-                            <span className="budget-preset-label">Cộng thêm</span>
-                            <div className="budget-preset-buttons">
-                                {BUDGET_PRESETS.map(preset => (
-                                    <button
-                                        key={`add-${preset.value}`}
-                                        type="button"
-                                        className="budget-preset-btn add"
-                                        onClick={() => addBudget(preset.value)}
-                                    >
-                                        +{preset.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="budget-preset-group">
-                            <span className="budget-preset-label">Đặt nhanh</span>
+                            <span className="budget-preset-label">Gợi ý</span>
                             <div className="budget-preset-buttons">
                                 {BUDGET_PRESETS.map(preset => (
                                     <button
