@@ -5,7 +5,8 @@ import './TreasureOverlay.css';
 const TreasureOverlay = ({ data }) => {
     if (!data) return null;
 
-    const { points, locationName, stage } = data;
+    // Lấy thêm biến coins từ data truyền vào
+    const { points, coins, locationName, stage } = data;
 
     return (
         <div className="treasure-overlay">
@@ -15,9 +16,14 @@ const TreasureOverlay = ({ data }) => {
             
             {stage === 'open' && (
                 <div className="reward-text show">
-                    <p>Chúc mừng bạn đã check-in thành công!</p>
+                    {/* Tùy chỉnh câu thông báo rương tại đây */}
+                    <p>Tuyệt vời! Bạn đã khám phá thành công</p> 
                     <p className="location-name">{locationName}</p>
-                    <div className="points-earned">+{points} EXP</div>
+                    
+                    {/* Hiển thị cả EXP và Xu */}
+                    <div className="points-earned">
+                        +{points} EXP {coins ? ` | +${coins} Xu` : ''}
+                    </div>
                 </div>
             )}
         </div>

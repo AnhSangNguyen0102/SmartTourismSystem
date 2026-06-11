@@ -548,7 +548,8 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 // 2. BẮT ĐẦU HIỆU ỨNG RƯƠNG CHO TRẠM (Luôn chạy dù là trạm nào)
                 playSound('chest_shake.mp3');
                 setRewardData({ 
-                    points: earnedPoints, 
+                    points: earnedPoints,
+                    coins: 20,
                     locationName: targetStop.location_name, 
                     stage: 'shaking' 
                 });
@@ -563,11 +564,12 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                 }, 1500);
 
                 // 3. XỬ LÝ KẾT THÚC SAU KHI RƯƠNG BIẾN MẤT (4.5 giây)
+                // 3. XỬ LÝ KẾT THÚC SAU KHI RƯƠNG BIẾN MẤT (4.5 giây)
                 setTimeout(() => {
                     setRewardData(null);
                     setSelectedStop(null); 
 
-                    // Cập nhật state nội bộ
+                    // Cập nhật trạng thái cấu trúc state local
                     setTripDetail(prev => {
                         if (!prev) return prev;
                         const updatedStops = prev.stops.map(s =>
@@ -582,18 +584,21 @@ const TripDetailScreen = ({ itineraryId, onBack, refreshUser, onPointsUpdate, us
                     });
                     
                     if (isCompleted) {
-                        // NẾU LÀ TRẠM CUỐI: Hiện thông báo chiến thắng và tách bạch phần thưởng
+                        // NẾU HOÀN THÀNH LỘ TRÌNH (Trạm cuối cùng được check-in xong)
                         playSound('victory.mp3');
                         
-                        // Bạn có thể dùng showToast hoặc showAlert tùy ý thích ở đây
-                        showToast(`🎉 Lộ trình hoàn thành! Bạn nhận +${earnedPoints} EXP (tại trạm), thưởng thêm +${completionScore} EXP và +${completionScore} Xu!`, 'success');
+                        showToast(
+                            `🎉 Lộ trình hoàn thành! Bạn nhận +${earnedPoints} EXP & +20 Xu (tại trạm này), cùng gói thưởng hoàn thành +${completionScore} EXP & Xu!`, 
+                            'success'
+                        );
                         
                         setMascotMessage(["Chúc mừng bạn đã hoàn thành trọn vẹn hành trình tuyệt vời này!"]);
                         
                         fetchDetail(true);
                         syncUserPoints();
                     } else {
-                        // NẾU LÀ TRẠM BÌNH THƯỜNG
+                        // NẾU CHỈ LÀ TRẠM CHECK-IN THÔNG THƯỜNG TRÊN ĐƯỜNG ĐI
+                        showToast(`✅ Khám phá thành công! Bạn nhận +${earnedPoints} EXP và +20 Xu thưởng trạm.`, 'success');
                         setMascotMessage(`Chúc mừng bạn đã khám phá được địa điểm ${targetStop.location_name}!`);
                         syncUserPoints();
                     }
