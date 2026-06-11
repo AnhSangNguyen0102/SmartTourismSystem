@@ -21,6 +21,7 @@ import {
     User,
     Users,
     X,
+    MessageSquare,
 } from 'lucide-react';
 import { adminService } from '../services/adminService';
 import './AdminModerationScreen.css';
@@ -32,6 +33,7 @@ const tabs = [
     { id: 'users', label: 'Users', title: 'Thành viên', icon: Users },
     { id: 'stats', label: 'Stats', title: 'Thống kê', icon: BarChart3 },
     { id: 'reports', label: 'Reports', title: 'Báo cáo', icon: FileText },
+    { id: 'feedbacks', label: 'Phản hồi', title: 'Ý kiến đóng góp', icon: MessageSquare },
 ];
 
 const formatDate = (value) => {
@@ -77,6 +79,7 @@ export default function AdminModerationScreen({ onBack }) {
     const [usersList, setUsersList] = useState([]);
     const [stats, setStats] = useState(null);
     const [reports, setReports] = useState([]);
+    const [feedbacks, setFeedbacks] = useState([]);
 
     const [userSearch, setUserSearch] = useState('');
     const [userActionTarget, setUserActionTarget] = useState(null);
@@ -90,11 +93,12 @@ export default function AdminModerationScreen({ onBack }) {
     const loadOverview = useCallback(async () => {
         setOverviewLoading(true);
         try {
-            const [enterpriseResult, locationResult, statsResult, reportsResult] = await Promise.allSettled([
+            const [enterpriseResult, locationResult, statsResult, reportsResult, feedbacksResult] = await Promise.allSettled([
                 adminService.getPendingEnterprises(),
                 adminService.getLocationSubmissions(),
                 adminService.getAdminStats(),
                 adminService.getReports(),
+                adminService.getFeedbacks(),
             ]);
 
             setOverview((current) => ({
@@ -113,6 +117,9 @@ export default function AdminModerationScreen({ onBack }) {
                 totalPoints: statsResult.status === 'fulfilled'
                     ? statsResult.value.total_points_awarded
                     : current.totalPoints,
+                feedbacks: feedbacksResult.status === 'fulfilled'
+                    ? feedbacksResult.value.filter(f => f.status === 'PENDING' || f.status === 'PROCESSING').length
+                    : current.feedbacks,
             }));
         } finally {
             setOverviewLoading(false);
@@ -162,6 +169,13 @@ export default function AdminModerationScreen({ onBack }) {
                     ...current,
                     reports: reportsData.length,
                     totalUsers: usersData.length,
+                }));
+            } else if (activeTab === 'feedbacks') {
+                const feedbacksData = await adminService.getFeedbacks();
+                setFeedbacks(feedbacksData);
+                setOverview((current) => ({
+                    ...current,
+                    feedbacks: feedbacksData.filter(f => f.status === 'PENDING' || f.status === 'PROCESSING').length,
                 }));
             }
         } catch (err) {
@@ -283,6 +297,7 @@ export default function AdminModerationScreen({ onBack }) {
         if (tabId === 'approved_locations') return approvedLocations.length;
         if (tabId === 'users') return overview.totalUsers;
         if (tabId === 'reports') return overview.reports;
+        if (tabId === 'feedbacks') return overview.feedbacks;
         return null;
     };
 
@@ -641,6 +656,100 @@ export default function AdminModerationScreen({ onBack }) {
         );
     };
 
+    const handleUpdateFeedbackStatus = (feedbackId, newStatus) => {
+        runAction(
+            async () => {
+                await adminService.updateFeedbackStatus(feedbackId, newStatus);
+            },
+            'Cập nhật trạng thái phản hồi thành công.'
+        );
+    };
+
+    const renderFeedbacks = () => {
+        if (feedbacks.length === 0) {
+            return <EmptyState icon={MessageSquare} text="Không có phản hồi đóng góp nào." />;
+        }
+
+        return (
+            <div className="admin-list feedbacks-list">
+                {feedbacks.map((fb) => {
+                    const isBug = fb.feedback_type === 'BUG';
+                    return (
+                        <div className="admin-list-item feedback-item-card" key={fb.feedback_id} style={{ pointerEvents: 'none', cursor: 'default' }}>
+                            <div className="feedback-card-header" style={{ pointerEvents: 'auto' }}>
+                                <span className={`feedback-type-badge ${isBug ? 'bug' : 'suggestion'}`}>
+                                    {isBug ? 'Lỗi (BUG)' : 'Góp ý (SUGGESTION)'}
+                                </span>
+                                <span className={`feedback-status-badge ${fb.status?.toLowerCase()}`}>
+                                    {fb.status === 'PENDING' ? 'Chờ xử lý' : fb.status === 'PROCESSING' ? 'Đang xử lý' : 'Đã giải quyết'}
+                                </span>
+                            </div>
+                            
+                            <div className="feedback-card-content" style={{ pointerEvents: 'auto', marginTop: '8px' }}>
+                                <p className="feedback-text">{fb.content}</p>
+                            </div>
+
+                            <div className="feedback-card-footer" style={{ pointerEvents: 'auto', marginTop: '8px' }}>
+                                <div className="feedback-user-info">
+                                    <strong>{fb.user_name || 'Khách'}</strong>
+                                    <small>{fb.user_email || 'Không có email'} · {formatDate(fb.created_at)}</small>
+                                </div>
+                                
+                                <div className="feedback-actions">
+                                    {fb.status === 'PENDING' && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="feedback-btn btn-processing"
+                                                onClick={() => handleUpdateFeedbackStatus(fb.feedback_id, 'PROCESSING')}
+                                            >
+                                                Xử lý
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="feedback-btn btn-resolved"
+                                                onClick={() => handleUpdateFeedbackStatus(fb.feedback_id, 'RESOLVED')}
+                                            >
+                                                Giải quyết
+                                            </button>
+                                        </>
+                                    )}
+                                    {fb.status === 'PROCESSING' && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="feedback-btn btn-pending"
+                                                onClick={() => handleUpdateFeedbackStatus(fb.feedback_id, 'PENDING')}
+                                            >
+                                                Chờ xử lý
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="feedback-btn btn-resolved"
+                                                onClick={() => handleUpdateFeedbackStatus(fb.feedback_id, 'RESOLVED')}
+                                            >
+                                                Giải quyết
+                                            </button>
+                                        </>
+                                    )}
+                                    {fb.status === 'RESOLVED' && (
+                                        <button
+                                            type="button"
+                                            className="feedback-btn btn-reopen"
+                                            onClick={() => handleUpdateFeedbackStatus(fb.feedback_id, 'PENDING')}
+                                        >
+                                            Mở lại
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     const renderContent = () => {
         if (loading) return <div className="admin-loading">Đang tải dữ liệu...</div>;
         if (activeTab === 'enterprise') return renderEnterprise();
@@ -648,6 +757,7 @@ export default function AdminModerationScreen({ onBack }) {
         if (activeTab === 'approved_locations') return renderApprovedLocations();
         if (activeTab === 'users') return renderUsers();
         if (activeTab === 'stats') return renderStats();
+        if (activeTab === 'feedbacks') return renderFeedbacks();
         return renderReports();
     };
 
