@@ -253,7 +253,6 @@ export default function ChatScreen({ user, onRequireLogin }) {
                             <img src={selectedFriend.avatar} alt={selectedFriend.name} className="active-friend-avatar" />
                             <div>
                                 <h4 className="active-friend-name">{selectedFriend.name}</h4>
-                                <span className="active-friend-status">Đang hoạt động</span>
                             </div>
                         </div>
                         <button className="chat-clear-btn" onClick={handleClearChat} title="Xóa lịch sử">

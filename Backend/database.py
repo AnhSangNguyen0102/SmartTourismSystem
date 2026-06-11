@@ -30,24 +30,33 @@ DATABASE_URL: str = os.getenv(
 if ("supabase.co" in DATABASE_URL or "supabase.com" in DATABASE_URL) and "sslmode" not in DATABASE_URL:
     DATABASE_URL += "?sslmode=require"
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=os.getenv("DB_ECHO", "false").lower() == "true",
+engine_options = {
+    "echo": os.getenv("DB_ECHO", "false").lower() == "true",
+}
+
+if DATABASE_URL.startswith("sqlite"):
+    # SQLite is used by the isolated backend test suite.
+    engine_options["connect_args"] = {"check_same_thread": False}
+else:
     # Use connection pooling to reuse connections instead of opening
-    # a new TCP+SSL connection per request (NullPool was very slow
-    # with remote Supabase due to SSL handshake overhead).
-    pool_size=5,
-    max_overflow=10,
-    pool_recycle=300,
-    pool_pre_ping=True,
-    connect_args={
-        "connect_timeout": 10,
-        "keepalives": 1,
-        "keepalives_idle": 30,
-        "keepalives_interval": 10,
-        "keepalives_count": 5
-    }
-)
+    # a new TCP+SSL connection per request.
+    engine_options.update(
+        {
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+            "connect_args": {
+                "connect_timeout": 10,
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 5,
+            },
+        }
+    )
+
+engine = create_engine(DATABASE_URL, **engine_options)
 
 
 def create_db_and_tables() -> None:

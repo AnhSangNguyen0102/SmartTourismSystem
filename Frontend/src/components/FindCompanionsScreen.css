@@ -276,3 +276,48 @@
     padding: 8px 12px;
     border-radius: 12px;
 }
+
+/* Dark Mode overrides for FindCompanionsScreen */
+body.dark-theme .matching-header-icon {
+    background-color: var(--st-surface);
+    border-color: var(--st-border);
+}
+body.dark-theme .tabs-row {
+    background-color: var(--st-surface);
+    border-color: var(--st-border);
+}
+body.dark-theme .match-card {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border: 3px solid var(--game-border-color);
+    box-shadow: 0 6px 0 var(--game-border-color);
+}
+body.dark-theme .match-name {
+    color: var(--st-text);
+}
+body.dark-theme .match-bio {
+    color: var(--st-text-muted);
+}
+body.dark-theme .empty-companions {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .empty-pending {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .pending-card {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border: 3px solid var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .pending-name {
+    color: var(--st-text);
+}
+body.dark-theme .matching-title {
+    color: var(--st-text);
+    text-shadow: 2px 2px 0px var(--st-bg);
+}

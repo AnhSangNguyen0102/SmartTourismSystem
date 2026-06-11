@@ -26,24 +26,48 @@ export const useGeolocation = (targetLat, targetLng) => {
   };
 
   useEffect(() => {
+    const updateCoordinates = (lat, lng, accuracy = 10) => {
+      setState({
+        latitude: lat,
+        longitude: lng,
+        accuracy,
+        error: null,
+        loading: false,
+      });
+
+      if (targetLat !== undefined && targetLng !== undefined) {
+        const dist = calculateDistance(lat, lng, targetLat, targetLng);
+        setDistance(dist);
+      }
+    };
+
+    // If mock GPS is active initially, load the mock coordinates immediately
+    if (window.isMockGpsActive && typeof window.mockLatitude === 'number') {
+      updateCoordinates(window.mockLatitude, window.mockLongitude);
+    }
+
+    const handleMockUpdate = (e) => {
+      const { lat, lng } = e.detail;
+      updateCoordinates(lat, lng);
+    };
+
+    const handleMockDisabled = () => {
+      setState(prev => ({ ...prev, loading: true }));
+    };
+
+    window.addEventListener('mock_location_update', handleMockUpdate);
+    window.addEventListener('mock_location_disabled', handleMockDisabled);
+
     const stopWatching = startWatchingPosition({
       onSuccess: (position) => {
+        if (window.isMockGpsActive) return; // Skip if mock GPS is active
+
         const { latitude, longitude, accuracy } = position;
-
-        setState({
-          latitude,
-          longitude,
-          accuracy,
-          error: null,
-          loading: false,
-        });
-
-        if (targetLat !== undefined && targetLng !== undefined) {
-          const dist = calculateDistance(latitude, longitude, targetLat, targetLng);
-          setDistance(dist);
-        }
+        updateCoordinates(latitude, longitude, accuracy);
       },
       onError: (geoError) => {
+        if (window.isMockGpsActive) return; // Skip if mock GPS is active
+
         setState((prev) => ({
           ...prev,
           error: geoError?.message || 'Không thể lấy dữ liệu GPS.',
@@ -61,6 +85,8 @@ export const useGeolocation = (targetLat, targetLng) => {
       if (typeof stopWatching === 'function') {
         stopWatching();
       }
+      window.removeEventListener('mock_location_update', handleMockUpdate);
+      window.removeEventListener('mock_location_disabled', handleMockDisabled);
     };
   }, [targetLat, targetLng]);
 

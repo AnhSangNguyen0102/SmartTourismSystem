@@ -180,12 +180,6 @@
     margin: 0;
 }
 
-.active-friend-status {
-    font-size: 9px;
-    color: var(--game-green, #2ed573);
-    font-weight: 800;
-}
-
 .chat-clear-btn {
     background: none;
     border: none;
@@ -334,4 +328,61 @@
     background-color: var(--game-sky, #70a1ff);
     border-radius: 50%;
     display: inline-block;
+}
+
+/* Dark Mode overrides for ChatScreen */
+body.dark-theme .empty-friends {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border: 3px solid var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .friend-item-card {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border: 3px solid var(--game-border-color);
+    box-shadow: 0 4px 0 var(--game-border-color);
+}
+body.dark-theme .friend-name {
+    color: var(--st-text);
+}
+body.dark-theme .active-chat-header {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-bottom: 2px solid var(--st-border);
+}
+body.dark-theme .active-friend-name {
+    color: var(--st-text);
+}
+body.dark-theme .message-bubble {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border: 2px solid var(--st-border);
+}
+body.dark-theme .message-bubble.blue {
+    background-color: var(--game-sky);
+    color: #ffffff;
+    border-color: var(--game-border-color);
+}
+body.dark-theme .chat-input-row {
+    background-color: var(--st-surface);
+    border-top: 2px solid var(--st-border);
+}
+body.dark-theme .chat-input-box {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+    border: 2px solid var(--st-border);
+}
+body.dark-theme .chat-title {
+    color: var(--st-text);
+    text-shadow: 2px 2px 0px var(--st-bg);
+}
+body.dark-theme .chat-back-btn {
+    color: var(--st-text);
+}
+body.dark-theme .active-friend-name {
+    color: var(--st-text);
+}
+body.dark-theme .friend-last-message.unread-bold {
+    color: var(--st-text);
 }

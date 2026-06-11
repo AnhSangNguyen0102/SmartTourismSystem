@@ -246,6 +246,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
         setSuccessData({
           message: data.message,
           exp_rewarded: data.reward_exp,
+          coin_rewarded: data.reward_coin,
           confidence_score: 100,
           new_itinerary_exp: data.new_total_points,
           new_level: Math.floor(data.new_total_points / 1000) + 1,
@@ -275,6 +276,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
         setSuccessData({
           message: data.message,
           exp_rewarded: data.reward_exp,
+          coin_rewarded: data.reward_coin,
           confidence_score: 100,
           new_itinerary_exp: data.new_total_points,
           new_level: Math.floor(data.new_total_points / 1000) + 1,
@@ -314,7 +316,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
               }}
             />
             <div className="reward-overlay" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Award size={14} /> +{task.reward_exp} EXP
+              <Award size={14} /> +{task.reward_exp} EXP{task.reward_coin ? ` | +${task.reward_coin} Xu` : ''}
             </div>
           </div>
           <div className="target-info">
@@ -420,11 +422,7 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
                   <button
                     key={opt}
                     onClick={() => setSelectedOption(opt)}
-                    style={{
-                      textAlign: 'left', padding: '12px 15px', borderRadius: '12px', color: '#fff', fontSize: '13px', cursor: 'pointer',
-                      border: isSelected ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.08)',
-                      background: isSelected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.02)'
-                    }}
+                    className={`qa-option-button ${isSelected ? 'selected' : ''}`}
                   >
                     <strong>{opt}.</strong> {optText}
                   </button>
@@ -496,9 +494,15 @@ export const TaskDetail = ({ task, userId, itineraryId, onBack, onCompleteSucces
             <p className="success-congrats-msg">{successData?.message}</p>
             <div className="score-reward-summary">
               <div className="reward-score-pill">
-                <span className="score-label">THƯỞNG HỆ THỐNG</span>
+                <span className="score-label">THƯỞNG EXP</span>
                 <span className="score-val">+{successData?.exp_rewarded} EXP</span>
               </div>
+              {successData?.coin_rewarded > 0 && (
+                <div className="reward-score-pill">
+                  <span className="score-label">THƯỞNG XU</span>
+                  <span className="score-val" style={{ color: '#fbc531' }}>+{successData.coin_rewarded} Xu</span>
+                </div>
+              )}
               <div className="reward-score-pill">
                 <span className="score-label">ĐỘ CHÍNH XÁC</span>
                 <span className="score-val" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

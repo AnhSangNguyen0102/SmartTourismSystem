@@ -177,3 +177,27 @@
         transform: translateY(-8px);
     }
 }
+
+/* Dark Mode overrides for IslandMap */
+body.dark-theme .island-map-container {
+    background-color: #0b0f19;
+}
+body.dark-theme .island-background {
+    background: radial-gradient(ellipse at center, #1e3a5f 0%, #0f172a 70%, transparent 100%);
+    filter: brightness(0.65) contrast(1.1);
+}
+body.dark-theme .building-name {
+    background: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .bubble-tr::after { border-color: var(--st-surface) transparent transparent transparent; }
+body.dark-theme .bubble-tl::after { border-color: var(--st-surface) transparent transparent transparent; }
+body.dark-theme .bubble-br::after { border-color: transparent transparent var(--st-surface) transparent; }
+body.dark-theme .bubble-bl::after { border-color: transparent transparent var(--st-surface) transparent; }
+
+body.dark-theme .bubble-tr::before { border-color: var(--st-border) transparent transparent transparent; }
+body.dark-theme .bubble-tl::before { border-color: var(--st-border) transparent transparent transparent; }
+body.dark-theme .bubble-br::before { border-color: transparent transparent var(--st-border) transparent; }
+body.dark-theme .bubble-bl::before { border-color: transparent transparent var(--st-border) transparent; }
+

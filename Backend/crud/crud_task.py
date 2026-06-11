@@ -105,6 +105,18 @@ class CRUDTask:
         if qr_task.expired_at < datetime.utcnow():
             raise HTTPException(status_code=400, detail="Mã QR này đã hết hạn sử dụng.")
 
+        # 1.1 Anti-cheat: Kiểm tra xem hôm nay user đã làm task này chưa
+        today = datetime.utcnow().date()
+        existing_history = db.exec(
+            select(UserTaskHistory).where(
+                UserTaskHistory.user_id == user_id,
+                UserTaskHistory.task_id == qr_task.qr_task_id,
+                UserTaskHistory.completed_at >= datetime.combine(today, datetime.min.time())
+            )
+        ).first()
+        if existing_history:
+            raise HTTPException(status_code=400, detail="Bạn đã hoàn thành nhiệm vụ này trong ngày hôm nay rồi.")
+
         # 2. Xử lý logic LUỒNG NPC / HÓA ĐƠN
         if qr_task.is_one_time and qr_task.is_used:
             raise HTTPException(status_code=400, detail="Mã QR trên hóa đơn này đã được sử dụng trước đó.")

@@ -655,3 +655,91 @@
     opacity: 0.75;
     pointer-events: none; /* Block clicking on Like/Save/Comment/Options during upload */
 }
+
+/* Dark Mode overrides for SocialFeedScreen */
+body.dark-theme .post-card {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+}
+body.dark-theme .author-name {
+    color: var(--st-text);
+}
+body.dark-theme .post-caption {
+    color: var(--st-text);
+}
+body.dark-theme .post-card-footer {
+    border-top-color: var(--st-border);
+}
+body.dark-theme .post-action-btn {
+    color: var(--st-text-muted);
+}
+body.dark-theme .post-dropdown-menu {
+    background-color: var(--st-surface);
+    border: 2px solid var(--st-border);
+}
+body.dark-theme .dropdown-item {
+    color: var(--st-text);
+}
+body.dark-theme .dropdown-item:hover {
+    background-color: var(--st-surface-muted);
+}
+body.dark-theme .modal-content {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .comments-drawer-content {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .comment-bubble {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+}
+body.dark-theme .commenter-name {
+    color: var(--st-text);
+}
+body.dark-theme .comment-text-content {
+    color: var(--st-text);
+}
+body.dark-theme .add-comment-form {
+    border-top-color: var(--st-border);
+}
+body.dark-theme .add-comment-form input {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .post-input-text {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+    border-color: var(--st-border);
+}
+body.dark-theme .tag-location-display {
+    background-color: var(--st-surface-muted);
+    color: var(--st-text);
+}
+body.dark-theme .feed-empty {
+    background-color: var(--st-surface);
+    color: var(--st-text);
+}
+body.dark-theme .feed-title {
+    color: var(--st-text);
+    text-shadow: 2px 2px 0px var(--st-bg);
+}
+body.dark-theme .btn-menu {
+    color: var(--st-text);
+}
+body.dark-theme .modal-header h3 {
+    color: var(--st-text);
+}
+body.dark-theme .btn-close {
+    color: var(--st-text);
+}
+body.dark-theme .privacy-select-row {
+    color: var(--st-text);
+}
+body.dark-theme .post-meta {
+    color: var(--st-text-muted);
+}

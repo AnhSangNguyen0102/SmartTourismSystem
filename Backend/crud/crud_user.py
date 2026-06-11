@@ -421,12 +421,15 @@ def update_user_kyc_status(
 def create_social_user(db: Session, full_name: str, email: str, social_id: str, register_type: str):
     import secrets
     from core.security import get_password_hash
+
     db_user = Users(
         full_name=full_name,
         email=email,
         passwordhash=get_password_hash(secrets.token_urlsafe(32)),
         social_id=social_id,
-        register_type=register_type,
+        # Provider names such as "GOOGLE" are not valid RegisterType values.
+        # Provider identity is represented by social_id; the account type is SOCIAL.
+        register_type=RegisterType.SOCIAL,
         role=UserRole.USER,        
         status=UserStatus.ACTIVE   
     )

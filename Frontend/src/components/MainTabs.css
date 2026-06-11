@@ -4,8 +4,9 @@
     flex-direction: column;
     height: 100%;
     position: relative;
-    background-color: #e0f2fe; /* Cartoon sky-blue background */
+    background-color: var(--st-bg); /* Use theme bg variable */
     min-height: 0;
+    transition: background-color 0.3s ease;
 }
 
 /* CARTOON GAME HUD BAR */
@@ -13,8 +14,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #ffffff;
-    border-bottom: 4px solid #2c3e50;
+    background-color: var(--st-surface);
+    border-bottom: 4px solid var(--game-border-color);
     padding: 10px 16px 10px 20px;
     height: 68px;
     z-index: 1010;
@@ -25,6 +26,7 @@
     overflow: hidden;
     gap: 8px;
     box-sizing: border-box;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .hud-player-info {
@@ -40,7 +42,7 @@
     width: 44px;
     height: 44px;
     background: radial-gradient(circle, #ffeaa7 0%, #ffd32d 100%);
-    border: 3px solid #2c3e50;
+    border: 3px solid var(--game-border-color);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -61,12 +63,12 @@
     right: -2px;
     background-color: #ff4757;
     color: #ffffff;
-    border: 2px solid #2c3e50;
+    border: 2px solid var(--game-border-color);
     border-radius: 6px;
     padding: 0px 5px;
     font-size: 10px;
     font-weight: 900;
-    box-shadow: 0 1.5px 0 #2c3e50;
+    box-shadow: 0 1.5px 0 var(--game-border-color);
 }
 
 .hud-name-container {
@@ -79,7 +81,7 @@
 .hud-player-name {
     font-size: 14px;
     font-weight: 700;
-    color: #2c3e50;
+    color: var(--st-text);
     max-width: 80px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -89,7 +91,7 @@
 .hud-player-tier {
     font-size: 10px;
     font-weight: 700;
-    color: #747d8c;
+    color: var(--st-text-muted);
     margin-top: 1px;
 }
 
@@ -104,16 +106,17 @@
 .hud-stat-pill {
     display: flex;
     align-items: center;
-    background-color: #ffffff;
-    border: 2.5px solid #2c3e50;
+    background-color: var(--st-surface);
+    border: 2.5px solid var(--game-border-color);
     border-radius: 16px;
     padding: 2px 8px 2px 26px;
     position: relative;
     height: 32px;
-    box-shadow: 0 3px 0 #2c3e50;
+    box-shadow: 0 3px 0 var(--game-border-color);
     flex-shrink: 0;
     box-sizing: border-box;
     min-width: 0;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .pill-icon {
@@ -131,7 +134,7 @@
 .pill-value {
     font-size: 11px;
     font-weight: 800;
-    color: #2c3e50;
+    color: var(--st-text);
 }
 
 .exp-pill {
@@ -155,8 +158,8 @@
 .hud-exp-progress-bar {
     width: 60px;
     height: 5px;
-    background-color: #dfe6e9;
-    border: 1px solid #2c3e50;
+    background-color: var(--st-surface-muted);
+    border: 1px solid var(--game-border-color);
     border-radius: 3px;
     overflow: hidden;
     margin-top: 1.5px;
@@ -175,7 +178,7 @@
 }
 
 .pill-icon svg {
-    color: #2c3e50;
+    color: var(--st-text);
     width: 14px;
     height: 14px;
 }
@@ -222,7 +225,7 @@
     left: 20px;
     right: 20px;
     height: 64px;
-    background: #ffffff;
+    background: var(--st-surface);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -230,6 +233,12 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     border-radius: 40px;
     z-index: 1000;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+body.dark-theme .bottom-nav {
+    border: 2px solid var(--st-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .nav-item {
@@ -342,6 +351,8 @@
 .quest-meta-info {
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
     background: rgba(255, 255, 255, 0.04);
     border-radius: 12px;
     padding: 10px 12px;
@@ -806,677 +817,27 @@
     box-shadow: none;
 }
 
-.placeholder-screen {
-    padding: 20px;
-    background-color: #f8f9fa;
-    min-height: 100%;
-}
-
-.profile-screen {
-    padding: 20px;
-    background-color: #e0f2fe;
-    min-height: 100%;
-    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
-    font-family: 'Be Vietnam Pro', sans-serif;
-}
-
-/* === PROFILE SCREEN - GAME STYLE === */
-
-/* Player Card - trung tâm, nổi bật */
-.profile-player-card {
-    background: linear-gradient(135deg, #ffd32d 0%, #ff9f1a 100%);
-    border: 3px solid #2c3e50;
-    border-radius: 24px;
-    padding: 24px 20px;
-    text-align: center;
-    box-shadow: 0 6px 0 #2c3e50;
-    margin-bottom: 16px;
-}
-
-.profile-avatar-frame {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 12px;
-}
-
-.profile-avatar-frame .profile-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 4px solid #2c3e50;
-    box-shadow: 0 4px 0 #2c3e50;
-}
-
-.profile-level-badge {
-    position: absolute;
-    bottom: -6px;
-    right: -6px;
-    background-color: #ff4757;
-    color: #ffffff;
-    border: 2.5px solid #2c3e50;
-    border-radius: 10px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    font-family: 'Fredoka', sans-serif;
-    box-shadow: 0 2px 0 #2c3e50;
-}
-
-.profile-player-name {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #2c3e50;
-    font-family: 'Fredoka', sans-serif;
-    -webkit-text-stroke: 0.3px #2c3e50;
-}
-
-.profile-player-tier {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 700;
-    color: #2c3e50;
-    background: rgba(255,255,255,0.5);
-    padding: 2px 10px;
-    border-radius: 8px;
-    margin-top: 4px;
-    border: 1.5px solid #2c3e50;
-}
-
-/* EXP Bar trong Player Card */
-.profile-exp-section {
-    margin-top: 16px;
-    background: rgba(0,0,0,0.1);
-    border-radius: 12px;
-    padding: 8px 12px;
-}
-
-.profile-exp-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 4px;
-}
-
-.profile-exp-bar {
-    width: 100%;
-    height: 10px;
-    background-color: rgba(0,0,0,0.15);
-    border-radius: 5px;
-    overflow: hidden;
-    border: 1.5px solid #2c3e50;
-}
-
-.profile-exp-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #2ed573, #7bed9f);
-    border-radius: 5px;
-    transition: width 0.5s ease;
-}
-
-/* Stats Row - 3 ô vuông */
-.profile-stats-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-}
-
-.profile-stat-box {
-    flex: 1;
-    background-color: #ffffff;
-    border: 3px solid #2c3e50;
-    border-radius: 20px;
-    padding: 14px 8px;
-    text-align: center;
-    box-shadow: 0 4px 0 #2c3e50;
-}
-
-.stat-box-icon {
-    font-size: 24px;
-    margin-bottom: 4px;
-}
-
-.stat-box-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: #2c3e50;
-    font-family: 'Fredoka', sans-serif;
-}
-
-.stat-box-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: #747d8c;
-    margin-top: 2px;
-}
-
-/* Menu buttons với arrow */
-.profile-menu-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 14px 16px;
-    background-color: #ffffff;
-    border: 2.5px solid #2c3e50;
-    border-radius: 16px;
-    cursor: pointer;
-    text-align: left;
-    box-shadow: 0 4px 0 #2c3e50;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    margin-bottom: 10px;
-    min-height: 52px;
-}
-
-.profile-menu-btn:active {
-    transform: translateY(4px);
-    box-shadow: none;
-}
-
-.menu-btn-icon {
-    font-size: 20px;
-    flex-shrink: 0;
-}
-
-.menu-btn-arrow {
-    margin-left: auto;
-    font-size: 18px;
-    color: #a4b0be;
-    font-weight: 700;
-}
-
-.profile-menu-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.profile-logout-btn {
-    background-color: #ff4757 !important;
-    border: 2.5px solid #2c3e50 !important;
-    margin-top: 10px;
-}
-
-.profile-logout-btn span.logout-text {
-    font-weight: 900;
-    color: #ffffff;
-}
-
-/* Achievements card - giữ nguyên */
-
-.achievements-card {
-    background-color: #fffdf0; /* Cartoon papyrus/scroll color */
-    padding: 20px;
-    border: 3px solid #2c3e50;
-    border-radius: 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 6px 0 #2c3e50;
-}
-
-.achievements-title {
-    margin: 0 0 15px 0;
-    color: #ff9f1a;
-    font-size: 16px;
-    font-weight: 900;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    -webkit-text-stroke: 0.5px #2c3e50;
-}
-
-.achievements-filter-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
-.achievements-filter-btn {
-    flex: 1;
-    padding: 10px 6px;
-    border-radius: 12px;
-    border: 2.5px solid #2c3e50;
-    font-weight: 900;
-    font-size: 12px;
-    cursor: pointer;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    min-height: 44px;
-    box-shadow: 0 3px 0 #2c3e50;
-}
-
-.achievements-filter-btn:active {
-    transform: translateY(3px);
-    box-shadow: none;
-}
-
-.achievements-filter-btn.active {
-    background-color: #ffd32d;
-    color: #2c3e50;
-}
-
-.achievements-filter-btn.inactive {
-    background-color: #ffffff;
-    color: #576574;
-}
-
-.achievements-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.achievement-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 12px;
-    border-radius: 16px;
-    border: 2.5px solid #2c3e50;
-    box-shadow: 0 4px 0 #2c3e50;
-}
-
-.achievement-item.unlocked {
-    background-color: #ffffff;
-}
-
-.achievement-item.locked {
-    background-color: #f1f2f6;
-    opacity: 0.65;
-    filter: grayscale(0.8);
-}
-
-.achievement-icon {
-    font-size: 28px;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border: 2px solid #2c3e50;
-    box-shadow: 0 2.5px 0 #2c3e50;
-}
-
-.achievement-icon.unlocked {
-    background-color: #ffd32d;
-}
-
-.achievement-icon.locked {
-    background-color: #a4b0be;
-}
-
-.achievement-details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-
-.achievement-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-}
-
-.achievement-name {
-    color: #2c3e50;
-    font-size: 14px;
-    font-weight: 900;
-}
-
-.achievement-badge {
-    font-size: 10px;
-    font-weight: 900;
-    padding: 2px 8px;
-    border-radius: 8px;
-    white-space: nowrap;
-    border: 1.5px solid #2c3e50;
-}
-
-.achievement-badge.unlocked {
-    background-color: #2ed573;
-    color: #ffffff;
-}
-
-.achievement-badge.locked {
-    background-color: #ff4757;
-    color: #ffffff;
-}
-
-.achievement-desc {
-    font-size: 12px;
-    color: #747d8c;
-    font-weight: 700;
-    text-align: left;
-}
-
-.achievement-progress {
-    margin-top: 5px;
-}
-
-.achievement-progress-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
-    color: #747d8c;
-    font-weight: 700;
-    margin-bottom: 2px;
-}
-
-.achievement-progress-bar {
-    width: 100%;
-    height: 8px;
-    background-color: #dfe6e9;
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1.5px solid #2c3e50;
-}
-
-.achievement-progress-fill {
-    height: 100%;
-    background-color: #2ed573;
-    border-radius: 4px;
-}
-
-.achievement-unlock-date {
-    font-size: 11px;
-    color: #2ed573;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 900;
-}
-
-.profile-menu-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.profile-loading,
-.profile-empty {
-    text-align: center;
-    padding: 10px;
-    color: #747d8c;
-    font-weight: 700;
-}
-
-.profile-menu-btn {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-    padding: 16px 20px;
-    background-color: #ffffff;
-    border: 2.5px solid #2c3e50;
-    border-radius: 16px;
-    cursor: pointer;
-    text-align: left;
-    box-shadow: 0 4px 0 #2c3e50;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    margin-bottom: 12px;
-    min-height: 52px;
-}
-
-.profile-menu-btn:hover {
-    background-color: #f8f9fa;
-}
-
-.profile-menu-btn:active {
-    transform: translateY(4px);
-    box-shadow: none;
-}
-
-.profile-menu-icon {
-    font-size: 20px;
-}
-
-.profile-menu-icon.settings {
-    color: #2c3e50;
-}
-
-.profile-menu-label {
-    font-size: 14px;
-    font-weight: 900;
-    color: #2c3e50;
-}
-
-.guest-placeholder {
-    padding: 40px 20px;
-    text-align: center;
-    margin-top: 10vh;
-}
-
-.guest-placeholder-icon {
-    font-size: 60px;
-    margin-bottom: 20px;
-}
-
-.guest-placeholder h2 {
-    color: #2c3e50;
-    margin-bottom: 10px;
-    font-weight: 900;
-}
-
-.guest-placeholder p {
-    color: #747d8c;
-    margin-bottom: 30px;
-    line-height: 1.6;
-    font-weight: 700;
-}
-
-.guest-login-btn {
-    background: #ffd32d;
-    color: #2c3e50;
-    padding: 14px 30px;
-    border-radius: 16px;
-    border: 2.5px solid #2c3e50;
-    font-weight: 900;
-    font-size: 15px;
-    cursor: pointer;
-    box-shadow: 0 4px 0 #2c3e50;
-    min-height: 48px;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.guest-login-btn:active {
-    transform: translateY(4px);
-    box-shadow: none;
-}
-
-.profile-logout-btn {
-    background-color: #ff4757 !important;
-    border: 2.5px solid #2c3e50 !important;
-    margin-top: 10px;
-}
-
-.profile-logout-btn span.logout-text {
-    font-weight: 900;
-    color: #ffffff;
-}
-
-.quest-action-btn.with-top-margin {
-    margin-top: 15px;
-}
-
-.photo-camera-icon {
-    font-size: 32px;
-}
-
-.photo-helper-text {
-    color: #a4b0be;
-}
-
-.success-reward-icon {
-    font-size: 24px;
-}
-
-/* ===== UI cleanup overrides (profile + icon rendering) ===== */
-.profile-screen {
-    background-color: #e0f2fe;
-}
-
-.profile-player-card {
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-    border: 3px solid #2c3e50;
-    box-shadow: 0 6px 0 #2c3e50;
-}
-
-.profile-avatar-frame .profile-avatar {
-    border: 3px solid #2c3e50;
-    box-shadow: 0 3px 0 #2c3e50;
-}
-
-.profile-level-badge {
-    border: 2px solid #2c3e50;
-    box-shadow: 0 2px 0 #2c3e50;
-}
-
-.profile-player-name {
-    -webkit-text-stroke: 0;
-}
-
-.profile-player-tier {
-    border: 2px solid #2c3e50;
-    background: #eaf2ff;
-    color: #1f3a5f;
-}
-
-.profile-tier-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.profile-exp-section {
-    background: #eef6ff;
-    border: 1.5px solid #2c3e50;
-}
-
-.profile-exp-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.profile-stats-row {
-    gap: 12px;
-}
-
-.profile-stat-box {
-    border: 2.5px solid #2c3e50;
-    box-shadow: 0 4px 0 #2c3e50;
-}
-
-.stat-box-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #334155;
-}
-
-.achievements-card {
-    background-color: #ffffff;
-    border: 3px solid #2c3e50;
-    box-shadow: 0 6px 0 #2c3e50;
-}
-
-.achievements-title {
-    color: #1e293b;
-    -webkit-text-stroke: 0;
-}
-
-.achievements-filter-btn {
-    border: 2px solid #2c3e50;
-    box-shadow: 0 3px 0 #2c3e50;
-    font-weight: 800;
-}
-
-.achievement-item {
-    border: 2px solid #2c3e50;
-    box-shadow: 0 3px 0 #2c3e50;
-}
-
-.achievement-item.locked {
-    filter: none;
-    opacity: 0.72;
-}
-
-.achievement-icon {
-    border: 2px solid #2c3e50;
-    box-shadow: 0 2px 0 #2c3e50;
-}
-
-.achievement-icon-svg {
-    color: #334155;
-}
-
-.profile-menu-btn {
-    border: 2.5px solid #2c3e50;
-    box-shadow: 0 4px 0 #2c3e50;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.profile-menu-btn:active {
-    transform: translateY(4px);
-    box-shadow: none;
-}
 
-.menu-btn-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #e9f2ff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #334155;
+/* Dark Mode overrides for MainTabs */
+body.dark-theme .game-hud-header {
+    background-color: var(--st-surface);
+    border-bottom-color: var(--st-border);
+    color: var(--st-text);
 }
-
-.profile-admin-dashboard-btn {
-    border-color: #b91c1c !important;
-    border-left: 6px solid #dc2626 !important;
-    color: #b91c1c;
-}
-
-.profile-admin-dashboard-btn .menu-btn-icon {
-    background: #fee2e2;
-    color: #b91c1c;
+body.dark-theme .hud-player-name {
+    color: var(--st-text);
 }
-
-.profile-admin-dashboard-btn .profile-menu-label,
-.profile-admin-dashboard-btn .menu-btn-arrow {
-    color: #b91c1c;
+body.dark-theme .hud-stat-pill {
+    background-color: var(--st-surface-muted);
+    border-color: var(--st-border);
+    color: var(--st-text);
 }
-
-.profile-logout-btn {
-    background-color: #ef4444 !important;
-    border-color: #2c3e50 !important;
+body.dark-theme .pill-value {
+    color: var(--st-text);
 }
-
-.profile-logout-btn .menu-btn-icon {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+body.dark-theme .bottom-nav {
+    background-color: var(--st-surface);
+    border-top: 1px solid var(--st-border);
+    box-shadow: var(--st-shadow);
 }
 
-@media (max-width: 380px) {
-    .profile-stats-row {
-        gap: 8px;
-    }
-
-    .profile-stat-box {
-        padding: 12px 6px;
-    }
-
-    .stat-box-value {
-        font-size: 15px;
-    }
-
-    .profile-player-name {
-        font-size: 18px;
-    }
-}

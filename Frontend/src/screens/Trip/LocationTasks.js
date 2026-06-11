@@ -29,17 +29,23 @@ const DEFAULT_METADATA = {
   rating: '4.5'
 };
 
-export const LocationTasks = ({ locationId, locationName, itineraryId, userId, onClose, onSelectTask }) => {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+export const LocationTasks = ({ locationId, locationName, itineraryId, userId, onClose, onSelectTask, tasks: propsTasks, loading: propsLoading }) => {
+  const [internalTasks, setInternalTasks] = useState([]);
+  const [internalLoading, setInternalLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const isControlled = propsTasks !== undefined;
+  const tasks = isControlled ? propsTasks : internalTasks;
+  const loading = isControlled ? Boolean(propsLoading) : internalLoading;
 
   const locationMeta = LOCATION_MOCK_METADATA[locationName] || DEFAULT_METADATA;
 
   useEffect(() => {
+    if (propsTasks !== undefined) return;
+
     const fetchTasks = async () => {
       try {
-        setLoading(true);
+        setInternalLoading(true);
         const token = await storageGet('access_token');
         const response = await fetch(
           `${API_BASE}/api/gamification/locations/${locationId}/tasks?itinerary_id=${itineraryId}&user_id=${userId}`,
@@ -53,18 +59,18 @@ export const LocationTasks = ({ locationId, locationName, itineraryId, userId, o
           throw new Error('Không thể lấy danh sách nhiệm vụ.');
         }
         const data = await response.json();
-        setTasks(data);
+        setInternalTasks(data);
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoading(false);
+        setInternalLoading(false);
       }
     };
 
     if (locationId && itineraryId && userId) {
       fetchTasks();
     }
-  }, [locationId, itineraryId, userId]);
+  }, [locationId, itineraryId, userId, propsTasks]);
 
   return (
     <div className="location-tasks-drawer">
@@ -141,6 +147,7 @@ export const LocationTasks = ({ locationId, locationName, itineraryId, userId, o
                   <div className="task-item-header">
                     <div className="task-badge-reward" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Award size={12} /> +{task.reward_exp} EXP
+                      {task.reward_coin > 0 && ` | +${task.reward_coin} Xu`}
                     </div>
                     <span style={{
                       fontSize: '10px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '6px',

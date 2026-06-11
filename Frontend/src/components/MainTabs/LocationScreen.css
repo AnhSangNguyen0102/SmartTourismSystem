@@ -1,0 +1,146 @@
+/* src/components/MainTabs/LocationScreen.css */
+/* Map Screen Full */
+.location-screen-full {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    border-radius: 40px;
+}
+
+.map-overlay-top {
+    position: absolute;
+    top: 84px; /* Clearance for the 68px game HUD + padding */
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.map-title-box {
+    background: transparent;
+}
+
+.map-title-main {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--st-text);
+    line-height: 1.1;
+    letter-spacing: -1px;
+    -webkit-text-stroke: 0.5px var(--st-surface);
+    text-shadow: 1.5px 1.5px 0 var(--st-surface);
+    font-family: 'Fredoka', sans-serif;
+}
+
+.map-title-sub {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--st-text);
+    margin-top: 4px;
+    letter-spacing: 1px;
+    background-color: var(--st-surface);
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1.5px solid var(--game-border-color);
+    width: fit-content;
+}
+
+.dot-blue {
+    width: 6px;
+    height: 6px;
+    background-color: #3b82f6;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.map-top-actions {
+    display: flex;
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.map-circle-btn {
+    width: 44px;
+    height: 44px;
+    background: var(--st-surface);
+    border: 2.5px solid var(--game-border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 var(--game-border-color);
+    color: var(--st-text);
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+}
+
+.map-circle-btn:hover {
+    background: var(--st-surface-muted);
+}
+
+.map-circle-btn:active {
+    transform: translateY(3px);
+    box-shadow: none;
+}
+
+.map-my-location-btn {
+    position: absolute;
+    bottom: 110px; /* Shifted up slightly to avoid bottom nav bar overlap */
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--st-surface);
+    border: 2.5px solid var(--game-border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 var(--game-border-color);
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+}
+
+.map-my-location-btn:hover {
+    background: var(--st-surface-muted);
+}
+
+.map-my-location-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+.placeholder-screen {
+    padding: 20px;
+    background-color: var(--st-bg);
+    min-height: 100%;
+}
+
+.map-search-result-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--st-border);
+    cursor: pointer;
+    fontSize: 13px;
+    font-weight: 600;
+    color: var(--st-text);
+    background-color: var(--st-surface-muted);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.map-search-result-item:hover {
+    background-color: var(--game-yellow) !important;
+    color: #2c3e50 !important;
+}

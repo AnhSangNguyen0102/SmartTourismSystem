@@ -17,7 +17,7 @@ const TreasureOverlay = ({ data }) => {
                 <div className="reward-text show">
                     <p>Chúc mừng bạn đã check-in thành công!</p>
                     <p className="location-name">{locationName}</p>
-                    <div className="points-earned">+{points} Điểm thưởng</div>
+                    <div className="points-earned">+{points} EXP</div>
                 </div>
             )}
         </div>

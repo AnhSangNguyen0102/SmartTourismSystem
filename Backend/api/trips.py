@@ -9,27 +9,25 @@ from core.config import settings
 import core.security as security
 import crud.crud_user as crud_user
 from schemas import (
-    CreateItineraryRequest, ItineraryResponse, TrackingRequest,
-    CheckInRequest, CheckInResponse, DeviationAlert, ItineraryDetailResponse,
+    CreateItineraryRequest, ItineraryResponse,
+    CheckInRequest, CheckInResponse, ItineraryDetailResponse,
     ItineraryHistoryItem, MessageResponse
 )
 from crud.crud_location import get_location_by_ids, increment_location_checkin_count
 from crud.crud_trip import (
-    create_itinerary, create_itinerary_day, create_itinerary_stop, create_itinerary_route,
+    create_itinerary, create_itinerary_day, create_itinerary_stop,
     get_itinerary_by_id
 )
 from crud.crud_tracking import (
-    get_stop_with_radius, get_checkin_by_stop, create_checkin_progress, 
-    update_checkin_status, create_deviation_log, verify_stop_ownership, verify_stop_in_itinerary, create_gps_log,
+    get_checkin_by_stop, create_checkin_progress, update_checkin_status,
     get_stop_with_ownership
 )
 from crud.crud_itinerary import update_itinerary_status, get_itinerary_history
-from models import Locations, ItineraryDays, ItineraryStops, ItineraryRoutes, ItineraryStatus, StopStatus, DeviationLogs, Itineraries
+from models import Locations, ItineraryDays, ItineraryStops, ItineraryStatus, StopStatus, Itineraries
 
-from core.algorithms import check_within_radius, tsp_dp_bitmask
-from core.google_maps import get_route_polyline
+from core.algorithms import check_within_radius
 
-router = APIRouter(prefix="/api/trips", tags=["Trips - Lộ trình & Theo dõi"])
+router = APIRouter(prefix="/api/trips", tags=["Trips - Chuyến đi & Check-in"])
 
 def dev_log(message: str) -> None:
     if settings.ENVIRONMENT.lower() == "development":
@@ -90,7 +88,16 @@ def complete_trip(
         raise HTTPException(status_code=403, detail="Lộ trình không tồn tại hoặc không thuộc về bạn")
         
     if trip.status == ItineraryStatus.COMPLETED:
-        raise HTTPException(status_code=400, detail="Chuyến đi này đã được hoàn thành")
+        stmt_prof = select(UserProfiles).where(UserProfiles.user_id == user_id)
+        profile = db.exec(stmt_prof).first()
+        return MessageResponse(
+            detail=f"Chuyến đi này đã được hoàn thành thành công trước đó!",
+            completion_score=trip.score_earned or 0,
+            earned_from_trip=trip.score_earned or 0,
+            total_rewarded=trip.score_earned or 0,
+            new_total_points=profile.total_points if profile else None,
+            new_points_balance=profile.points_balance if profile else None,
+        )
         
     # Tính số trạm đã check-in
     stmt_completed = (
@@ -109,12 +116,10 @@ def complete_trip(
     total_stops = db.exec(stmt_total).one()
     
     # Tính điểm
-    distance_km = float(trip.total_distance)
     is_perfect = (completed_stops == total_stops and total_stops > 0)
     
     completion_score = int(
         (completed_stops * 20) + 
-        (distance_km * 5) + 
         (100 if is_perfect else 0)
     )
     
@@ -124,21 +129,21 @@ def complete_trip(
     trip.update_at = datetime.utcnow()
     db.add(trip)
     
-    # Cộng điểm thưởng lộ trình và chuyển điểm hiện tại vào ví
+    # Cộng điểm thưởng lộ trình vào profile (KHÔNG reset total_points)
     stmt_prof = select(UserProfiles).where(UserProfiles.user_id == user_id)
     profile = db.exec(stmt_prof).first()
-    earned_from_trip = 0
+
+    current_points = profile.total_points if profile and profile.total_points else 0
+    current_coins = profile.points_balance if profile and profile.points_balance else 0
+
     if profile:
-        earned_from_trip = profile.total_points
-        profile.points_balance += completion_score + earned_from_trip
-        profile.total_points = 0
+        profile.total_points = current_points + completion_score
+        profile.points_balance = current_coins + completion_score
         db.add(profile)
         
     # Kích hoạt kiểm tra thành tựu
     unlocked_msg = ""
     new_unlocks = check_and_update_achievements(db, user_id, "complete_itinerary", amount=1)
-    if distance_km > 0:
-        new_unlocks += check_and_update_achievements(db, user_id, "distance", amount=int(distance_km))
     if is_perfect:
         new_unlocks += check_and_update_achievements(db, user_id, "perfect_trip", amount=1)
         
@@ -147,11 +152,16 @@ def complete_trip(
         unlocked_msg = f" 🎉 Bạn đã mở khóa thành tựu mới: {titles}!"
         
     db.commit()
+
+    # Refresh lại profile để lấy dữ liệu chuẩn xác nhất sau khi commit
+    if profile:
+        db.refresh(profile)
+
     return MessageResponse(
-        detail=f"Chúc mừng bạn đã hoàn thành chuyến đi! Bạn nhận được {completion_score} điểm thưởng lộ trình và +{earned_from_trip} điểm đã tích lũy.{unlocked_msg}",
+        detail=f"Chúc mừng bạn đã hoàn thành chuyến đi! Bạn nhận được +{completion_score} EXP và +{completion_score} xu.{unlocked_msg}",
         completion_score=completion_score,
-        earned_from_trip=earned_from_trip,
-        total_rewarded=completion_score + earned_from_trip,
+        earned_from_trip=trip.score_earned,
+        total_rewarded=completion_score,
         new_total_points=profile.total_points if profile else None,
         new_points_balance=profile.points_balance if profile else None,
     )
@@ -176,36 +186,11 @@ def cancel_trip(
         
     update_itinerary_status(db, itinerary_id=itinerary_id, new_status=ItineraryStatus.CANCELLED)
     
-    # Dù hủy, vẫn cộng điểm hiện tại vào ngân sách
-    from models import UserProfiles
-    profile = db.exec(select(UserProfiles).where(UserProfiles.user_id == user_id)).first()
-    if profile and profile.total_points > 0:
-        profile.points_balance += profile.total_points
-        earned = profile.total_points
-        profile.total_points = 0
-        db.add(profile)
-        db.commit()
-        return MessageResponse(detail=f"Chuyến đi đã được hủy. +{earned} điểm đã được cộng vào ngân sách.")
-    
+    # Hủy chuyến đi - KHÔNG chuyển total_points sang points_balance
+    db.commit()
     return MessageResponse(detail="Chuyến đi đã được hủy.")
 
-@router.get("/{itinerary_id}/deviation-status", response_model=DeviationAlert, summary="Kiểm tra trạng thái lệch hướng")
-def get_deviation_status(
-    itinerary_id: UUID,
-    db: Session = Depends(get_session),
-):
-    """
-    Kiểm tra xem lộ trình có bản ghi lệch hướng gần đây (trong 5 phút) không.
-    Frontend gọi endpoint này khi nhấn Refresh.
-    """
-    # Tính năng cảnh báo lệch hướng đã được tắt theo yêu cầu, luôn trả về is_deviated=False
-    return DeviationAlert(
-        is_deviated=False,
-        distance_to_target=0,
-        message="Bạn đang đi đúng hướng"
-    )
-
-@router.post("/create", response_model=ItineraryResponse, summary="Tạo lộ trình mới")
+@router.post("/create", response_model=ItineraryResponse, summary="Tạo chuyến đi mới")
 def create_new_itinerary(
     request: CreateItineraryRequest, 
     db: Session = Depends(get_session),
@@ -279,8 +264,7 @@ def create_new_itinerary(
             db, session_id=request.session_id, user_id=user_id, name=request.name, 
             total_travel_time=0, budget_category=budget_category, commit=False
         )
-        # 3. Phân bổ ngày (Day Clustering)
-        # Giả sử request có truyền end_date, nếu không mặc định là 1 ngày
+        # 3. Chia danh sách người dùng chọn theo số ngày
         num_days = 1
         if hasattr(request, 'end_date') and request.end_date:
             num_days = max(1, (request.end_date - request.start_date).days + 1)
@@ -290,15 +274,11 @@ def create_new_itinerary(
         chunks = [request.location_ids[i:i + chunk_size] for i in range(0, len(request.location_ids), chunk_size)]
 
         global_total_time = 0
-        global_total_distance = 0.0
         global_total_budget = 0.0
 
-        # 4. Tự đi: Không tối ưu TSP & Không vẽ route/polyline giữa các địa điểm
+        # 4. Giữ nguyên thứ tự địa điểm do người dùng chọn
         for day_index, chunk_ids in enumerate(chunks):
             current_date = request.start_date + timedelta(days=day_index)
-
-            # Giữ nguyên thứ tự người dùng chọn ban đầu
-            optimized_ids = list(chunk_ids)
 
             # Tính toán ngân sách dự kiến cho ngày này dựa trên allocated_prices đã tính
             day_budget = sum(allocated_prices[lid] for lid in chunk_ids)
@@ -314,7 +294,7 @@ def create_new_itinerary(
             current_dt = datetime.combine(current_date, time(8, 0))
             daily_time = 0
 
-            for order, loc_id in enumerate(optimized_ids, start=1):
+            for order, loc_id in enumerate(chunk_ids, start=1):
                 loc = loc_map[loc_id]
 
                 # Thời gian đến (Arrival)
@@ -338,7 +318,6 @@ def create_new_itinerary(
 
         # 5. Cập nhật tổng thời gian chuyến đi và ngân sách
         trip.total_travel_time = global_total_time
-        trip.total_distance = round(global_total_distance, 2)
         trip.total_budget = global_total_budget
         db.add(trip)
         
@@ -357,10 +336,10 @@ def create_new_itinerary(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống khi tạo lộ trình: {str(e)}")
 
 
-@router.get("/{itinerary_id}", response_model=ItineraryDetailResponse, summary="Xem chi tiết lộ trình")
+@router.get("/{itinerary_id}", response_model=ItineraryDetailResponse, summary="Xem chi tiết chuyến đi")
 def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
     from models import ItineraryRoutes, LocationsImage
-    
+
     trip = get_itinerary_by_id(db, itinerary_id)
     if not trip:
         raise HTTPException(status_code=404, detail="Không tìm thấy chuyến đi")
@@ -430,24 +409,10 @@ def get_trip_detail(itinerary_id: UUID, db: Session = Depends(get_session)):
         stop_dict["image_url"] = image_url
         
         stop_dicts.append(stop_dict)
-        all_stop_ids.append(stop.stop_id)
         
     trip_data["stops"] = stop_dicts
-    
-    # 4. Lấy routes (polyline) giữa các trạm dừng
-    routes_data = []
-    if all_stop_ids:
-        route_statement = (
-            select(ItineraryRoutes)
-            .where(ItineraryRoutes.from_stop_id.in_(all_stop_ids))
-            .order_by(ItineraryRoutes.route_id)
-        )
-        routes = db.exec(route_statement).all()
-        routes_data = [r.model_dump() for r in routes]
-    
-    trip_data["routes"] = routes_data
-    
-    # 5. Đưa dictionary vào khuôn Pydantic
+
+    # 4. Đưa dictionary vào khuôn Pydantic
     return ItineraryDetailResponse(**trip_data)
 
 
@@ -513,21 +478,8 @@ def checkin_stop(
     # Tăng lượt checkin tại địa điểm
     increment_location_checkin_count(db, stop_data.location_id)
 
-    # TÍNH ĐIỂM THƯỞNG — dựa trên khoảng cách giữa các trạm
-    # Tra cứu route đến trạm này (đã tính sẵn khi tạo lộ trình, KHÔNG gọi thêm API)
-    route_to_stop = db.exec(
-        select(ItineraryRoutes).where(ItineraryRoutes.to_stop_id == stop_id)
-    ).first()
-    
-    if route_to_stop is not None:
-        distance_km = float(route_to_stop.distance)
-        # Custom rounding: phần thập phân >= 0.8 làm tròn lên, < 0.8 làm tròn xuống
-        frac = distance_km - math.floor(distance_km)
-        earned_points = math.ceil(distance_km) if frac >= 0.8 else math.floor(distance_km)
-        earned_points = max(1, earned_points)  # Tối thiểu 1 điểm
-    else:
-        # Trạm đầu tiên (không có route đến) → 10 điểm mặc định
-        earned_points = 10
+    # Không chấm điểm theo quãng đường vì người dùng tự chọn hành trình.
+    earned_points = 10
     
     # Lưu điểm thưởng vào stop để frontend hiển thị được — dùng UPDATE trực tiếp
     from sqlalchemy import update as sa_update
@@ -589,12 +541,10 @@ def checkin_stop(
             )
             total_stops = db.exec(stmt_total).one()
             
-            distance_km = float(trip.total_distance)
             is_perfect = (completed_stops == total_stops and total_stops > 0)
             
             completion_score = int(
                 (completed_stops * 20) + 
-                (distance_km * 5) + 
                 (100 if is_perfect else 0)
             )
             
@@ -603,17 +553,14 @@ def checkin_stop(
             trip.update_at = datetime.utcnow()
             db.add(trip)
             
-            # Cộng điểm thưởng lộ trình vào profile và chuyển total_points -> points_balance
+            # Cộng điểm thưởng lộ trình vào profile (KHÔNG reset total_points)
             if profile:
-                earned_from_trip = profile.total_points
-                profile.points_balance += completion_score + earned_from_trip
-                profile.total_points = 0
+                profile.total_points = (profile.total_points or 0) + completion_score
+                profile.points_balance = (profile.points_balance or 0) + completion_score
                 db.add(profile)
                 
             # Kích hoạt các thành tựu hoàn thành lộ trình
             new_unlocks += check_and_update_achievements(db, user_id, "complete_itinerary", amount=1)
-            if distance_km > 0:
-                new_unlocks += check_and_update_achievements(db, user_id, "distance", amount=int(distance_km))
             if is_perfect:
                 new_unlocks += check_and_update_achievements(db, user_id, "perfect_trip", amount=1)
             auto_completed = True
@@ -627,76 +574,34 @@ def checkin_stop(
         unlocked_msg = f" 🎉 Thành tựu mới: {titles}!"
 
     if auto_completed:
-        return CheckInResponse(
-            success=True,
-            message=f"✅ Check-in thành công! +{earned_points} điểm. 🎉 Lộ trình hoàn thành! Bạn nhận thêm +{completion_score} điểm tích lũy.{unlocked_msg}",
-            stop_id=stop_id,
-            progress_id=progress_id,
-            earned_points=earned_points
+        # Cập nhật trạng thái trạm hiện tại thành COMPLETED trước khi trả về
+        from sqlalchemy import update as sa_update
+        db.execute(
+            sa_update(ItineraryStops)
+            .where(ItineraryStops.stop_id == stop_id)
+            .values(reward=earned_points, status=StopStatus.COMPLETED)
         )
 
+        return CheckInResponse(
+            success=True,
+            message=f"✅ Check-in thành công! +{earned_points} EXP. 🎉 Lộ trình hoàn thành! Bạn nhận thêm +{completion_score} EXP và +{completion_score} xu.{unlocked_msg}",
+            stop_id=stop_id,
+            progress_id=progress_id,
+            earned_points=earned_points,
+            
+            # --- BỔ SUNG CÁC TRƯỜNG ĐỂ FRONTEND MỞ POPUP NHẬN THƯỞNG ---
+            is_itinerary_completed=True,  # Cờ hiệu báo cho Frontend biết lộ trình đã kết thúc
+            completion_score=completion_score,
+            total_rewarded=completion_score,
+            new_total_points=profile.total_points if profile else None,
+            new_points_balance=profile.points_balance if profile else None,
+        )
+
+    # Trả về kết quả check-in thông thường nếu chưa đi hết các trạm
     return CheckInResponse(
         success=True,
-        message=f"✅ Check-in thành công! Bạn nhận được {earned_points} điểm thưởng.{unlocked_msg}",
+        message=f"✅ Check-in thành công! Bạn nhận được {earned_points} EXP.{unlocked_msg}",
         stop_id=stop_id,
         progress_id=progress_id,
         earned_points=earned_points
-    )
-
-
-@router.post("/tracking", response_model=DeviationAlert, summary="Gửi tọa độ GPS & Kiểm tra chệch hướng")
-def track_user_location(
-    request: TrackingRequest,
-    db: Session = Depends(get_session),
-    current_user: dict = Depends(security.verify_token)
-):
-    """
-    Bắt tọa độ GPS từ Mobile. 
-    Nếu User cách xa đường đi mặc định > 5km -> Trả về cảnh báo chệch hướng.
-    """
-    user_id = get_current_user_id(db, current_user)
-    
-    # 0. Kiểm tra quyền sở hữu lộ trình
-    trip = get_itinerary_by_id(db, request.itinerary_id)
-    if not trip or trip.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Lộ trình không tồn tại hoặc không thuộc về bạn")
-        
-    # 0.1 Kiểm tra trạm có thuộc lộ trình không
-    if not verify_stop_in_itinerary(db, request.itinerary_id, request.current_stop_id):
-        raise HTTPException(status_code=400, detail="Trạm không thuộc lộ trình này")
-
-    # 1. Lấy thông tin Stop hiện tại User đang hướng tới
-    stop_data = get_stop_with_radius(db, request.current_stop_id)
-    if not stop_data:
-        raise HTTPException(status_code=404, detail="Không tìm thấy trạm dừng")
-    
-    tracking_lat, tracking_lon = validate_coordinates(request.latitude, request.longitude)
-
-    # 2. Tính khoảng cách tới trạm đó
-    from core.algorithms import haversine
-    dist_km = haversine(
-        tracking_lat, tracking_lon,
-        float(stop_data.latitude), float(stop_data.longitude)
-    )
-
-    # 3. Lấy hoặc tạo CheckinProgress để lưu tracking GPS
-    progress = get_checkin_by_stop(db, user_id, request.current_stop_id)
-    if not progress:
-        progress = create_checkin_progress(
-            db, user_id=user_id, stop_id=request.current_stop_id,
-            latitude=request.latitude, longitude=request.longitude
-        )
-        
-    create_gps_log(
-        db, progress_id=progress.progress_id,
-        latitude=request.latitude, longitude=request.longitude
-    )
-
-    # Logic cảnh báo: Đã tắt theo yêu cầu (luôn trả về is_deviated=False và không ghi log deviation)
-    is_deviated = False
-    
-    return DeviationAlert(
-        is_deviated=is_deviated,
-        distance_to_target=round(dist_km * 1000, 2),
-        message="Bạn đang đi đúng hướng"
     )

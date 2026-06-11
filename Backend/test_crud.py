@@ -40,13 +40,12 @@ from crud.crud_location    import (
 )
 from crud.crud_itinerary   import (
     create_itinerary, create_itinerary_days, create_itinerary_stops,
-    create_itinerary_routes, get_itinerary_full, update_itinerary_status,
+    get_itinerary_full, update_itinerary_status,
     get_itinerary_history, get_itinerary_stops_with_locations,
 )
 from crud.crud_tracking    import (
     create_checkin_progress, update_checkin_status,
-    create_gps_log, create_deviation_log,
-    verify_stop_in_itinerary, get_checkin_by_stop, get_stop_with_radius,
+    get_checkin_by_stop,
 )
 from crud.crud_enterprise  import (
     create_enterprise_profile, get_pending_enterprise_profiles,
@@ -440,7 +439,6 @@ def run():
                     name="Smoke Trip",
                     total_budget=Decimal("1500000"),
                     total_travel_time=300,
-                    total_distance=Decimal("25.5"),
                 )
                 seed_itinerary_id = new_itin.itinerary_id
                 ok("itinerary", "create_itinerary", f"itinerary_id={new_itin.itinerary_id}")
@@ -483,23 +481,6 @@ def run():
         elif not seed_location_id:
             skip("itinerary", "create_itinerary_stops", "Thiếu seed_location_id")
 
-        if len(new_stops) >= 2:
-            try:
-                routes = create_itinerary_routes(db, [
-                    {
-                        "from_stop_id": new_stops[0].stop_id,
-                        "to_stop_id": new_stops[1].stop_id,
-                        "travel_time": 20,
-                        "distance": Decimal("3.2"),
-                        "polyline_data": "encoded_polyline_here",
-                    }
-                ])
-                ok("itinerary", "create_itinerary_routes", f"{len(routes)} route")
-            except Exception as e:
-                fail("itinerary", "create_itinerary_routes", str(e))
-        else:
-            skip("itinerary", "create_itinerary_routes", "Cần >= 2 stops")
-
         if new_itin:
             try:
                 full = get_itinerary_full(db, new_itin.itinerary_id)
@@ -533,26 +514,7 @@ def run():
         # ════════════════════════════════════════════════════
         section("7. crud_tracking  –  Tracking & Check-in")
 
-        # verify_stop_in_itinerary / get_checkin_by_stop / get_stop_with_radius
-        # cần stop_id thật — nếu không có seed thì skip
-        if seed_stop_id and seed_itinerary_id:
-            try:
-                ok_val = verify_stop_in_itinerary(db, seed_itinerary_id, seed_stop_id)
-                ok("tracking", "verify_stop_in_itinerary", f"result={ok_val}")
-            except Exception as e:
-                fail("tracking", "verify_stop_in_itinerary", str(e))
-
-            try:
-                radius_info = get_stop_with_radius(db, seed_stop_id)
-                ok("tracking", "get_stop_with_radius",
-                   f"radius={radius_info.checkin_radius if radius_info else 'None'}")
-            except Exception as e:
-                fail("tracking", "get_stop_with_radius", str(e))
-        else:
-            skip("tracking", "verify_stop_in_itinerary / get_stop_with_radius",
-                 "Thiếu seed_stop_id (cần seed location để create stops)")
-
-        # Write tests cho tracking cần user + stop thật → tạo chain lại
+        # Write tests cho check-in cần user + stop thật → tạo chain lại
         temp_track_user = None
         try:
             temp_track_user = create_user(
@@ -582,17 +544,6 @@ def run():
                     fail("tracking", "get_checkin_by_stop", str(e))
 
                 try:
-                    gps = create_gps_log(
-                        db,
-                        progress_id=prog.progress_id,
-                        latitude=Decimal("10.762622"),
-                        longitude=Decimal("106.660172"),
-                    )
-                    ok("tracking", "create_gps_log", f"log_id={gps.log_id}")
-                except Exception as e:
-                    fail("tracking", "create_gps_log", str(e))
-
-                try:
                     upd_chk, upd_stop, is_new = update_checkin_status(db, prog.progress_id, seed_stop_id)
                     ok("tracking", "update_checkin_status",
                        f"completed={upd_chk.is_completed if upd_chk else '?'}, "
@@ -603,22 +554,8 @@ def run():
             except Exception as e:
                 fail("tracking", "create_checkin_progress", str(e))
         else:
-            skip("tracking", "create_checkin_progress / gps_log / update_checkin_status",
+            skip("tracking", "create_checkin_progress / update_checkin_status",
                  "Thiếu temp_track_user hoặc seed_stop_id")
-
-        if seed_itinerary_id:
-            try:
-                dev = create_deviation_log(
-                    db,
-                    itinerary_id=seed_itinerary_id,
-                    latitude=Decimal("10.770000"),
-                    longitude=Decimal("106.670000"),
-                )
-                ok("tracking", "create_deviation_log", f"alert_id={dev.alert_id}")
-            except Exception as e:
-                fail("tracking", "create_deviation_log", str(e))
-        else:
-            skip("tracking", "create_deviation_log", "Thiếu seed_itinerary_id")
 
         db.rollback()
         print("  ↩  Rolled back tracking write operations")
