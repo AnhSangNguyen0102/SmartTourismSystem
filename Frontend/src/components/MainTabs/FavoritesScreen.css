@@ -63,3 +63,43 @@
     place-items: center;
     color: var(--st-text-muted);
 }
+
+/* Favorites Filter Tabs */
+.favorites-filter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.favorites-filter-btn {
+    flex: 1;
+    border: 2px solid var(--game-border-color);
+    border-radius: 12px;
+    background: var(--st-surface);
+    color: var(--st-text);
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 850;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--game-border-color);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.favorites-filter-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--game-border-color);
+}
+
+.favorites-filter-btn.active {
+    background: #ff4757;
+    color: #ffffff;
+    border-color: var(--game-border-color);
+    box-shadow: 0 3px 0 var(--game-border-color);
+}
+
+body.dark-theme .favorites-filter-btn.active {
+    background: #ff4757;
+    color: #ffffff;
+}
+

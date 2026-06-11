@@ -10,13 +10,14 @@ const FavoritesScreen = ({ onOpenLocationDetail }) => {
     const [savedList, setSavedList] = useState([]);
     const [savedLocations, setSavedLocations] = useState([]);
     const [loadingSaved, setLoadingSaved] = useState(true);
+    const [postFilter, setPostFilter] = useState('saved'); // 'saved', 'liked', 'commented'
 
-    const fetchSavedPosts = async () => {
+    const fetchSavedPosts = async (filterType = postFilter) => {
         setLoadingSaved(true);
         try {
             const token = await storageGet('access_token');
             if (!token) return;
-            const res = await fetch(`${API_BASE}/api/social/saved-posts`, {
+            const res = await fetch(`${API_BASE}/api/social/saved-posts?filter_type=${filterType}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -31,8 +32,8 @@ const FavoritesScreen = ({ onOpenLocationDetail }) => {
     };
 
     useEffect(() => {
-        fetchSavedPosts();
-    }, []);
+        fetchSavedPosts(postFilter);
+    }, [postFilter]);
 
     useEffect(() => {
         const loadLocations = () => getFavoriteLocations().then(setSavedLocations);
@@ -44,8 +45,10 @@ const FavoritesScreen = ({ onOpenLocationDetail }) => {
     return (
         <div className="favorites-screen-wrapper" style={{ padding: '16px', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '950', color: 'var(--st-text)', marginBottom: '16px', textShadow: '1.5px 1.5px 0 var(--st-bg)' }}>Yêu Thích Đã Lưu</h2>
+            
+            {/* Địa điểm yêu thích */}
             {savedLocations.length > 0 && (
-                <div className="favorite-location-list">
+                <div className="favorite-location-list" style={{ marginBottom: '20px' }}>
                     <h3>Địa điểm yêu thích</h3>
                     {savedLocations.map((location) => (
                         <button
@@ -69,16 +72,50 @@ const FavoritesScreen = ({ onOpenLocationDetail }) => {
                     ))}
                 </div>
             )}
+
+            {/* Bộ lọc bài viết */}
+            <div className="favorites-posts-header" style={{ marginTop: '24px', marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'var(--st-text)', margin: '0 0 12px' }}>Bài viết</h3>
+                <div className="favorites-filter-tabs">
+                    <button 
+                        type="button" 
+                        className={`favorites-filter-btn ${postFilter === 'saved' ? 'active' : ''}`}
+                        onClick={() => setPostFilter('saved')}
+                    >
+                        Đã lưu
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`favorites-filter-btn ${postFilter === 'liked' ? 'active' : ''}`}
+                        onClick={() => setPostFilter('liked')}
+                    >
+                        Đã tim
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`favorites-filter-btn ${postFilter === 'commented' ? 'active' : ''}`}
+                        onClick={() => setPostFilter('commented')}
+                    >
+                        Đã bình luận
+                    </button>
+                </div>
+            </div>
+
+            {/* Nội dung bài viết */}
             {loadingSaved ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>
                     <div className="loader-hud" style={{ margin: '0 auto 12px' }}></div>
-                    <p style={{ fontWeight: 'bold', color: 'var(--st-text-muted)' }}>Đang tải danh mục đã lưu...</p>
+                    <p style={{ fontWeight: 'bold', color: 'var(--st-text-muted)', fontSize: '12px' }}>Đang tải bài viết...</p>
                 </div>
-            ) : savedList.length === 0 && savedLocations.length === 0 ? (
+            ) : savedList.length === 0 ? (
                 <div className="cartoon-card" style={{ padding: '32px', textAlign: 'center', color: 'var(--st-text-muted)', fontWeight: 'bold' }}>
-                    <Heart size={48} style={{ color: '#ff4757', marginBottom: '12px' }} />
-                    <p>Danh sách trống!</p>
-                    <p style={{ fontSize: '11px', fontWeight: 'normal', marginTop: '4px' }}>Hãy lưu các địa điểm và bài đăng thú vị để xem lại tại đây.</p>
+                    <Heart size={36} style={{ color: '#ff4757', marginBottom: '12px', opacity: 0.6 }} />
+                    <p style={{ fontSize: '14px', margin: '0' }}>Không có bài viết nào!</p>
+                    <p style={{ fontSize: '11px', fontWeight: 'normal', marginTop: '4px', color: '#94a3b8' }}>
+                        {postFilter === 'saved' && 'Hãy lưu các bài đăng thú vị của cộng đồng để xem lại.'}
+                        {postFilter === 'liked' && 'Những bài viết bạn thả tim sẽ xuất hiện ở đây.'}
+                        {postFilter === 'commented' && 'Những bài viết bạn đã viết bình luận sẽ xuất hiện ở đây.'}
+                    </p>
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '80px' }}>
